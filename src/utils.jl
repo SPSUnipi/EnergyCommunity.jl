@@ -27,8 +27,8 @@ type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load
 @inline field_i(d, field) = field_d(d, field, 0)
 @inline field_f(d, field) = field_d(d, field, 0.0)
 "Function get field that throws an error if the field is not found"
-@inline function field(d, field, desc=nothing)
-    if d isa AbstractDict && field in keys(d)
+@inline function field(d::AbstractDict, field, desc=nothing)
+    if field in keys(d)
         return d[field]
     else
         msg = isnothing(desc) ? "Field $field not found in dictionary $(keys(d))" : desc
@@ -37,15 +37,15 @@ type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load
 end
 
 "Function to get the general parameters"
-general(d) = field(d, "general")
+general(d::AbstractDict) = field(d, "general")
 "Function to get the users configuration"
-users(d) = field(d, "users")
+users(d::AbstractDict) = field(d, "users")
 "Function to get the market configuration"
-market(d) = field(d, "market")
+market(d::AbstractDict) = field(d, "market")
 "Function to get the profile dictionary"
-profiles(d) = field_d(d, "profile")
+profiles(d::AbstractDict) = field_d(d, "profile")
 "Function to get the components list of a dictionary"
-components(d) = d
+components(d::AbstractDict) = d
 "Function to get the components value of a dictionary"
 component(d, c_name) = field(components(d), c_name)
 "Function to get the components value of a dictionary"
