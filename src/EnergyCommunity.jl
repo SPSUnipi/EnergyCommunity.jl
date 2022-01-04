@@ -5,9 +5,8 @@ module EnergyCommunity
     using JuMP
     using Plots
     using DataFrames
-    using Parameters
     import CSV
-    import Gurobi
+    import GLPK
     import XLSX
     import FileIO
     import YAML

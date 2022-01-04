@@ -55,41 +55,47 @@ mutable struct ModelEC <: AbstractEC
     model::Model  # JuMP model
     optimizer  # optimizer of the JuMP model
 
-    results::Dict  # results of the model in Dictionary format 
-
-    function ModelEC(
-            data::Dict=ZERO_DD,
-            group_type=GroupNC(),
-            user_set::Vector=Vector(),
-            optimizer=optimizer_with_attributes(Gurobi.Optimizer)
-        )
-        check_valid_data_dict(data)
-        gen_data, users_data, market_data = explode_data(data)
-
-        if isempty(user_set)
-            user_set = user_names(gen_data, users_data)
-        end
-        model=Model()
-        results=Dict()
-        
-        new(data, gen_data, market_data, users_data, group_type, user_set, model, optimizer, results)
-    end
+    results::Dict  # results of the model in Dictionary format
 end
 
 
 
+function ModelEC(
+    data::Dict=ZERO_DD,
+    group_type=GroupNC(),
+    optimizer=nothing,
+    user_set::Vector=Vector()
+)
+    check_valid_data_dict(data)
+    gen_data, users_data, market_data = explode_data(data)
+
+    if isempty(user_set)
+        user_set = user_names(gen_data, users_data)
+    end
+    model=Model()
+    results=Dict()
+
+    if isnothing(optimizer)
+        println("WARNING: Optimizer of the EnergyCommunity model not specified")
+    end
+
+    ModelEC(data, gen_data, market_data, users_data, group_type, user_set, model, optimizer, results)
+end
+
+
 function ModelEC(;
-        data::Dict=ZERO_DD,
-        group_type=GroupNC(),
-        user_set::Vector=Vector(),
-        optimizer=optimizer_with_attributes(Gurobi.Optimizer)
-    )
-    ModelEC(data, group_type, user_set, optimizer)
+    data::Dict=ZERO_DD,
+    group_type=GroupNC(),
+    optimizer=nothing,
+    user_set::Vector=Vector()
+)
+
+    ModelEC(data, group_type, optimizer, user_set)
 end
 
 function ModelEC(file_name::AbstractString,
         group_type,
-        optimizer=optimizer_with_attributes(Gurobi.Optimizer)
+        optimizer=nothing
     )
     data = read_input(file_name)
 
