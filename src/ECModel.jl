@@ -200,8 +200,11 @@ function save_summary(ECModel::AbstractEC, output_file::AbstractString; kwargs..
         kwargs_dict[:user_set] = ECModel.user_set
     end
     
-    
+    # get list of DataFrames to save
     output_list = prepare_summary(ECModel.group_type, ECModel; kwargs_dict...)
+
+    # create parent dirs as needed
+    mkpath(dirname(output_file))
 
     # Write XLSX table
     XLSX.openxlsx(output_file, mode="w") do xf
