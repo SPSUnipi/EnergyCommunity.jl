@@ -204,7 +204,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
 
     # Total converter dispatch: positive when supplying to AC
     @expression(model_user, P_conv_us[u=user_set, c=asset_names(users_data[u], CONV), t=time_set],
-        P_conv_P_us[u, c, t] - P_conv_P_us[u, c, t]
+        P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
     )
 
     ## Inequality constraints
