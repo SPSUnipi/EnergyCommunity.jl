@@ -63,10 +63,10 @@ end
 
 
 """
-    save(ECModel::AbstractEC, output_file::AbstractString)
+    save(output_file::AbstractString, ECModel::AbstractEC)
 Function to save the results and the model to the hard drive
 """
-function save(ECModel::AbstractEC, output_file::AbstractString)
+function save(output_file::AbstractString, ECModel::AbstractEC)
     save_model = Dict(
         "data"=> ECModel.data,
         "user_set"=>ECModel.user_set,
@@ -77,10 +77,10 @@ function save(ECModel::AbstractEC, output_file::AbstractString)
 end
 
 """
-    load(ECModel::AbstractEC, output_file::AbstractString)
+    load!(output_file::AbstractString, ECModel::AbstractEC)
 Function to save the results and the model to the hard drive
 """
-function load(ECModel::AbstractEC, output_file::AbstractString)
+function load!(output_file::AbstractString, ECModel::AbstractEC)
 
     ## load raw data and preliminary checks
     raw_data = FileIO.load(output_file)
@@ -126,6 +126,14 @@ function load(ECModel::AbstractEC, output_file::AbstractString)
     ECModel.results = raw_data["results"]
     
     return ECModel
+end
+
+"""
+    load(output_file::AbstractString)
+Function to save the results and the model to the hard drive
+"""
+function load(output_file::AbstractString)
+    return load!(output_file, ModelEC())
 end
 
 
