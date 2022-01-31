@@ -93,6 +93,12 @@ function ModelEC(;
     ModelEC(data, group_type, optimizer, user_set)
 end
 
+"""
+Load Model from disk
+
+file_name : str
+    Filename
+"""
 function ModelEC(file_name::AbstractString,
         group_type,
         optimizer=nothing
@@ -102,14 +108,22 @@ function ModelEC(file_name::AbstractString,
     ModelEC(data=data, group_type=group_type, optimizer=optimizer)
 end
 
-function ModelEC(model_copy::ModelEC, group_type)
-    ModelEC(deepcopy(model_copy.data), group_type, deepcopy(model_copy.user_set), model_copy.optimizer)
+"Copy constructor"
+function ModelEC(model_copy::ModelEC, group_type, optimizer=nothing)
+    ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(model_copy.user_set))
 end
 
+"Copy of ModelEC"
 function Base.copy(model_copy::ModelEC)
-    ModelEC(model_copy.data, model_copy.group_type, deepcopy(model_copy.user_set), model_copy.optimizer)
+    ModelEC(model_copy.data, model_copy.group_type, model_copy.optimizer, deepcopy(model_copy.user_set))
 end
 
+"Deepcopy of ModelEC"
 function Base.deepcopy(model_copy::ModelEC)
     ModelEC(deepcopy(model_copy.data), model_copy.group_type, deepcopy(user_set), model_copy.optimizer)
+end
+
+"""Function zero to represent the empty ModelEC"""
+function Base.zero(::ModelEC)
+    return ModelEC()
 end
