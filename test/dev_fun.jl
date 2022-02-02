@@ -1,7 +1,8 @@
-include("../src/EnergyCommunity.jl")
-
-using .EnergyCommunity
-using Gurobi, Plots
+using Revise
+using EnergyCommunity
+using FileIO
+using GLPK, Plots
+using JuMP
 
 
 ## Parameters
@@ -23,7 +24,7 @@ output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  #
 ## Initialization
 
 # Read data from excel file
-ECModel = ModelEC(input_file, EnergyCommunity.GroupCO())
+ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), GLPK.Optimizer)
 
 # set_group_type!(ECModel, GroupNC())
 
@@ -37,9 +38,18 @@ print_summary(ECModel)
 
 save_summary(ECModel, output_file_combined)
 
+grid_shares_EC = calculate_grid_shares(ECModel)
+energy_shares_EC = calculate_production_shares(ECModel)
+
+# save("testECsave.jld2", ECModel)
+
+# model2 = load("testECsave.jld2")
+
+# print_summary(model2)
+
 ## Model NC
 
-NC_Model = ModelEC(ECModel, EnergyCommunity.GroupNC())
+NC_Model = ModelEC(ECModel, EnergyCommunity.GroupNC(), GLPK.Optimizer)
 
 build_model!(NC_Model)
 
@@ -51,46 +61,9 @@ print_summary(NC_Model)
 
 save_summary(NC_Model, output_file_isolated)
 
-# # unpack the data
-# gen_data, users_data, market_data = explode_data(data)
-# n_users = length(users_data)
 
-
-# # reset the set of users if not specified
-# user_set = user_names(gen_data, users_data)
-
-
-# ## Execution of users-only optimization
-
-# # build the users-only model
-# model_user = build_model_user(data)
-
-# # Execute optimization on the users-only model
-# optimize!(model_user)
-
-# # output results users-only model
-# output_results_user(data, model_user, output_file_isolated, output_plot_isolated)
-
-# ## Execution of the optimization for the energy community
-
-# # build the energy community model
-# model = build_model(data)
-
-# # Execute optimization for the energy community model
-# optimize!(model)
-
-# # output energy community model
-# output_results(data, model, output_file_combined, output_plot_combined, model_user)
-
-# # Convert models to dictionaries to be easily saved and reloaded
-# dict_model = jump_to_dict(model)
-# dict_model_user = jump_to_dict(model_user)
-
-# # save dictionaries to disk
-# # @save "results.jld" dict_model dict_model_user
-
-# # reload dictionaries from disk
-# # @load "results.jld"
+grid_shares_NC = calculate_grid_shares(NC_Model)
+energy_shares_NC = calculate_production_sharess(NC_Model)
 
 
 # ## Plot sankey diagrams
