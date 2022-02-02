@@ -285,3 +285,94 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
     
     return ECModel
 end
+
+
+"""
+    calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
+
+Calculate energy ratio by energy production resource for a generic group
+'''
+# Outputs
+frac : DenseAxisArray
+    DenseAxisArray describing the share of energy production by
+    energy resource by user and the entire system,
+    normalized with respect to the demand of the corresponding group
+
+'''
+"""
+function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    # list of all assets
+    ren_set_unique = unique([name for u in user_set for name in asset_names(users_data[u], REN)])
+
+    _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+    _P_ren_us = ECModel.results[:P_ren_us]  # Ren production dispatch of users - users mode
+    _x_us = ECModel.results[:x_us]  # Installed capacity by user
+
+    # Available renewable production
+    _P_ren_available = JuMP.Containers.DenseAxisArray(
+        [sum(Float64[
+            !has_asset(users_data[u], r) ? 0.0 : profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
+                for r in asset_names(users_data[u], REN)
+        ]) for u in user_set, t in time_set],
+        user_set, time_set
+    )
+
+    # sum of the load power by user
+    sum_power_us = JuMP.Containers.DenseAxisArray(
+        Float64[sum(
+            sum(profile_component(users_data[u], l, "load"))
+            for l in asset_names(users_data[u], LOAD))
+        for u in user_set],
+        user_set
+    )
+
+    # Calculate total energy fraction at EC level for every renewable resource
+    frac_tot = JuMP.Containers.DenseAxisArray(
+        [(sum(!has_asset(users_data[u], t_ren) ? 0.0 : sum(
+                Float64[
+                    (_P_ren_us[u,t] <= 0) ? 0.0 : _P_ren_us[u,t] * sum(
+                        Float64[profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
+                        for r in asset_names(users_data[u], REN) if r == t_ren]
+                    ) / _P_ren_available[u, t]
+                    for t in time_set
+            ]) for u in user_set
+            ) / sum(sum_power_us))
+        for t_ren in ren_set_unique],
+        ren_set_unique
+    )
+
+    # fraction of energy production by user and EC
+    frac = JuMP.Containers.DenseAxisArray(
+        Float64[
+            frac_tot.data';
+            Float64[!has_asset(users_data[u], t_ren) ? 0.0 : sum(
+                Float64[
+                    (_P_ren_us[u,t] <= 0) ? 0.0 :
+                        _P_ren_us[u,t] * sum(Float64[
+                            profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
+                                for r in asset_names(users_data[u], REN) if r == t_ren
+                        ]) / _P_ren_available[u,t] / sum_power_us[u]
+                    for t in time_set
+                ])
+                for u in user_set, t_ren in ren_set_unique
+            ]
+        ],
+        user_set_EC, ren_set_unique
+    )
+
+    return frac
+end

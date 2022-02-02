@@ -400,3 +400,56 @@ function prepare_summary(::AbstractGroupNC, ECModel::AbstractEC; user_set::Abstr
 
     return output_list
 end
+
+"""
+    calculate_grid_ratio(::AbstractGroupNC, ECModel::AbstractEC)
+
+Calculate ratio of grid usage for the Non-Cooperative case
+'''
+Outputs
+-------
+grid_frac : DenseAxisArray
+    Reliance on the grid demand for each user and the aggregation
+'''
+"""
+function calculate_grid_ratio(::AbstractGroupNC, ECModel::AbstractEC)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+
+    # sum of the load power by user
+    sum_power_us = JuMP.Containers.DenseAxisArray(
+        Float64[sum(
+            sum(profile_component(users_data[u], l, "load"))
+            for l in asset_names(users_data[u], LOAD))
+        for u in user_set],
+        user_set
+    )
+
+    # fraction of grid resiliance of the aggregate case noagg
+    grid_frac_tot = sum(max.(-_P_tot_us, 0)) / sum(sum_power_us)
+
+    # fraction of grid reliance with respect to demand by user noagg case
+    grid_frac = JuMP.Containers.DenseAxisArray(
+        vcat(
+            grid_frac_tot,
+            [sum(max.(-_P_tot_us[u,:], 0)) / sum_power_us[u]
+                for u in user_set]
+        ),
+        user_set_EC
+    )
+    
+    return grid_frac
+end

@@ -21,6 +21,7 @@ GroupCONC = [GroupCO(), GroupNC()]
 
 abstract type AbstractEC end
 
+# constant empty dictionary for an empty EnergyCommunity model
 const ZERO_DD = Dict("general"=>Dict(), "users"=>Dict(), "market"=>Dict())
 
 
@@ -84,8 +85,8 @@ end
 
 
 function ModelEC(;
-    data::Dict=ZERO_DD,
-    group_type=GroupNC(),
+    data::Dict,
+    group_type,
     optimizer=nothing,
     user_set::Vector=Vector()
 )

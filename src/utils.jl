@@ -91,6 +91,18 @@ end
 "Function to get the list of devices for a user"
 device_names(d) = asset_names(d, DEVICES)
 
+"Function to get the list of generators for a user"
+generator_names(d) = asset_names(d, GENS)
+
+
+"Function to check whether an user has an asset type"
+has_asset(d, atype::ASSET_TYPE) = !isempty(asset_names(d, a_type))
+
+
+"Function to check whether an user has an asset given its name"
+has_asset(d, aname::AbstractString) = aname in keys(d)
+
+
 "Get the list of users"
 function user_names(gen_data, users_data)
     # get the list of users if set
