@@ -25,7 +25,7 @@ function _base_test(optimizer, mode)
 
     build_model!(ECModel)
 
-    optimize_model!(ECModel)
+    optimize!(ECModel)
 
     @test termination_status(ECModel) in [MOI.OPTIMAL, MOI.LOCALLY_SOLVED]
 

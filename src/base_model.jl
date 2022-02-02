@@ -309,7 +309,7 @@ function calculate_demand(::AbstractGroup, ECModel::AbstractEC)
     time_res = profile(ECModel.market_data, "time_res")
 
     data_load = Float64[sum(sum(
-                profile_component(users_data[u], l, "load")) .* time_res 
+                profile_component(users_data[u], l, "load") .* time_res)
                 for l in asset_names(users_data[u], LOAD)
             ) for u in user_set]
 
@@ -410,9 +410,13 @@ function calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_u
 
         # calculate the demand by EC and user
         demand_EC_us = calculate_demand(ECModel.group_type, ECModel)
+
+        # create auxiliary DenseAxisArray to perform the division
         
         # update value
-        frac = frac ./ demand_EC_us
+        frac = JuMP.Containers.DenseAxisArray(
+                frac.data ./ demand_EC_us.data,
+            user_set_EC, ren_set_unique)
         
     end
 

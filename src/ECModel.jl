@@ -37,7 +37,7 @@ end
 
 
 "Solve the optimization problem for the EC"
-function optimize_model!(ECModel::AbstractEC)
+function JuMP.optimize!(ECModel::AbstractEC)
     optimize!(ECModel.model)
     ECModel.results = jump_to_dict(ECModel.model)
     return ECModel
@@ -295,7 +295,10 @@ end
 
 Calculate the optimization status of the model
 """
-function termination_status(ECModel::AbstractEC)
+function JuMP.termination_status(ECModel::AbstractEC)
     if isempty(ECModel.results)
-        
+        return MOI.OPTIMIZE_NOT_CALLED
+    else
+        return MOI.TerminationStatusCode(ECModel.results[:termination_status])
+    end
 end

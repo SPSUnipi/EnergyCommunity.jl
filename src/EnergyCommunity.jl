@@ -5,11 +5,14 @@ module EnergyCommunity
     using JuMP
     using Plots
     using DataFrames
+    using MathOptInterface
     import CSV
     import GLPK
     import XLSX
     import FileIO
     import YAML
+
+    const MOI = MathOptInterface
     
     # additional usefull functions i.e. main type definitions and read data
     include("utils.jl")  

@@ -30,7 +30,7 @@ ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), GLPK.Optimizer)
 
 build_model!(ECModel)
 
-optimize_model!(ECModel)
+optimize!(ECModel)
 
 plot(ECModel, output_plot_combined)
 
@@ -53,7 +53,7 @@ NC_Model = ModelEC(ECModel, EnergyCommunity.GroupNC(), GLPK.Optimizer)
 
 build_model!(NC_Model)
 
-optimize_model!(NC_Model)
+optimize!(NC_Model)
 
 plot(NC_Model, output_plot_isolated)
 
