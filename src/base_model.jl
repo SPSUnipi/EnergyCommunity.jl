@@ -376,7 +376,7 @@ function calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_u
     frac_tot = JuMP.Containers.DenseAxisArray(
         [(sum(!has_asset(users_data[u], t_ren) ? 0.0 : sum(
                 Float64[
-                    _P_ren_us[u,t] * sum(
+                    _P_ren_us[u,t] <= 0.0 ? 0.0 : _P_ren_us[u,t] * sum(
                         Float64[profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
                         for r in asset_names(users_data[u], REN) if r == t_ren]
                     ) / _P_ren_available[u, t] * time_res[t]
@@ -393,7 +393,7 @@ function calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_u
             frac_tot.data';
             Float64[!has_asset(users_data[u], t_ren) ? 0.0 : sum(
                 Float64[
-                    _P_ren_us[u,t] * sum(Float64[
+                    _P_ren_us[u,t] <= 0.0 ? 0.0 : _P_ren_us[u,t] * sum(Float64[
                         profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
                             for r in asset_names(users_data[u], REN) if r == t_ren
                     ]) / _P_ren_available[u,t] * time_res[t]
