@@ -66,14 +66,14 @@ end
     save(output_file::AbstractString, ECModel::AbstractEC)
 Function to save the results and the model to the hard drive
 """
-function save(output_file::AbstractString, ECModel::AbstractEC)
+function FileIO.save(output_file::AbstractString, ECModel::AbstractEC)
     save_model = Dict(
         "data"=> ECModel.data,
         "user_set"=>ECModel.user_set,
         "group_type"=>string(typeof(ECModel.group_type)),
         "results"=>ECModel.results
     )
-    FileIO.save(ECModel.data, output_file)
+    FileIO.save(output_file, save_model)
 end
 
 """
@@ -132,7 +132,7 @@ end
     load(output_file::AbstractString)
 Function to save the results and the model to the hard drive
 """
-function load(output_file::AbstractString)
+function FileIO.load(output_file::AbstractString)
     return load!(output_file, ModelEC())
 end
 
@@ -233,4 +233,38 @@ function save_summary(ECModel::AbstractEC, output_file::AbstractString; kwargs..
             end
         end
     end
+end
+
+
+"""
+    calculate_production_ratios(ECModel::AbstractEC)
+
+Calculate energy ratio by energy production resource for the community
+'''
+# Outputs
+frac : DenseAxisArray
+    DenseAxisArray describing the share of energy production by
+    energy resource by user and the entire system,
+    normalized with respect to the demand of the corresponding group
+
+'''
+"""
+function calculate_production_ratios(ECModel::AbstractEC)
+    return calculate_production_ratios(ECModel.group_type, ECModel)
+end
+
+
+"""
+    calculate_grid_ratio(ECModel::AbstractEC)
+
+Calculate ratio of grid usage for the energy community
+'''
+Outputs
+-------
+grid_frac : DenseAxisArray
+    Reliance on the grid demand for each user and the aggregation
+'''
+"""
+function calculate_grid_ratio(::AbstractGroupNC, ECModel::AbstractEC)
+    return calculate_grid_ratio(ECModel.group_type, ECModel)
 end
