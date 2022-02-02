@@ -63,7 +63,7 @@ save_summary(NC_Model, output_file_isolated)
 
 
 grid_shares_NC = calculate_grid_shares(NC_Model)
-energy_shares_NC = calculate_production_sharess(NC_Model)
+energy_shares_NC = calculate_production_shares(NC_Model)
 
 
 # ## Plot sankey diagrams
