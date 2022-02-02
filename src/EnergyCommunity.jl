@@ -7,7 +7,6 @@ module EnergyCommunity
     using DataFrames
     using MathOptInterface
     import CSV
-    import GLPK
     import XLSX
     import FileIO
     import YAML
