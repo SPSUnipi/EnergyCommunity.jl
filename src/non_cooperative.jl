@@ -402,9 +402,11 @@ function prepare_summary(::AbstractGroupNC, ECModel::AbstractEC; user_set::Abstr
 end
 
 """
-    calculate_grid_ratio(::AbstractGroupNC, ECModel::AbstractEC)
+    calculate_grid_share(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
-Calculate ratio of grid usage for the Non-Cooperative case
+Calculate grid usage for the Non-Cooperative case
+Output is normalized with respect to the demand when per_unit is true
+
 '''
 Outputs
 -------
@@ -412,14 +414,14 @@ grid_frac : DenseAxisArray
     Reliance on the grid demand for each user and the aggregation
 '''
 """
-function calculate_grid_ratio(::AbstractGroupNC, ECModel::AbstractEC)
+function calculate_grid_shares(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
     # get user set
     user_set = ECModel.user_set
     user_set_EC = vcat(EC_CODE, user_set)
 
     gen_data = ECModel.gen_data
-    users_data = ECModel.users_data
+    market_data = ECModel.market_data
 
     # get time set
     init_step = field(gen_data, "init_step")
@@ -429,27 +431,32 @@ function calculate_grid_ratio(::AbstractGroupNC, ECModel::AbstractEC)
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
-    # sum of the load power by user
-    sum_power_us = JuMP.Containers.DenseAxisArray(
-        Float64[sum(
-            sum(profile_component(users_data[u], l, "load"))
-            for l in asset_names(users_data[u], LOAD))
-        for u in user_set],
-        user_set
-    )
-
     # fraction of grid resiliance of the aggregate case noagg
-    grid_frac_tot = sum(max.(-_P_tot_us, 0)) / sum(sum_power_us)
+    grid_frac_tot = sum(max.(-_P_tot_us, 0))
+
+    # time step resolution
+    time_res = profile(market_data, "time_res")
 
     # fraction of grid reliance with respect to demand by user noagg case
     grid_frac = JuMP.Containers.DenseAxisArray(
         vcat(
             grid_frac_tot,
-            [sum(max.(-_P_tot_us[u,:], 0)) / sum_power_us[u]
+            [sum(max.(-_P_tot_us[u,:] .* time_res, 0))
                 for u in user_set]
         ),
         user_set_EC
     )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel.group_type, ECModel)
+        
+        # update value
+        grid_frac = grid_frac ./ demand_EC_us
+
+    end
     
     return grid_frac
 end

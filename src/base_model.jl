@@ -286,11 +286,48 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
     return ECModel
 end
 
+"""
+    calculate_demand(::AbstractGroup, ECModel::AbstractEC)
+
+Function to calculate the demand by user
+Outputs
+-------
+demand_us_EC : DenseAxisArray
+    DenseAxisArray representing the demand by the EC and each user
 
 """
-    calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
+function calculate_demand(::AbstractGroup, ECModel::AbstractEC)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    # users set
+    users_data = ECModel.users_data
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    data_load = Float64[sum(sum(
+                profile_component(users_data[u], l, "load")) .* time_res 
+                for l in asset_names(users_data[u], LOAD)
+            ) for u in user_set]
+
+    # sum of the load power by user and EC
+    demand_us_EC = JuMP.Containers.DenseAxisArray(
+        [sum(data_load); data_load],
+        user_set_EC
+    )
+
+    return demand_us_EC
+end
+
+
+"""
+    calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=True)
 
 Calculate energy ratio by energy production resource for a generic group
+Output is normalized with respect to the demand when per_unit is True
 '''
 # Outputs
 frac : DenseAxisArray
@@ -300,7 +337,7 @@ frac : DenseAxisArray
 
 '''
 """
-function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
+function calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=True)
 
     # get user set
     user_set = ECModel.user_set
@@ -308,6 +345,7 @@ function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
 
     gen_data = ECModel.gen_data
     users_data = ECModel.users_data
+    market_data = ECModel.market_data
 
     # get time set
     init_step = field(gen_data, "init_step")
@@ -322,6 +360,9 @@ function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
     _P_ren_us = ECModel.results[:P_ren_us]  # Ren production dispatch of users - users mode
     _x_us = ECModel.results[:x_us]  # Installed capacity by user
 
+    # time step resolution
+    time_res = profile(market_data, "time_res")
+
     # Available renewable production
     _P_ren_available = JuMP.Containers.DenseAxisArray(
         [sum(Float64[
@@ -331,26 +372,17 @@ function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
         user_set, time_set
     )
 
-    # sum of the load power by user
-    sum_power_us = JuMP.Containers.DenseAxisArray(
-        Float64[sum(
-            sum(profile_component(users_data[u], l, "load"))
-            for l in asset_names(users_data[u], LOAD))
-        for u in user_set],
-        user_set
-    )
-
     # Calculate total energy fraction at EC level for every renewable resource
     frac_tot = JuMP.Containers.DenseAxisArray(
         [(sum(!has_asset(users_data[u], t_ren) ? 0.0 : sum(
                 Float64[
-                    (_P_ren_us[u,t] <= 0) ? 0.0 : _P_ren_us[u,t] * sum(
+                    _P_ren_us[u,t] * sum(
                         Float64[profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
                         for r in asset_names(users_data[u], REN) if r == t_ren]
-                    ) / _P_ren_available[u, t]
+                    ) / _P_ren_available[u, t] * time_res[t]
                     for t in time_set
             ]) for u in user_set
-            ) / sum(sum_power_us))
+            ))
         for t_ren in ren_set_unique],
         ren_set_unique
     )
@@ -361,11 +393,10 @@ function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
             frac_tot.data';
             Float64[!has_asset(users_data[u], t_ren) ? 0.0 : sum(
                 Float64[
-                    (_P_ren_us[u,t] <= 0) ? 0.0 :
-                        _P_ren_us[u,t] * sum(Float64[
-                            profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
-                                for r in asset_names(users_data[u], REN) if r == t_ren
-                        ]) / _P_ren_available[u,t] / sum_power_us[u]
+                    _P_ren_us[u,t] * sum(Float64[
+                        profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
+                            for r in asset_names(users_data[u], REN) if r == t_ren
+                    ]) / _P_ren_available[u,t] * time_res[t]
                     for t in time_set
                 ])
                 for u in user_set, t_ren in ren_set_unique
@@ -373,6 +404,17 @@ function calculate_production_ratios(::AbstractGroup, ECModel::AbstractEC)
         ],
         user_set_EC, ren_set_unique
     )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel.group_type, ECModel)
+        
+        # update value
+        frac = frac ./ demand_EC_us
+        
+    end
 
     return frac
 end
