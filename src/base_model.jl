@@ -195,7 +195,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
         #     ) / ((1 + field(gen_data, "d_rate"))^y)
         #     for y in year_set)
         # - CAPEX_tot_us[u]  # Investment costs
-    )  
+    )
 
     # Power flow by user POD
     @expression(model_user, P_us[u = user_set, t = time_set],

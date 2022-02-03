@@ -273,6 +273,47 @@ function calculate_grid_shares(ECModel::AbstractEC; per_unit::Bool=true)
 end
 
 
+"""
+    calculate_shared_consumption(ECModel::AbstractEC; per_unit::Bool=true)
+
+Calculate the demand that each user meets using its own sources or other users.
+When only_shared is false, also self consumption is considered, otherwise only shared consumption.
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+shared_cons_frac : DenseAxisArray
+    Shared consumption for each user and the aggregation
+'''
+"""
+function calculate_shared_consumption(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    return calculate_shared_consumption(ECModel.group_type, ECModel,
+                                        per_unit=per_unit, only_shared=only_shared)
+end
+
+
+"""
+    calculate_shared_energy(ECModel::AbstractEC; per_unit::Bool=true)
+
+Calculate the energy that each user produces and uses in its own POD or it is
+commercially consumed within the EC, when creaded.
+When only_shared is false, also self production is considered, otherwise only shared energy.
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+shared_cons_frac : DenseAxisArray
+    Shared consumption for each user and the aggregation
+'''
+"""
+function calculate_shared_energy(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    return calculate_shared_energy(ECModel.group_type, ECModel,
+                                    per_unit=per_unit, only_shared=only_shared)
+end
+
+
 
 """
     calculate_demand(ECModel::AbstractEC)
