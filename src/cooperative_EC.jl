@@ -597,7 +597,7 @@ function calculate_grid_export(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
 end
 
 """
-    calculate_shared_energy(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
 
 Calculate the shared produced energy for the Cooperative case.
 In the Cooperative case, there can be shared energy between users, not only self production.
@@ -612,7 +612,7 @@ shared_en_frac : DenseAxisArray
     Shared energy for each user and the aggregation
 '''
 """
-function calculate_shared_energy(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+function calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
 
     # get user set
     user_set = ECModel.user_set
@@ -636,7 +636,7 @@ function calculate_shared_energy(::AbstractGroupCO, ECModel::AbstractEC; per_uni
 
     # total shared production for every time step
     shared_prod_by_time = JuMP.Containers.DenseAxisArray(
-        Float64[sum((max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        Float64[(sum(max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t] for t in time_set],
         time_set
     )
 
@@ -649,8 +649,8 @@ function calculate_shared_energy(::AbstractGroupCO, ECModel::AbstractEC; per_uni
             total_shared_prod;
             [
                 sum(Float64[
-                    shared_prod_by_time[t] <= 0.0 || _P_us[u,t] <=0 ? 0.0 : _P_us[u,t]^2/total_shared_cons[t]*time_res[t]
-                    fot t in time_set
+                    shared_prod_by_time[t] <= 0.0 || _P_us[u,t] <=0 ? 0.0 : _P_us[u,t]^2/shared_prod_by_time[t]*time_res[t]
+                    for t in time_set
                 ])
                 for u in user_set
             ]
@@ -732,8 +732,8 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
             total_shared_cons;
             [
                 sum(Float64[
-                    total_shared_cons[t] <= 0.0 || _P_us[u,t] >=0 ? 0.0 : _P_us[u,t]^2/total_shared_cons[t]*time_res[t]
-                    fot t in time_set
+                    shared_cons_by_time[t] <= 0.0 || _P_us[u,t] >=0 ? 0.0 : _P_us[u,t]^2/shared_cons_by_time[t]*time_res[t]
+                    for t in time_set
                 ])
                 for u in user_set
             ]

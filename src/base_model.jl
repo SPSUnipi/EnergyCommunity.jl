@@ -461,7 +461,7 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
     shared_en_frac = JuMP.Containers.DenseAxisArray(
         [
             sum(shared_en_us);
-            shared_en_us
+            shared_en_us.data
         ],
         user_set_EC
     )
@@ -519,9 +519,9 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 
     # self consumption by user and EC
     shared_cons = JuMP.Containers.DenseAxisArray(
-        [
+        Float64[
             sum(shared_cons_us);
-            shared_cons_us
+            shared_cons_us.data
         ],
         user_set_EC
     )

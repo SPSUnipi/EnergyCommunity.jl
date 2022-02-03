@@ -1,6 +1,8 @@
 using EnergyCommunity, JuMP, Plots
 using Test, FileIO, GLPK, MathOptInterface
 
+ENV["GKSwstype"]="nul"
+
 const MOI = MathOptInterface
 
 # EC groups

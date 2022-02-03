@@ -342,7 +342,15 @@ name_units : (optional) Vector
     "Market buy", [users labels], "Community", "Market sell", [users labels]
 
 """
-function plot_sankey(ECModel::AbstractEC; name_units=nothing)
+function plot_sankey(ECModel::AbstractEC;
+    name_units=nothing,
+    norm_value::Float64=30.,
+    market_color = palette(:rainbow)[2],
+    community_color = palette(:rainbow)[5],
+    users_colors = palette(:default)
+    )
+
+    user_set = ECModel.user_set
 
     # specify labels if not provided
     if isnothing(name_units)
@@ -351,8 +359,8 @@ function plot_sankey(ECModel::AbstractEC; name_units=nothing)
     end
 
     # Calculation of energy quantities
-    shared_production = calculate_shared_production(ECModel, per_unit=false)
-    shared_consumption = calculate_shared_consumption(ECModel, per_unit=false)
+    shared_production = calculate_shared_production(ECModel, per_unit=false, only_shared=true)
+    shared_consumption = calculate_shared_consumption(ECModel, per_unit=false, only_shared=true)
     self_consumption = calculate_self_consumption(ECModel, per_unit=false)
     grid_import = calculate_grid_import(ECModel, per_unit=false)
     grid_export = calculate_grid_export(ECModel, per_unit=false)
@@ -387,15 +395,15 @@ function plot_sankey(ECModel::AbstractEC; name_units=nothing)
     # calculate produced energy and energy sold to the market by user
     for (u_i, u_name) in enumerate(user_set)
         # demand from the market
-        demand_market = sum(max(-_P_tot_us_agg[u_name,t], 0) * (1 - shared_cons_frac_agg[t]) for t in time_set)
+        demand_market = grid_import[u_name]
         if demand_market > 0.001
             append!(source_sank, market_id_from)
             append!(target_sank, user_id_to(u_i))
-            append!(value_sank, demand_market)
+            append!(value_sank, u_name)
         end
 
         # production to the market
-        prod_market = sum(max(_P_tot_us_agg[u_name,t], 0) * (1 - shared_en_frac_agg[t]) for t in time_set)
+        prod_market = grid_export[u_name]
         if prod_market > 0.001
             append!(source_sank, user_id_from(u_i))
             append!(target_sank, market_id_to)
@@ -403,7 +411,7 @@ function plot_sankey(ECModel::AbstractEC; name_units=nothing)
         end
 
         # shared energy
-        shared_en = sum(max(_P_tot_us_agg[u_name,t], 0) * shared_en_frac_agg[t] for t in time_set)
+        shared_en = shared_production[u_name]
         if shared_en > 0.001
             append!(source_sank, user_id_from(u_i))
             append!(target_sank, community_id)
@@ -411,7 +419,7 @@ function plot_sankey(ECModel::AbstractEC; name_units=nothing)
         end
 
         # shared consumption
-        shared_cons = sum(max(-_P_tot_us_agg[u_name,t], 0) * shared_cons_frac_agg[t] for t in time_set)
+        shared_cons = shared_consumption[u_name]
         if shared_cons > 0.001
             append!(source_sank, community_id)
             append!(target_sank, user_id_to(u_i))
@@ -419,10 +427,7 @@ function plot_sankey(ECModel::AbstractEC; name_units=nothing)
         end
         
         # self consumption
-        self_cons = sum(sum(Float64[
-                profile_component(users_data[u_name], l, "load")[t] for l in asset_names(users_data[u_name], LOAD)
-            ]) 
-            - max(-_P_tot_us_agg[u_name,t], 0) for t in time_set)
+        self_cons = self_consumption[u_name]
         if self_cons > 0.001
             append!(source_sank, user_id_from(u_i))
             append!(target_sank, user_id_to(u_i))
@@ -430,15 +435,11 @@ function plot_sankey(ECModel::AbstractEC; name_units=nothing)
         end
     end
 
-    value_sank = value_sank/sum(profile_component(users_data[u], l, "load")[t] 
-        for u in user_set for l in asset_names(users_data[u], LOAD) for t in time_set)
+    value_sank = value_sank/maximum(value_sank)*norm_value
 
     # s = sankey(name_units, source_sank.-1, target_sank.-1, value_sank)  # ECharts style
-    market_color = palette(:rainbow)[2]
-    community_color = palette(:rainbow)[5]
-    users_colors = palette(:default)
-    tot_colors = vcat([market_color],users_colors[1:length(user_set)],[community_color],
-        [market_color],users_colors[1:length(user_set)])
+    tot_colors = [market_color; users_colors[1:length(user_set)]; community_color;
+        market_color; users_colors[1:length(user_set)]]
 
     # Check and remove the ids that do not appear in the lists
     no_shows = []
