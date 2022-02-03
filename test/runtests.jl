@@ -14,7 +14,7 @@ include("tests.jl")
     # Loop over group types
     for group in EC_GROUPS
 
-        _base_test(GPLK.Optimizer, group)
+        _base_test(GLPK.Optimizer, group)
 
     end
 
