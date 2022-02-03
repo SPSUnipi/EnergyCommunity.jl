@@ -237,25 +237,6 @@ end
 
 
 """
-    calculate_production_ratios(ECModel::AbstractEC)
-
-Calculate energy ratio by energy production resource for the community
-Output is normalized with respect to the demand when per_unit is true
-'''
-# Outputs
-frac : DenseAxisArray
-    DenseAxisArray describing the share of energy production by
-    energy resource by user and the entire system,
-    normalized with respect to the demand of the corresponding group
-
-'''
-"""
-function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
-    return calculate_production_shares(ECModel.group_type, ECModel, per_unit=per_unit)
-end
-
-
-"""
     calculate_grid_share(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate grid usage for the energy community.
@@ -311,22 +292,6 @@ shared_cons_frac : DenseAxisArray
 function calculate_shared_energy(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
     return calculate_shared_energy(ECModel.group_type, ECModel,
                                     per_unit=per_unit, only_shared=only_shared)
-end
-
-
-
-"""
-    calculate_demand(ECModel::AbstractEC)
-
-Function to calculate the demand by user
-Outputs
--------
-demand_us_EC : DenseAxisArray
-    DenseAxisArray representing the demand by the EC and each user
-
-"""
-function calculate_demand(ECModel::AbstractEC)
-    return calculate_demand(ECModel.group_type, ECModel::AbstractEC)
 end
 
 

@@ -287,7 +287,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
 end
 
 """
-    calculate_demand(::AbstractGroup, ECModel::AbstractEC)
+    calculate_demand(ECModel::AbstractEC)
 
 Function to calculate the demand by user
 Outputs
@@ -296,7 +296,7 @@ demand_us_EC : DenseAxisArray
     DenseAxisArray representing the demand by the EC and each user
 
 """
-function calculate_demand(::AbstractGroup, ECModel::AbstractEC)
+function calculate_demand(ECModel::AbstractEC)
 
     # get user set
     user_set = ECModel.user_set
@@ -324,7 +324,7 @@ end
 
 
 """
-    calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=True)
+    calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=True)
 
 Calculate energy ratio by energy production resource for a generic group
 Output is normalized with respect to the demand when per_unit is True
@@ -337,7 +337,7 @@ frac : DenseAxisArray
 
 '''
 """
-function calculate_production_shares(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=True)
+function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=True)
 
     # get user set
     user_set = ECModel.user_set
