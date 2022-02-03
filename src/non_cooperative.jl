@@ -419,7 +419,7 @@ function prepare_summary(::AbstractGroupNC, ECModel::AbstractEC; user_set::Abstr
 end
 
 """
-    calculate_grid_share(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
+    calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate grid usage for the Non-Cooperative case
 Output is normalized with respect to the demand when per_unit is true
@@ -431,7 +431,7 @@ grid_frac : DenseAxisArray
     Reliance on the grid demand for each user and the aggregation
 '''
 """
-function calculate_grid_shares(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
+function calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
     # get user set
     user_set = ECModel.user_set
@@ -479,7 +479,67 @@ function calculate_grid_shares(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
 end
 
 """
-    calculate_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
+    calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
+
+Calculate grid export for the Non-Cooperative case
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+grid_frac : DenseAxisArray
+    Reliance on the grid demand for each user and the aggregation
+'''
+"""
+function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    market_data = ECModel.market_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+
+    # fraction of grid resiliance of the aggregate case noagg
+    grid_frac_tot = sum(max.(_P_tot_us, 0))
+
+    # time step resolution
+    time_res = profile(market_data, "time_res")
+
+    # fraction of grid reliance with respect to demand by user noagg case
+    grid_frac = JuMP.Containers.DenseAxisArray(
+        vcat(
+            grid_frac_tot,
+            [sum(max.(_P_tot_us[u,:] .* time_res, 0))
+                for u in user_set]
+        ),
+        user_set_EC
+    )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel)
+        
+        # update value
+        grid_frac = grid_frac ./ demand_EC_us
+
+    end
+    
+    return grid_frac
+end
+
+"""
+    calculate_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
 
 Calculate the demand that each user meets using its own sources or other users for the Non-Cooperative case.
 In the Non-Cooperative case, there is no shared energy, only self consumption.
@@ -493,7 +553,7 @@ shared_cons_frac : DenseAxisArray
     Shared consumption for each user and the aggregation
 '''
 """
-function calculate_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
+function calculate_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
     # get user set
     user_set = ECModel.user_set
     user_set_EC = vcat(EC_CODE, user_set)
@@ -506,7 +566,7 @@ end
 
 
 """
-    calculate_shared_production(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    calculate_shared_production(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
 
 Calculate the shared produced energy for the Non-Cooperative case.
 In the Non-Cooperative case, there is no shared energy between users, only self production.
@@ -519,7 +579,7 @@ shared_en_frac : DenseAxisArray
     Shared energy for each user and the aggregation
 '''
 """
-function calculate_shared_production(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+function calculate_shared_production(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
 
     # get user set
     user_set = ECModel.user_set

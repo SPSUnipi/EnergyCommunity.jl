@@ -1,4 +1,4 @@
-using EnergyCommunity, JuMP
+using EnergyCommunity, JuMP, Plots
 using Test, FileIO, GLPK, MathOptInterface
 
 const MOI = MathOptInterface

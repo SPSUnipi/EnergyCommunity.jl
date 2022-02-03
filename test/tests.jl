@@ -35,7 +35,7 @@ function _base_test(optimizer, mode)
 
     save_summary(ECModel, output_file_combined)
 
-    grid_shares_EC = calculate_grid_shares(ECModel)
+    grid_shares_EC = calculate_grid_import(ECModel)
     energy_shares_EC = calculate_production_shares(ECModel)
 
 end
