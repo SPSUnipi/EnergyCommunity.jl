@@ -324,10 +324,10 @@ end
 
 
 """
-    calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=True)
+    calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate energy ratio by energy production resource for a generic group
-Output is normalized with respect to the demand when per_unit is True
+Output is normalized with respect to the demand when per_unit is true
 '''
 # Outputs
 frac : DenseAxisArray
@@ -337,7 +337,7 @@ frac : DenseAxisArray
 
 '''
 """
-function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=True)
+function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
     # get user set
     user_set = ECModel.user_set
@@ -425,7 +425,7 @@ end
 
 
 """
-    calculate_self_production(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
 
 Calculate the self production for each user.
 Output is normalized with respect to the demand when per_unit is true
@@ -437,7 +437,7 @@ shared_en_frac : DenseAxisArray
     Shared energy for each user and the aggregation
 '''
 """
-function calculate_self_energy(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
 
     # get user set
     user_set = ECModel.user_set
@@ -483,7 +483,7 @@ end
 
 
 """
-    calculate_self_consumption(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true)
+    calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate the demand that each user meets using its own sources, or self consumption.
 Output is normalized with respect to the demand when per_unit is true
@@ -495,7 +495,7 @@ shared_cons_frac : DenseAxisArray
     Shared consumption for each user and the aggregation
 '''
 """
-function calculate_self_consumption(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true)
+function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 
     # get user set
     user_set = ECModel.user_set

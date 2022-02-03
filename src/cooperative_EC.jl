@@ -519,7 +519,7 @@ function calculate_grid_shares(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
     if per_unit
 
         # calculate the demand by EC and user
-        demand_EC_us = calculate_demand(ECModel.group_type, ECModel)
+        demand_EC_us = calculate_demand(ECModel)
         
         # update value
         grid_frac = grid_frac ./ demand_EC_us
@@ -527,4 +527,170 @@ function calculate_grid_shares(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
     end
 
     return grid_frac
+end
+
+"""
+    calculate_shared_energy(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+
+Calculate the shared produced energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+When only_shared is false, also self production is considered, otherwise only shared energy.
+Shared energy means energy that is shared between 
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+shared_en_frac : DenseAxisArray
+    Shared energy for each user and the aggregation
+'''
+"""
+function calculate_shared_energy(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+    _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    # total shared production for every time step
+    shared_prod_by_time = JuMP.Containers.DenseAxisArray(
+        Float64[sum((max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        time_set
+    )
+
+    # total shared production
+    total_shared_prod = sum(shared_prod_by_time)
+    
+    # shared production by user and EC
+    shared_prod_us = JuMP.Containers.DenseAxisArray(
+        Float64[
+            total_shared_prod;
+            [
+                sum(Float64[
+                    shared_prod_by_time[t] <= 0.0 || _P_us[u,t] <=0 ? 0.0 : _P_us[u,t]^2/total_shared_cons[t]*time_res[t]
+                    fot t in time_set
+                ])
+                for u in user_set
+            ]
+        ],
+        user_set_EC
+    )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel)
+        
+        # update value
+        shared_prod_us = shared_prod_us ./ demand_EC_us
+        
+    end
+    
+    if only_shared
+        return shared_prod_us
+    else
+        # add self production
+        self_prod = calculate_self_production(ECModel, per_unit=per_unit)
+
+        return self_prod + shared_prod_us
+    end
+end
+
+"""
+    calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true)
+
+Calculate the demand that each user meets using its own sources or other users for the Cooperative case.
+In the Cooperative case, there can be shared energy, non only self consumption.
+When only_shared is false, also self consumption is considered, otherwise only shared energy.
+Shared energy means energy that is shared between 
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+shared_cons_frac : DenseAxisArray
+    Shared consumption for each user and the aggregation
+'''
+"""
+function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+    _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    # total shared consumption for every time step
+    shared_cons_by_time = JuMP.Containers.DenseAxisArray(
+        Float64[(-sum(min.(_P_us[:, t], 0.0)) - min(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        time_set
+    )
+
+    # total shared consumption
+    total_shared_cons = sum(shared_cons_by_time)
+    
+    # shared consumption by user and EC
+    shared_cons_us = JuMP.Containers.DenseAxisArray(
+        Float64[
+            total_shared_cons;
+            [
+                sum(Float64[
+                    total_shared_cons[t] <= 0.0 || _P_us[u,t] >=0 ? 0.0 : _P_us[u,t]^2/total_shared_cons[t]*time_res[t]
+                    fot t in time_set
+                ])
+                for u in user_set
+            ]
+        ],
+        user_set_EC
+    )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel)
+        
+        # update value
+        shared_cons_us = shared_cons_us ./ demand_EC_us
+        
+    end
+    
+    if only_shared
+        return shared_cons_us
+    else
+        # add self consumption
+        self_consump = calculate_self_consumption(ECModel, per_unit=per_unit)
+
+        return self_consump + shared_cons_us
+    end
 end
