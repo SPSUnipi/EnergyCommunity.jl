@@ -1,8 +1,6 @@
-function _base_test(optimizer, mode)
+function _base_test(input_file, group, optimizer)
 
     ## Parameters
-
-    input_file = joinpath(@__DIR__, "./data/energy_community_model.yml")  # Input file
 
     output_file_isolated = joinpath(@__DIR__, "./results/output_file_NC.xlsx")  # Output file - model users alone
     output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_NC.png")  # Output png file of plot - model users alone
@@ -19,7 +17,7 @@ function _base_test(optimizer, mode)
     ## Initialization
 
     # Read data from excel file
-    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), GLPK.Optimizer)
+    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
 
     # set_group_type!(ECModel, GroupNC())
 
