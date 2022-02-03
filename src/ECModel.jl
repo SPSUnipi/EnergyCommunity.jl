@@ -275,7 +275,7 @@ end
 
 
 """
-    calculate_shared_energy(ECModel::AbstractEC; per_unit::Bool=true)
+    calculate_shared_production(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate the energy that each user produces and uses in its own POD or it is
 commercially consumed within the EC, when creaded.
@@ -289,8 +289,8 @@ shared_cons_frac : DenseAxisArray
     Shared consumption for each user and the aggregation
 '''
 """
-function calculate_shared_energy(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
-    return calculate_shared_energy(ECModel.group_type, ECModel,
+function calculate_shared_production(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    return calculate_shared_production(ECModel.group_type, ECModel,
                                     per_unit=per_unit, only_shared=only_shared)
 end
 

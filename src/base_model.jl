@@ -409,7 +409,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=True)
     if per_unit
 
         # calculate the demand by EC and user
-        demand_EC_us = calculate_demand(ECModel.group_type, ECModel)
+        demand_EC_us = calculate_demand(ECModel)
 
         # create auxiliary DenseAxisArray to perform the division
         
@@ -421,4 +421,121 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=True)
     end
 
     return frac
+end
+
+
+"""
+    calculate_self_production(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+
+Calculate the self production for each user.
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+shared_en_frac : DenseAxisArray
+    Shared energy for each user and the aggregation
+'''
+"""
+function calculate_self_energy(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+    _P_ren_us = ECModel.results[:P_ren_us]  # renewable production by user
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    # self consumption by user only
+    shared_en_us = JuMP.Containers.DenseAxisArray(
+        Float64[sum(time_res .* max.(
+                0.0, _P_ren_us[u, :] - max.(_P_us[u, :], 0.0)
+            )) for u in user_set],
+        user_set
+    )
+
+    # self consumption by user and EC
+    shared_en_frac = JuMP.Containers.DenseAxisArray(
+        [
+            sum(shared_en_us);
+            shared_en_us
+        ],
+        user_set_EC
+    )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel)
+        
+        # update value
+        shared_en_frac = shared_en_frac ./ demand_EC_us
+
+    end
+
+    return shared_en_frac
+end
+
+
+
+"""
+    calculate_self_consumption(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true)
+
+Calculate the demand that each user meets using its own sources, or self consumption.
+Output is normalized with respect to the demand when per_unit is true
+
+'''
+Outputs
+-------
+shared_cons_frac : DenseAxisArray
+    Shared consumption for each user and the aggregation
+'''
+"""
+function calculate_self_consumption(::AbstractGroup, ECModel::AbstractEC; per_unit::Bool=true)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    users_data = ECModel.users_data
+
+    _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    # self consumption by user only
+    shared_cons_us = JuMP.Containers.DenseAxisArray(
+        Float64[sum(time_res .* max.(0.0, 
+                sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
+                + min.(_P_us[u, :], 0.0)
+            )) for u in user_set],
+        user_set
+    )
+
+    # self consumption by user and EC
+    shared_cons = JuMP.Containers.DenseAxisArray(
+        [
+            sum(shared_cons_us);
+            shared_cons_us
+        ],
+        user_set_EC
+    )
+
+    # normalize output if perunit is required
+    if per_unit
+
+        # calculate the demand by EC and user
+        demand_EC_us = calculate_demand(ECModel)
+        
+        # update value
+        shared_cons = shared_cons ./ demand_EC_us
+
+    end
+
+    return shared_cons
 end
