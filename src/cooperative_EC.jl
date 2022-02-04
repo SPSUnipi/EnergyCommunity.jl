@@ -561,11 +561,11 @@ function calculate_grid_export(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
     _P_agg = ECModel.results[:P_agg]  # Ren production dispatch of users - users mode
 
-    # fraction of grid resiliance of the aggregate case agg
-    grid_frac_tot = sum(max.(_P_agg, 0))
-
     # time step resolution
     time_res = profile(market_data, "time_res")
+
+    # fraction of grid resiliance of the aggregate case agg
+    grid_frac_tot = sum(max.(_P_agg.*time_res, 0))
 
     # fraction of grid reliance with respect to demand by user agg case
     grid_frac = JuMP.Containers.DenseAxisArray(
@@ -649,7 +649,8 @@ function calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per
             total_shared_prod;
             [
                 sum(Float64[
-                    shared_prod_by_time[t] <= 0.0 || _P_us[u,t] <=0 ? 0.0 : _P_us[u,t]^2/shared_prod_by_time[t]*time_res[t]
+                    shared_prod_by_time[t] <= 0.0 ? 0.0 : 
+                        shared_prod_by_time[t]*max(_P_us[u,t], 0.0)/sum(max.(_P_us[:,t], 0.0))  # time_res already accounted for
                     for t in time_set
                 ])
                 for u in user_set
@@ -719,7 +720,7 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
 
     # total shared consumption for every time step
     shared_cons_by_time = JuMP.Containers.DenseAxisArray(
-        Float64[(-sum(min.(_P_us[:, t], 0.0)) - min(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        Float64[(sum(-min.(_P_us[:, t], 0.0)) + min(_P_agg[t], 0.0))*time_res[t] for t in time_set],
         time_set
     )
 
@@ -732,7 +733,9 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
             total_shared_cons;
             [
                 sum(Float64[
-                    shared_cons_by_time[t] <= 0.0 || _P_us[u,t] >=0 ? 0.0 : _P_us[u,t]^2/shared_cons_by_time[t]*time_res[t]
+                    shared_cons_by_time[t] <= 0.0 ? 0.0 :
+                        shared_cons_by_time[t]*min(_P_us[u,t], 0.0)/sum(min.(_P_us[:,t], 0.0))  # time_res already accounted for
+                                                                                                # simplification of two -
                     for t in time_set
                 ])
                 for u in user_set

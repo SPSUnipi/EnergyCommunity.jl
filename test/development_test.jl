@@ -41,7 +41,7 @@ save_summary(ECModel, output_file_combined)
 grid_shares_EC = calculate_grid_import(ECModel)
 energy_shares_EC = calculate_production_shares(ECModel)
 
-plot_sankey(ECModel)
+handle_plot, sank_data = plot_sankey(ECModel, plotting=true)
 
 # save("testECsave.jld2", ECModel)
 
@@ -51,21 +51,21 @@ plot_sankey(ECModel)
 
 ## Model NC
 
-NC_Model = ModelEC(ECModel, EnergyCommunity.GroupNC(), GLPK.Optimizer)
+# NC_Model = ModelEC(ECModel, EnergyCommunity.GroupNC(), GLPK.Optimizer)
 
-build_model!(NC_Model)
+# build_model!(NC_Model)
 
-optimize!(NC_Model)
+# optimize!(NC_Model)
 
-plot(NC_Model, output_plot_isolated)
+# plot(NC_Model, output_plot_isolated)
 
-print_summary(NC_Model)
+# print_summary(NC_Model)
 
-save_summary(NC_Model, output_file_isolated)
+# save_summary(NC_Model, output_file_isolated)
 
 
-grid_shares_NC = calculate_grid_shares(NC_Model)
-energy_shares_NC = calculate_production_shares(NC_Model)
+# grid_shares_NC = calculate_grid_shares(NC_Model)
+# energy_shares_NC = calculate_production_shares(NC_Model)
 
 
 # ## Plot sankey diagrams

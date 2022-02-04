@@ -322,6 +322,44 @@ function calculate_demand(ECModel::AbstractEC)
     return demand_us_EC
 end
 
+"""
+    calculate_production(ECModel::AbstractEC)
+
+Function to calculate the energy production by user
+Outputs
+-------
+production_us_EC : DenseAxisArray
+    DenseAxisArray representing the production by the EC and each user
+
+"""
+function calculate_production(ECModel::AbstractEC)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    # users set
+    users_data = ECModel.users_data
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    _P_ren = ECModel.results[:P_ren_us]
+
+    data_production = Float64[sum(
+                sum(_P_ren[u, :] .* time_res)
+                    for r in asset_names(users_data[u], REN)
+            ) for u in user_set]
+
+    # sum of the load power by user and EC
+    production_us_EC = JuMP.Containers.DenseAxisArray(
+        [sum(data_production); data_production],
+        user_set_EC
+    )
+
+    return production_us_EC
+end
+
 
 """
     calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)

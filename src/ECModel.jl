@@ -343,8 +343,9 @@ name_units : (optional) Vector
 
 """
 function plot_sankey(ECModel::AbstractEC;
+    plotting=true,
     name_units=nothing,
-    norm_value::Float64=30.,
+    norm_value=nothing,
     market_color = palette(:rainbow)[2],
     community_color = palette(:rainbow)[5],
     users_colors = palette(:default)
@@ -362,12 +363,11 @@ function plot_sankey(ECModel::AbstractEC;
     shared_production = calculate_shared_production(ECModel, per_unit=false, only_shared=true)
     shared_consumption = calculate_shared_consumption(ECModel, per_unit=false, only_shared=true)
     self_consumption = calculate_self_consumption(ECModel, per_unit=false)
+    self_production = calculate_self_production(ECModel, per_unit=false)
     grid_import = calculate_grid_import(ECModel, per_unit=false)
     grid_export = calculate_grid_export(ECModel, per_unit=false)
-    
-    source_sank = Int[]  # sources of the Sankey
-    target_sank = Int[]  # targets of the Sankey
-    value_sank = Float64[]  # value of each flow
+    demand_us = calculate_demand(ECModel)
+    production_us = calculate_production(ECModel)
 
     # definition of the ids of the resources
     market_id_from = 1
@@ -384,13 +384,17 @@ function plot_sankey(ECModel::AbstractEC;
         market_id_from => 1;
         [user_id_from(id) => 1 for id in 1:length(user_set)];
         community_id => 2;
+        market_id_to => 3;
         [user_id_to(id) => 3 for id in 1:length(user_set)];
-        market_id_to => 3
     ])
 
     # create an ordering of the labels
     order_list = Dict(id => id +1 for id in 1:length(name_units) if market_id_to != id)
     push!(order_list, length(name_units)=>market_id_to)  # move market to before the users
+    
+    source_sank = Int[]  # sources of the Sankey
+    target_sank = Int[]  # targets of the Sankey
+    value_sank = Float64[]  # value of each flow
 
     # calculate produced energy and energy sold to the market by user
     for (u_i, u_name) in enumerate(user_set)
@@ -399,7 +403,7 @@ function plot_sankey(ECModel::AbstractEC;
         if demand_market > 0.001
             append!(source_sank, market_id_from)
             append!(target_sank, user_id_to(u_i))
-            append!(value_sank, u_name)
+            append!(value_sank, demand_market)
         end
 
         # production to the market
@@ -435,7 +439,9 @@ function plot_sankey(ECModel::AbstractEC;
         end
     end
 
-    value_sank = value_sank/maximum(value_sank)*norm_value
+    if !isnothing(norm_value)
+        value_sank = value_sank/maximum(value_sank)*norm_value
+    end
 
     # s = sankey(name_units, source_sank.-1, target_sank.-1, value_sank)  # ECharts style
     tot_colors = [market_color; users_colors[1:length(user_set)]; community_color;
@@ -449,41 +455,58 @@ function plot_sankey(ECModel::AbstractEC;
         end
     end
     if !isempty(no_shows)
-        upd_index(data_idx, no_shows) = map((x) -> x - sum(x .> no_shows), data_idx)
-        upd_index!(data_idx, no_shows) = map!((x) -> x - sum(x .> no_shows), data_idx, data_idx)
+        # auxiliary functions definition
+        update_index(data_idx, no_shows) = map((x) -> x - sum(x .> no_shows), data_idx)
+        update_index!(data_idx, no_shows) = map!((x) -> x - sum(x .> no_shows), data_idx, data_idx)
         # map!((x) -> x - sum(x .> no_shows), source_sank, source_sank)
         # map!((x) -> x - sum(x .> no_shows), target_sank, target_sank)
-        upd_index!(source_sank, no_shows)
-        upd_index!(target_sank, no_shows)
+        update_index!(source_sank, no_shows)
+        update_index!(target_sank, no_shows)
         deleteat!(name_units, no_shows)
         deleteat!(tot_colors, no_shows)
-        filter(x->!(x.first in no_shows), node_layer)
-        filter(x->!(x.first in no_shows), order_list)
-        for k in keys(node_layer)
-            node_layer[k - sum(node_layer[k] .> no_shows)]
-        end
-        node_layer = Dict(upd_index(k, no_shows) => node_layer[k] for k in keys(node_layer))
-        order_list = Dict(upd_index(k, no_shows) => upd_index(order_list[k], no_shows) for k in keys(order_list))
+        filter!(x->!(x.first in no_shows), node_layer)
+        filter!(x->!(x.first in no_shows), order_list)
+        
+        node_layer = Dict(update_index(k, no_shows) => node_layer[k] for k in keys(node_layer))
+        order_list = Dict(update_index(k, no_shows) => update_index(order_list[k], no_shows) for k in keys(order_list))
     end
 
     data_sort = sortslices(hcat(source_sank, target_sank, value_sank),
         dims=1,by=x->(x[1],x[2]),rev=false)
-    _source_sank = convert.(Int, data_sort[:, 1])
-    _target_sank = convert.(Int, data_sort[:, 2])
-    _value_sank = data_sort[:, 3]
+    source_sank = convert.(Int, data_sort[:, 1])
+    target_sank = convert.(Int, data_sort[:, 2])
+    value_sank = data_sort[:, 3]
 
-    sank_agg = DataFrame(source_sank=_source_sank,
-        target_sank=_target_sank,
-        value_sank=_value_sank)
+    # Dictionary to return output data if desired
+    sank_data = Dict(
+        "source"=>source_sank,
+        "target"=>target_sank,
+        "value"=>value_sank,
+        "labels"=>name_units,
+        "colors"=>tot_colors,
+        "layer"=>node_layer,
+        "order"=>order_list,
+    )
 
-    s = sankey(_source_sank, _target_sank, _value_sank;
-        node_labels=name_units,
-        node_colors=tot_colors,
-        edge_color=:gradient,
-        compact=true,
-        label_size=15,
-        opt_layer_assign=node_layer,
-        opt_node_order=order_list
-        )  # SankeyPlots style
-    s, sank_agg
+    # initialize handle_plot
+    handle_plot = nothing
+
+    # if plotting is true, then plot the graph
+    if plotting
+        # Version for SankeyPlots.jl
+        # handle_plot = sankey(source_sank, target_sank, value_sank;
+        #     node_labels=name_units,
+        #     node_colors=tot_colors,
+        #     edge_color=:gradient,
+        #     compact=true,
+        #     label_size=15,
+        #     opt_layer_assign=node_layer,
+        #     opt_node_order=order_list
+        #     )  # SankeyPlots style
+
+        # Version for ECharts
+        handle_plot = ECharts.sankey(name_units, source_sank.-1, target_sank.-1, value_sank)
+    end
+    
+    return handle_plot, sank_data
 end
