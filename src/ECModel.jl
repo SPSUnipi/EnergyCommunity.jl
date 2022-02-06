@@ -494,7 +494,7 @@ function plot_sankey(ECModel::AbstractEC;
     # if plotting is true, then plot the graph
     if plotting
         # Version for SankeyPlots.jl
-        # handle_plot = sankey(source_sank, target_sank, value_sank;
+        # handle_plot = SankeyPlots.sankey(source_sank, target_sank, value_sank;
         #     node_labels=name_units,
         #     node_colors=tot_colors,
         #     edge_color=:gradient,
