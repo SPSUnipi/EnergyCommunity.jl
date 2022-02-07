@@ -6,8 +6,8 @@ module EnergyCommunity
     using Plots
     using DataFrames
     using MathOptInterface
-    import ECharts
-    # import SankeyPlots
+    # import ECharts
+    import SankeyPlots
     import CSV
     import XLSX
     import FileIO

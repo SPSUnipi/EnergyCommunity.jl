@@ -509,7 +509,7 @@ name_units : (optional) Vector
 function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
 
     # Version for SankeyPlots.jl
-    handle_plot = SankeyPlots.sankey(source_sank, target_sank, value_sank;
+    handle_plot = SankeyPlots.sankey(sank_data["source"], sank_data["target"], sank_data["value"];
         node_labels=sank_data["labels"],
         node_colors=sank_data["colors"],
         edge_color=:gradient,

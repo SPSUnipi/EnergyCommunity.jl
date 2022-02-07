@@ -1,5 +1,6 @@
 using EnergyCommunity, JuMP, Plots
 using Test, FileIO, GLPK, MathOptInterface
+using ReferenceTests
 
 # needed to avoid problems with qt when plotting
 ENV["GKSwstype"]="nul"
