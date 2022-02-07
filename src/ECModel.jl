@@ -494,18 +494,18 @@ function plot_sankey(ECModel::AbstractEC;
     # if plotting is true, then plot the graph
     if plotting
         # Version for SankeyPlots.jl
-        # handle_plot = SankeyPlots.sankey(source_sank, target_sank, value_sank;
-        #     node_labels=name_units,
-        #     node_colors=tot_colors,
-        #     edge_color=:gradient,
-        #     compact=true,
-        #     label_size=15,
-        #     opt_layer_assign=node_layer,
-        #     opt_node_order=order_list
-        #     )  # SankeyPlots style
+        handle_plot = SankeyPlots.sankey(source_sank, target_sank, value_sank;
+            node_labels=name_units,
+            node_colors=tot_colors,
+            edge_color=:gradient,
+            compact=true,
+            label_size=15,
+            opt_layer_assign=node_layer,
+            opt_node_order=order_list
+            )  # SankeyPlots style
 
         # Version for ECharts
-        handle_plot = ECharts.sankey(name_units, source_sank.-1, target_sank.-1, value_sank)
+        # handle_plot = ECharts.sankey(name_units, source_sank.-1, target_sank.-1, value_sank)
     end
     
     return handle_plot, sank_data
