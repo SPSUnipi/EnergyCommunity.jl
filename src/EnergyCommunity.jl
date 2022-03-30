@@ -39,5 +39,8 @@ module EnergyCommunity
     # include the abstract types for encapsuling the method
     include("ECModel.jl")
 
+    # include the callbacks to be used in the Games package
+    include("Games_jl_interface.jl")
+
     @exportAll()
 end # module
