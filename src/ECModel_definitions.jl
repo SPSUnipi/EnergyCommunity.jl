@@ -111,6 +111,9 @@ end
 
 "Copy constructor"
 function ModelEC(model_copy::ModelEC, group_type, optimizer=nothing)
+    if isnothing(optimizer)
+        optimizer = deepcopy(model_copy.optimizer)
+    end
     ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(model_copy.user_set))
 end
 
