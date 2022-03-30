@@ -515,8 +515,8 @@ function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
         edge_color=:gradient,
         compact=true,
         label_size=15,
-        opt_layer_assign=sank_data["layer"],
-        opt_node_order=sank_data["order"]
+        force_layer=sank_data["layer"],
+        force_order=sank_data["order"]
         )  # SankeyPlots style
 
     # Version for ECharts
