@@ -9,6 +9,12 @@ function set_group_type!(ECModel::AbstractEC, group::AbstractGroup)
     ECModel.group_type = group
 end
 
+
+"Set the EC user set"
+function set_user_set!(ECModel::AbstractEC, user_set::AbstractVector)
+    ECModel.user_set = user_set
+end
+
 "Build the mathematical problem for the EC"
 function build_model!(ECModel::AbstractEC)
 
