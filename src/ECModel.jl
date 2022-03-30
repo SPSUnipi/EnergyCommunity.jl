@@ -4,9 +4,20 @@ function explode_data(ECModel::AbstractEC)
 end
 
 
+"Get the EC group type"
+function get_group_type(ECModel::AbstractEC)
+    return ECModel.group_type
+end
+
 "Set the EC group type"
 function set_group_type!(ECModel::AbstractEC, group::AbstractGroup)
     ECModel.group_type = group
+end
+
+
+"Get the EC user set"
+function get_user_set(ECModel::AbstractEC)
+    return ECModel.user_set
 end
 
 
@@ -43,7 +54,7 @@ end
 
 
 "Solve the optimization problem for the EC"
-function JuMP.optimize!(ECModel::AbstractEC)
+function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
     optimize!(ECModel.model)
     ECModel.results = jump_to_dict(ECModel.model)
     return ECModel
@@ -330,6 +341,21 @@ function JuMP.termination_status(ECModel::AbstractEC)
         return MOI.OPTIMIZE_NOT_CALLED
     else
         return MOI.TerminationStatusCode(ECModel.results[:termination_status])
+    end
+end
+
+
+"""
+
+    objective_function(ECModel::AbstractEC)
+
+Get the objective function of the model
+"""
+function JuMP.objective_function(ECModel::AbstractEC)
+    if isempty(ECModel.results)
+        return MOI.OPTIMIZE_NOT_CALLED
+    else
+        return ECModel.results[:objective_function]
     end
 end
 
