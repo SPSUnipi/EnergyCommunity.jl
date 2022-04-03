@@ -110,11 +110,14 @@ function ModelEC(file_name::AbstractString,
 end
 
 "Copy constructor"
-function ModelEC(model_copy::ModelEC, group_type, optimizer=nothing)
+function ModelEC(model_copy::ModelEC, group_type; optimizer=nothing, user_set=nothing)
     if isnothing(optimizer)
         optimizer = deepcopy(model_copy.optimizer)
     end
-    ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(model_copy.user_set))
+    if isnothing(user_set)
+        user_set = model_copy.user_set
+    end
+    ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(user_set))
 end
 
 "Copy of ModelEC"
@@ -124,7 +127,7 @@ end
 
 "Deepcopy of ModelEC"
 function Base.deepcopy(model_copy::ModelEC)
-    ModelEC(deepcopy(model_copy.data), model_copy.group_type, deepcopy(user_set), model_copy.optimizer)
+    ModelEC(deepcopy(model_copy.data), model_copy.group_type, model_copy.optimizer, deepcopy(model_copy.user_set))
 end
 
 """Function zero to represent the empty ModelEC"""

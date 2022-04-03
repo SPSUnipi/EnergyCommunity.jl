@@ -23,7 +23,7 @@ utility_callback_by_subgroup : Function
 """
 function to_utility_callback_by_subgroup(ECModel::AbstractEC, BaseUtility::AbstractDict=Dict())
 
-    if typeof(ECModel.group_type) :< AbstractGroupNC
+    if typeof(ECModel.group_type) <: AbstractGroupNC
         # When a Non Cooperative method is given, no benefits are generated for the community
         let ret_value = ret_value
             return (uset) -> 0.0
@@ -42,13 +42,8 @@ function to_utility_callback_by_subgroup(ECModel::AbstractEC, BaseUtility::Abstr
         # optimize the model
         optimize!(NCModel)
 
-        # get objective function
-        obj_val = objective_function(NCModel)
-
         # update base utility
-        BaseUtility = Dict([
-            uname=>obj_val[uname] for uname in get_user_set(NCModel)
-        ])
+        BaseUtility = objective_by_user(NCModel)
     end
 
     # create a backup of the model and work on it
@@ -57,12 +52,14 @@ function to_utility_callback_by_subgroup(ECModel::AbstractEC, BaseUtility::Abstr
         # general implementation of utility_callback_by_subgroup
         function utility_callback_by_subgroup(user_set_callback)
 
+            user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
+
             # check if the EC is in the list and if at least two users are in the set
-            if ((EC_CODE in user_set_callback) && length(setdiff(user_set_callback, EC_CODE)) > 1)
+            if ((EC_CODE in user_set_callback) && length(user_set_no_EC) > 1)
                 # if it is in the code, then execute the normal model
 
                 # change the set of the EC
-                set_user_set!(ecm_copy, user_set_callback)
+                set_user_set!(ecm_copy, user_set_no_EC)
 
                 # build the model with the updated set of users
                 build_model!(ecm_copy)
@@ -72,7 +69,7 @@ function to_utility_callback_by_subgroup(ECModel::AbstractEC, BaseUtility::Abstr
 
                 # get base utility by base model
                 base_utility = sum(Float64[
-                    BaseUtility[uname] for uname in user_set_callback
+                    BaseUtility[uname] for uname in user_set_no_EC
                 ])
 
                 # coalition benefit

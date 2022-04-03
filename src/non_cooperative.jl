@@ -600,10 +600,11 @@ function objective_by_user(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true)
         throw(ErrorException("EnergyCommunity model not solved"))
         return nothing
     elseif add_EC  # if add_EC option is enabled, add the EC_CODE to the users
-        user_set_EC = vcat(EC_CODE, user_set)
+        ret_value = ECModel.results[:NPV_us]
+        user_set_EC = vcat(EC_CODE, keys(ret_value))
         # add the EC to the users
-        ret_tot = JuMP.DenseAxisArray(
-            [0.0; ECModel.results[:NPV_us]],
+        ret_tot = JuMP.Containers.DenseAxisArray(
+            [0.0; ret_value.data],
             user_set_EC
         )
         return ret_tot
