@@ -452,8 +452,8 @@ function calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
     # fraction of grid resiliance of the aggregate case noagg
-    grid_frac_tot = -sum(min.(_P_tot_us, 0) .* time_res)
-
+    grid_frac_tot = sum(Float64[-sum(min.(_P_tot_us[u,:], 0) .* time_res) for u in user_set])
+    
     # fraction of grid reliance with respect to demand by user noagg case
     grid_frac = JuMP.Containers.DenseAxisArray(
         vcat(
@@ -512,7 +512,7 @@ function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
     # fraction of grid resiliance of the aggregate case noagg
-    grid_frac_tot = sum(max.(_P_tot_us .* time_res, 0))
+    grid_frac_tot = sum(Float64[sum(min.(_P_tot_us[u,:], 0) .* time_res) for u in user_set])
 
     # fraction of grid reliance with respect to demand by user noagg case
     grid_frac = JuMP.Containers.DenseAxisArray(
@@ -589,4 +589,25 @@ function calculate_shared_production(::AbstractGroupNC, ECModel::AbstractEC; kwa
         fill(0.0, length(user_set_EC)),
         user_set_EC
     )
+end
+
+
+"""
+Function to return the objective function by user in the NonCooperative case
+"""
+function objective_by_user(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true)
+    if isempty(ECModel.results)
+        throw(ErrorException("EnergyCommunity model not solved"))
+        return nothing
+    elseif add_EC  # if add_EC option is enabled, add the EC_CODE to the users
+        user_set_EC = vcat(EC_CODE, user_set)
+        # add the EC to the users
+        ret_tot = JuMP.DenseAxisArray(
+            [0.0; ECModel.results[:NPV_us]],
+            user_set_EC
+        )
+        return ret_tot
+    else  # Otherwise return only the users
+        return ECModel.results[:NPV_us]
+    end
 end

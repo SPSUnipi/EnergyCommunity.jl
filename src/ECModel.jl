@@ -36,6 +36,13 @@ function build_model!(ECModel::AbstractEC)
     return ECModel
 end
 
+"""
+Function to return the objective function by User
+"""
+function objective_by_user(ECModel::AbstractEC; add_EC=true)
+    return objective_by_user(ECModel.group_type, ECModel; add_EC=add_EC)
+end
+
 "Abstract build function model for generic EnergyCommunity model"
 function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer)
 

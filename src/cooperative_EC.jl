@@ -764,3 +764,24 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
         return self_consump + shared_cons_us
     end
 end
+
+
+"""
+Function to return the objective function by user in the NonCooperative case
+"""
+function objective_by_user(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true)
+    if isempty(ECModel.results)
+        throw(ErrorException("EnergyCommunity model not solved"))
+        return nothing
+    elseif add_EC  # if add_EC option is enabled, add the EC_CODE to the users
+        user_set_EC = vcat(EC_CODE, user_set)
+        # add the EC to the users
+        ret_tot = JuMP.DenseAxisArray(
+            [ECModel.results[:R_Reward_agg_NPV]; ECModel.results[:NPV_us]],
+            user_set_EC
+        )
+        return ret_tot
+    else  # Otherwise return only the users
+        return ECModel.results[:NPV_us]
+    end
+end
