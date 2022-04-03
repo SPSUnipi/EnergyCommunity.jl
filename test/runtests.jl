@@ -1,5 +1,5 @@
 using EnergyCommunity, JuMP, Plots
-using Test, FileIO, GLPK, MathOptInterface
+using Test, FileIO, GLPK, HiGHS, MathOptInterface
 using ReferenceTests
 
 # needed to avoid problems with qt when plotting
@@ -20,8 +20,14 @@ include("tests.jl")
     # Loop over group types
     for group in EC_GROUPS
 
-        _base_test(input_file, group, GLPK.Optimizer)
+        @testset "Group $(string(group))" begin
+            _base_test(input_file, group, HiGHS.Optimizer)
+        end
 
+    end
+
+    @testset "Callback test" begin
+        _callback_test(input_file, HiGHS.Optimizer)
     end
 
 end

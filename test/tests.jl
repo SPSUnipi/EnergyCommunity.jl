@@ -17,7 +17,7 @@ function _base_test(input_file, group, optimizer)
     ## Initialization
 
     # Read data from excel file
-    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+    ECModel = ModelEC(input_file, group, optimizer)
 
     # set_group_type!(ECModel, GroupNC())
 
@@ -37,5 +37,28 @@ function _base_test(input_file, group, optimizer)
     energy_shares_EC = calculate_production_shares(ECModel)
     
     @test_reference "refs/group_$(string(group)).png" plot_sankey(ECModel)
+
+end
+
+function _callback_test(input_file, optimizer)
+
+    ## Model CO
+
+    ## Initialization
+
+    # Read data from excel file
+    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+
+    # set_group_type!(ECModel, GroupNC())
+
+    callback = to_utility_callback_by_subgroup(ECModel)
+
+    dist_base = callback([EC_CODE, get_user_set(ECModel)[1]])
+
+    @test dist_base ≈ 0.0
+
+    dist_base = callback([EC_CODE; get_user_set(ECModel)])
+
+    @test !isnothing(dist_base)
 
 end
