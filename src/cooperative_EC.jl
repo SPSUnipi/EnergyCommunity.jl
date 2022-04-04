@@ -775,7 +775,7 @@ function objective_by_user(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true)
         return nothing
     elseif add_EC  # if add_EC option is enabled, add the EC_CODE to the users
         ret_value = ECModel.results[:NPV_us]
-        user_set_EC = vcat(EC_CODE, keys(ret_value))
+        user_set_EC = vcat(EC_CODE, axes(ret_value)[1])
         # add the EC to the users
         ret_tot = JuMP.Containers.DenseAxisArray(
             [0.0; ret_value.data],
