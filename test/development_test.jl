@@ -34,7 +34,7 @@ build_model!(NCModel)
 optimize!(NCModel)
 
 
-lpc_callback, ecm_model = to_least_profitable_coalition_callback(ECModel)
+lpc_callback = to_least_profitable_coalition_callback(ECModel)
 
 spread = objective_value(ECModel) - objective_value(NCModel)
 

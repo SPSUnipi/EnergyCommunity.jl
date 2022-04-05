@@ -173,10 +173,10 @@ function build_least_profitable!(ECModel::AbstractEC, BaseUtility; add_EC=true)
         build_nullify_con_by_binary!(ECModel.model[con], coalition_status)
     end
 
-    # # change expressions constantss
-    # for expr in list_exprs
-    #     build_nullify_expr_by_binary!(ECModel.model[expr], coalition_status)
-    # end
+    # change expressions constantss
+    for expr in list_exprs
+        build_nullify_expr_by_binary!(ECModel.model[expr], coalition_status)
+    end
 
     # # remove the grand coalition from the analysis
     # @constraint(ECModel.model, exclude_grand_coalition,
@@ -193,15 +193,15 @@ function build_least_profitable!(ECModel::AbstractEC, BaseUtility; add_EC=true)
     #     coalition_status[i] >= 1.0
     # )
 
-    # # change expression of SW
-    # for u in ECModel.user_set
-    #     # get the constant value
-    #     coeff = constant(ECModel.model[:NPV_us][u])
-    #     println("NPV_us coeff $u: ", coeff)
-    #     # change expression to add the constant only when the corresponding binary is enabled
-    #     add_to_expression!(ECModel.model[:SW], coeff * coalition_status[u] - coeff)
-    #     add_to_expression!(ECModel.model[:NPV_us][u], coeff * coalition_status[u] - coeff)
-    # end
+    # change expression of SW
+    for u in ECModel.user_set
+        # get the constant value
+        coeff = constant(ECModel.model[:NPV_us][u])
+        println("NPV_us coeff $u: ", coeff)
+        # change expression to add the constant only when the corresponding binary is enabled
+        add_to_expression!(ECModel.model[:SW], coeff * coalition_status[u] - coeff)
+        add_to_expression!(ECModel.model[:NPV_us][u], coeff * coalition_status[u] - coeff)
+    end
 
     # define expression of BaseUtility
     @expression(ECModel.model, BaseUtility[u in user_set_EC],
