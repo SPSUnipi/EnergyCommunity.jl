@@ -33,9 +33,6 @@ module EnergyCommunity
     
     # Functions to build and print the model of the system in the EC configuration
     include("cooperative_EC.jl")
-    
-    # Function to plot the Sankey diagrams (energy shares by user)
-    include("create_sankey_diagram.jl")
 
     # include the abstract types for encapsuling the method
     include("ECModel.jl")
