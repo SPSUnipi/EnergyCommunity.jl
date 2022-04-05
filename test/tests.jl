@@ -74,7 +74,7 @@ function _least_profitable_callback_test(input_file, optimizer)
     total_surplus = objective_value(ECModel) - objective_value(NCModel)
 
     # test coalition distribution
-    test_coal = Dict(EC_CODE=>0.0, "user1"=>spread/2, "user2"=>0.0, "user3"=>spread/2)
+    test_coal = Dict(EC_CODE=>0.0, "user1"=>total_surplus/2, "user2"=>0.0, "user3"=>total_surplus/2)
 
     # create callback
     callback = to_least_profitable_coalition_callback(ECModel)
