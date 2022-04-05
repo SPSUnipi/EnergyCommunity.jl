@@ -43,7 +43,7 @@ end
 function _utility_callback_test(input_file, optimizer)
 
     ## Initialization
-    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO() optimizer)
+    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
 
     callback = to_utility_callback_by_subgroup(ECModel)
 
