@@ -197,7 +197,7 @@ function build_least_profitable!(ECModel::AbstractEC, BaseUtility; add_EC=true)
     for u in ECModel.user_set
         # get the constant value
         coeff = constant(ECModel.model[:NPV_us][u])
-        println("NPV_us coeff $u: ", coeff)
+        
         # change expression to add the constant only when the corresponding binary is enabled
         add_to_expression!(ECModel.model[:SW], coeff * coalition_status[u] - coeff)
         add_to_expression!(ECModel.model[:NPV_us][u], coeff * coalition_status[u] - coeff)
