@@ -349,6 +349,6 @@ function to_least_profitable_coalition_callback(ECModel::AbstractEC; BaseUtility
             return least_profitable_coalition, coalition_benefit, min_surplus
         end
 
-        return least_profitable_coalition_callback, ecm_copy
+        return least_profitable_coalition_callback  #, ecm_copy
     end
 end
