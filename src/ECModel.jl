@@ -70,7 +70,7 @@ end
 "Solve the optimization problem for the EC"
 function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
     optimize!(ECModel.model)
-    ECModel.results = jump_to_dict(ECModel.model)
+    ECModel.results = _jump_to_dict(ECModel.model)
     return ECModel
 end
 
@@ -604,3 +604,5 @@ function plot_sankey(ECModel::AbstractEC;
     
     return plot_sankey(ECModel, sank_data)
 end
+
+

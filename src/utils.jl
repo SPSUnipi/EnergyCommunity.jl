@@ -284,11 +284,11 @@ end
 
 
 """
-    jump_to_dict
+    _jump_to_dict
 
 Function to turn a JuMP model to a dictionary
 """
-function jump_to_dict(model::Model)
+function _jump_to_dict(model::Model)
     results = Dict{Symbol, Any}()
 
     # push the information on the optimization status

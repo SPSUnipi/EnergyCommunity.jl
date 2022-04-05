@@ -19,6 +19,23 @@ struct GroupNC <: AbstractGroupNC end
 GroupAny = [GroupCO(), GroupANC(), GroupNC()]
 GroupCONC = [GroupCO(), GroupNC()]
 
+# definition of the name of the abstract model types
+name(::AbstractGroup) = "Abstract Group Model"
+name(::AbstractGroupCO) = "Abstract Cooperative Model"
+name(::AbstractGroupNC) = "Abstract Non-Cooperative Model"
+name(::AbstractGroupANC) = "Abstract Aggregating-Non-Cooperative Model"
+
+# definition of the name of the concrete model types
+name(::GroupCO) = "Cooperative Model"
+name(::GroupNC) = "Non-Cooperative Model"
+name(::GroupANC) = "Aggregating-Non-Cooperative Model"
+
+function Base.string(GType::AbstractGroup)
+    return name(GType)
+end
+
+
+
 abstract type AbstractEC end
 
 # constant empty dictionary for an empty EnergyCommunity model
@@ -133,4 +150,50 @@ end
 """Function zero to represent the empty ModelEC"""
 function Base.zero(::ModelEC)
     return ModelEC()
+end
+
+
+"""
+    name(model::AbstractEC)
+
+Return the name of the model.
+"""
+name(model::AbstractEC) = "An Abstract Energy Community Model"
+
+
+"""
+    name(model::ModelEC)
+
+Return the name of the model.
+"""
+name(model::ModelEC) = "An Energy Community Model"
+
+
+"""
+    _print_summary(io::IO, model::AbstractEC)
+
+Print a plain-text summary of `model` to `io`.
+"""
+function _print_summary(io::IO, model::AbstractEC)
+    println(io, name(model))
+    println(io, "Energy Community problem for a " * name(get_group_type(model)))
+    println(io, "User set: " * string(model.user_set))
+    if isempty(model.results)
+        println("Model not optimized")
+    else
+        println("Solved model")
+    end
+    return
+end
+
+function Base.summary(io::IO, ECModel::AbstractEC)
+    _print_summary(io, ECModel)
+end
+
+function Base.print(io::IO, ECModel::AbstractEC)
+    _print_summary(io, ECModel)
+end
+
+function Base.show(io::IO, ECModel::AbstractEC)
+    _print_summary(io, ECModel)
 end
