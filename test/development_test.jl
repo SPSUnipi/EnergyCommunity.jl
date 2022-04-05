@@ -1,8 +1,9 @@
 using Revise
 using EnergyCommunity
 using FileIO
-using GLPK, Plots
+using HiGHS, Plots
 using JuMP
+using Gurobi
 
 
 ## Parameters
@@ -24,24 +25,37 @@ output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  #
 ## Initialization
 
 # Read data from excel file
-ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), GLPK.Optimizer)
-
-# set_group_type!(ECModel, GroupNC())
-
+ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), Gurobi.Optimizer)
 build_model!(ECModel)
-
 optimize!(ECModel)
 
-plot(ECModel, output_plot_combined)
+NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), Gurobi.Optimizer)
+build_model!(NCModel)
+optimize!(NCModel)
 
-print_summary(ECModel)
 
-save_summary(ECModel, output_file_combined)
+lpc_callback, ecm_model = to_least_profitable_coalition_callback(ECModel)
 
-grid_shares_EC = calculate_grid_import(ECModel)
-energy_shares_EC = calculate_production_shares(ECModel)
+spread = objective_value(ECModel) - objective_value(NCModel)
 
-handle_plot, sank_data = plot_sankey(ECModel, plotting=true)
+test_coal = Dict("EC"=>0.0, "user1"=>spread/2, "user2"=>spread/2, "user3"=>0.0)
+#test_coal = Dict("EC"=>0.0, "user1"=>0.0, "user2"=>0.0, "user3"=>0.0)
+#test_coal = Dict("EC"=>0.0, "user2"=>spread/2, "user3"=>spread/2)
+
+least_profitable_coalition, coalition_benefit, min_surplus = lpc_callback(test_coal)
+
+# optimize!(ECModel)
+
+# plot(ECModel, output_plot_combined)
+
+# print_summary(ECModel)
+
+# save_summary(ECModel, output_file_combined)
+
+# grid_shares_EC = calculate_grid_import(ECModel)
+# energy_shares_EC = calculate_production_shares(ECModel)
+
+# handle_plot, sank_data = plot_sankey(ECModel, plotting=true)
 
 # save("testECsave.jld2", ECModel)
 

@@ -6,6 +6,7 @@ module EnergyCommunity
     using Plots
     using DataFrames
     using MathOptInterface
+    using Base.Iterators
     # import ECharts
     import SankeyPlots
     import CSV

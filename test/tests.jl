@@ -47,7 +47,7 @@ function _callback_test(input_file, optimizer)
     ## Initialization
 
     # Read data from excel file
-    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO() optimizer)
 
     # set_group_type!(ECModel, GroupNC())
 

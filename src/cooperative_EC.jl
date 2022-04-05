@@ -83,7 +83,7 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
 
     # Power shared among the users
     @expression(model, P_shared_agg[t in time_set],
-        sum(model[:P_P_us][u, t] - P_P_agg[t] for u in user_set)
+        sum(model[:P_P_us][:, t]) - P_P_agg[t]
     )
 
     # Total net power exchanged by a virtual POD corresponding to the entire EC:
