@@ -27,7 +27,9 @@ include("tests.jl")
     end
 
     @testset "Callback test" begin
-        _callback_test(input_file, HiGHS.Optimizer)
+        _utility_callback_test(input_file, HiGHS.Optimizer)
+        
+        _least_profitable_callback_test(input_file, HiGHS.Optimizer)
     end
 
 end

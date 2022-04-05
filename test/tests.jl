@@ -40,16 +40,10 @@ function _base_test(input_file, group, optimizer)
 
 end
 
-function _callback_test(input_file, optimizer)
-
-    ## Model CO
+function _utility_callback_test(input_file, optimizer)
 
     ## Initialization
-
-    # Read data from excel file
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO() optimizer)
-
-    # set_group_type!(ECModel, GroupNC())
 
     callback = to_utility_callback_by_subgroup(ECModel)
 
@@ -60,5 +54,37 @@ function _callback_test(input_file, optimizer)
     dist_base = callback([EC_CODE; get_user_set(ECModel)])
 
     @test !isnothing(dist_base)
+
+end
+
+function _least_profitable_callback_test(input_file, optimizer)
+
+    ## Initialization
+    ## Model CO
+    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+    build_model!(ECModel)
+    optimize!(ECModel)
+    
+    ## Model NC
+    NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), optimizer)
+    build_model!(NCModel)
+    optimize!(NCModel)
+    
+    # total surplus
+    total_surplus = objective_value(ECModel) - objective_value(NCModel)
+
+    # test coalition distribution
+    test_coal = Dict(EC_CODE=>0.0, "user1"=>spread/2, "user2"=>0.0, "user3"=>spread/2)
+
+    # create callback
+    callback = to_least_profitable_coalition_callback(ECModel)
+
+    # test to identify the least profitable coalition of the profit distribution test_coal
+    # expected value are tested below
+    least_profitable_coalition, coalition_benefit, min_surplus = callback(test_coal)
+
+    @test Set(least_profitable_coalition) == Set(["user1", "user3"])
+    @test coalition_benefit ≈ 9404.77 atol=1
+    @test min_surplus ≈ -1280.42 atol=1
 
 end
