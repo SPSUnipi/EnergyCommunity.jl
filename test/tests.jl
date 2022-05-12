@@ -88,3 +88,37 @@ function _least_profitable_callback_test(input_file, optimizer)
     @test min_surplus ≈ -1280.42 atol=1
 
 end
+
+function _profit_distribution_Games_jl_test(input_file, games_mode, distribution_function, optimizer, kwargs...)
+
+    ## Initialization
+    ## Model CO
+    ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+    
+    mode = games_mode(ECModel)
+
+    calc_solution = distribution_function(mode, kwargs...)
+
+    path_solution = (
+        string(@__DIR__) * 
+        "\\testcases\\" * 
+        string(games_mode) * "\\" * 
+        string(distribution_function) * "\\" 
+        * example_name * ".yml"
+    )
+    
+    if isfile(path_solution)
+        # if the file exists run tests
+        proven_solution = YAML.load_file(path_solution)
+        
+        @test Set(keys(calc_solution)) == Set(keys(proven_solution))
+        @test all(isapprox(calc_solution[k] - proven_solution[k], 0.0, atol=1e-4) for k in keys(proven_solution))
+    else
+        # otherwise create the tests
+        mkpath(dirname(path_solution))
+
+        YAML.write_file(path_solution, calc_solution)
+        @warn("Preloaded solution not found, then it has been created")
+    end
+
+end

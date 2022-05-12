@@ -1,5 +1,5 @@
 using EnergyCommunity, JuMP, Plots
-using Test, FileIO, GLPK, HiGHS, MathOptInterface
+using Test, FileIO, GLPK, HiGHS, MathOptInterface, Games, YAML
 using ReferenceTests
 
 # needed to avoid problems with qt when plotting
@@ -9,6 +9,8 @@ const MOI = MathOptInterface
 
 # EC groups to test
 const EC_GROUPS = [EnergyCommunity.GroupCO(), EnergyCommunity.GroupNC()]
+
+const OPTIMIZER = HiGHS.Optimizer
 
 input_file = joinpath(@__DIR__, "./data/energy_community_model.yml")  # Input file
 
@@ -21,17 +23,25 @@ include("tests.jl")
     for group in EC_GROUPS
 
         @testset "Group $(string(group))" begin
-            _base_test(input_file, group, HiGHS.Optimizer)
+            _base_test(input_file, group, OPTIMIZER)
         end
 
     end
 
+end
+
+@testset "Games.jl interaction" begin
+    
     @testset "Utility callback test" begin
-        _utility_callback_test(input_file, HiGHS.Optimizer)
+        _utility_callback_test(input_file, OPTIMIZER)
     end
         
     @testset "Least profitable group callback test" begin
-        _least_profitable_callback_test(input_file, HiGHS.Optimizer)
+        _least_profitable_callback_test(input_file, OPTIMIZER)
+    end
+        
+    @testset "Games.jl - Shapley" begin
+        _profit_distribution_Games_jl_test(input_file, EnumMode, shapley_value, OPTIMIZER)
     end
 
 end
