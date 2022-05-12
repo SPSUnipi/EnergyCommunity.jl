@@ -22,8 +22,8 @@ end
 
 
 "Set the EC user set"
-function set_user_set!(ECModel::AbstractEC, user_set::AbstractVector)
-    ECModel.user_set = user_set
+function set_user_set!(ECModel::AbstractEC, user_set)
+    ECModel.user_set = collect(user_set)
 end
 
 "Build the mathematical problem for the EC"

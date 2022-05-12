@@ -73,7 +73,7 @@ function to_utility_callback_by_subgroup(ECModel::AbstractEC; BaseUtility::Abstr
                 ])
 
                 # coalition benefit
-                utility_coal = objective_function(ecm_copy) - base_utility
+                utility_coal = objective_value(ecm_copy) - base_utility
 
                 # return the coalition benefit
                 return utility_coal
@@ -351,4 +351,33 @@ function to_least_profitable_coalition_callback(ECModel::AbstractEC; BaseUtility
 
         return least_profitable_coalition_callback  #, ecm_copy
     end
+end
+
+
+"""
+    RobustMode(ECModel::AbstractEC)
+
+Function to create the RobustMode item for the Games.jl package 
+"""
+function Games.RobustMode(ECModel::AbstractEC; kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel)
+    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel)
+
+    robust_mode = RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback; kwargs...)
+
+    return robust_mode
+end
+
+
+"""
+    EnumMode(ECModel::AbstractEC)
+
+Function to create the EnumMode item for the Games.jl package 
+"""
+function Games.EnumMode(ECModel::AbstractEC; kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel)
+
+    robust_mode = EnumMode([EC_CODE; ECModel.user_set], utility_callback; kwargs...)
+
+    return robust_mode
 end

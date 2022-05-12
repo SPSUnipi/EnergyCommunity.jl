@@ -27,7 +27,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
 
     # Set definitions
 
-    user_set = user_names(gen_data, users_data)
+    user_set = ECModel.user_set
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = init_step:final_step
