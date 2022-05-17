@@ -16,6 +16,9 @@ jobs:
             os: ubuntu-latest
             arch: x64
     steps:
+      - name: Login github
+        run: |
+          git config user.name ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
