@@ -163,8 +163,8 @@ end
     load(output_file::AbstractString)
 Function to save the results and the model to the hard drive
 """
-function FileIO.load(output_file::AbstractString)
-    return load!(output_file, ModelEC())
+function FileIO.load(output_file::AbstractString, ECModel::AbstractEC)
+    return load!(output_file, zero(ECModel))
 end
 
 
