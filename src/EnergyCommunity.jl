@@ -33,7 +33,7 @@ module EnergyCommunity
     include("non_cooperative.jl")
     
     # Functions to build and print the model of the system in the EC configuration
-    include("cooperative_EC.jl")
+    include("cooperative.jl")
 
     # include the abstract types for encapsuling the method
     include("ECModel.jl")

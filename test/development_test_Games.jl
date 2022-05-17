@@ -4,6 +4,7 @@ using FileIO
 using HiGHS, Plots
 using JuMP
 using Gurobi
+using Games
 
 
 ## Parameters
@@ -24,25 +25,37 @@ output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  #
 
 ## Initialization
 
+OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0)
+
 # Read data from excel file
-ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), Gurobi.Optimizer)
+ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), OPTIMIZER)
 build_model!(ECModel)
 optimize!(ECModel)
 
-# NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), Gurobi.Optimizer)
-# build_model!(NCModel)
-# optimize!(NCModel)
 
+NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), OPTIMIZER)
+build_model!(NCModel)
+optimize!(NCModel)
 
-# lpc_callback = to_least_profitable_coalition_callback(ECModel)
+ECModel.user_set = collect(keys(ECModel.users_data))
 
-# spread = objective_value(ECModel) - objective_value(NCModel)
+utility_callback = to_utility_callback_by_subgroup(ECModel)
+worst_coalition_callback = to_least_profitable_coalition_callback(ECModel)
 
-# test_coal = Dict("EC"=>0.0, "user1"=>spread/2, "user2"=>spread/2, "user3"=>0.0)
-# #test_coal = Dict("EC"=>0.0, "user1"=>0.0, "user2"=>0.0, "user3"=>0.0)
-# #test_coal = Dict("EC"=>0.0, "user2"=>spread/2, "user3"=>spread/2)
+ECModel.user_set = collect(keys(ECModel.users_data))
 
-# least_profitable_coalition, coalition_benefit, min_surplus = lpc_callback(test_coal)
+# enum_mode = EnumMode(ECModel)
+
+# save("enum_mode.jld2", enum_mode)
+enum_mode = load("enum_mode.jld2", EnumMode())
+
+# test_coal = ["user1", "user2"]
+
+# least_profitable_coalition, coalition_benefit, min_surplus = worst_coalition_callback(test_coal)
+
+# profit_distribution, min_surplus, history = least_core(mode, ECModel.optimizer)
+
+sh_val = shapley_value(enum_mode)
 
 # optimize!(ECModel)
 
