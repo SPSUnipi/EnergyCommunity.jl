@@ -12,6 +12,8 @@ ECModel : AbstractEC
     When the model is not cooperative an error is thrown.
 base_group_type : AbstractGroup
     Type of the base case to consider
+no_aggregator_group : AbstractGroup (otional, default NonCooperative)
+    EC group type for when no aggregator is considered
 
 Return
 ------
@@ -19,12 +21,16 @@ utility_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_utility_callback_by_subgroup(ECModel::AbstractEC, base_group_type::AbstractGroup)
+function to_utility_callback_by_subgroup(
+        ECModel::AbstractEC, base_group_type::AbstractGroup;
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        kwargs...
+    )
 
     ecm_copy=deepcopy(ECModel)
     base_model=ModelEC(ECModel, base_group_type)
 
-    objective_callback_EC = to_objective_callback_by_subgroup(ECModel)
+    objective_callback_EC = to_objective_callback_by_subgroup(ECModel, no_aggregator_group=no_aggregator_group)
     objective_callback_base = to_objective_callback_by_subgroup(base_model)
 
 
@@ -33,7 +39,6 @@ function to_utility_callback_by_subgroup(ECModel::AbstractEC, base_group_type::A
 
         # general implementation of utility_callback_by_subgroup
         function utility_callback_by_subgroup(user_set_callback)
-
             return objective_callback_EC(user_set_callback) - objective_callback_base(user_set_callback)
         end
 
@@ -224,7 +229,11 @@ least_profitable_coalition_callback : Function
     Function that accepts as input an AbstractDict representing the benefit distribution
     by user
 """
-function to_least_profitable_coalition_callback(ECModel::AbstractEC; BaseUtility::AbstractDict=Dict())
+function to_least_profitable_coalition_callback(
+        ECModel::AbstractEC;
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        kwargs...
+    )
 
     if typeof(ECModel.group_type) <: AbstractGroupNC
         # When a Non Cooperative method is given, no benefits are generated for the community
@@ -311,10 +320,10 @@ end
 Function to create the RobustMode item for the Games.jl package 
 """
 function Games.RobustMode(ECModel::AbstractEC, base_group_type::AbstractGroup; kwargs...)
-    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type)
-    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; kwargs...)
+    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; kwargs...)
 
-    robust_mode = Games.RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback; kwargs...)
+    robust_mode = Games.RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
     return robust_mode
 end
@@ -325,10 +334,10 @@ end
 
 Function to create the EnumMode item for the Games.jl package 
 """
-function Games.EnumMode(ECModel::AbstractEC, base_group_type::AbstractGroup; kwargs...)
-    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type)
+function Games.EnumMode(ECModel::AbstractEC, base_group_type::AbstractGroup; verbose::Bool=true, kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; kwargs...)
 
-    robust_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; kwargs...)
+    robust_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
 
     return robust_mode
 end

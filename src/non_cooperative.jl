@@ -645,37 +645,35 @@ objective_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_objective_callback_by_subgroup(::AbstractGroupNC, ECModel::AbstractEC)
+function to_objective_callback_by_subgroup(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
+
+    # work on a copy
+    ecm_copy = deepcopy(ECModel)
+    reset_user_set!(ecm_copy)
+
+    # build the model with the updated set of users
+    build_model!(ecm_copy)
+
+    # optimize the model
+    optimize!(ecm_copy)
+
+    obj_users = objective_by_user(ecm_copy)
 
     # create a backup of the model and work on it
-    let ecm_copy = deepcopy(ECModel)
+    let obj_users = obj_users
 
         # general implementation of objective_callback_by_subgroup
         function objective_callback_by_subgroup(user_set_callback)
 
             user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
 
-            # check if at least one user is in the list
-            if length(user_set_no_EC) > 1
-
-                # change the set of the EC
-                set_user_set!(ecm_copy, user_set_no_EC)
-
-                # build the model with the updated set of users
-                build_model!(ecm_copy)
-
-                # optimize the model
-                optimize!(ecm_copy)
-
-                # return the objective
-                return objective_value(ecm_copy)
+            # return the objective
+            if length(user_set_no_EC) > 0
+                return sum(obj_users[u] for u in user_set_no_EC)
             else
-                # otherwise return the null return value as
-                # when the aggregator is not available, then no benefit
-                # can be achieved                
-
                 return 0.0
             end
+            
         end
 
         return objective_callback_by_subgroup

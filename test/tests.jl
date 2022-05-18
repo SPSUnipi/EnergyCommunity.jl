@@ -49,7 +49,7 @@ function _utility_callback_test(input_file, optimizer, group_type)
 
     dist_base = callback([EC_CODE, get_user_set(ECModel)[1]])
 
-    @test dist_base ≈ 0.0
+    @test dist_base ≈ 0.0 atol=1e-6
 
     dist_base = callback([EC_CODE; get_user_set(ECModel)])
 
@@ -89,13 +89,13 @@ function _least_profitable_callback_test(input_file, optimizer)
 
 end
 
-function _profit_distribution_Games_jl_test(input_file, games_mode, distribution_function, optimizer, kwargs...)
+function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer, kwargs...)
 
     ## Initialization
     ## Model CO
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
     
-    mode = games_mode(ECModel)
+    mode = games_mode(ECModel, group_type)
 
     calc_solution = distribution_function(mode, kwargs...)
 
@@ -103,7 +103,8 @@ function _profit_distribution_Games_jl_test(input_file, games_mode, distribution
         string(@__DIR__) * 
         "/refs/games/" * 
         string(distribution_function) * "/" 
-        * string(games_mode) * ".yml"
+        * string(games_mode) * "/"
+        * string(group_type) * ".yml"
     )
     
     if isfile(path_solution)

@@ -246,10 +246,21 @@ objective_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC)
+function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC; kwargs...)
 
     # create a backup of the model and work on it
-    let ecm_copy = deepcopy(ECModel)
+    ecm_copy = deepcopy(ECModel)
+
+    # reset of the EC
+    reset_user_set!(ecm_copy)
+
+    # build the model with the updated set of users
+    build_model!(ecm_copy)
+
+    # optimize the model
+    optimize!(ecm_copy)
+
+    let ecm_copy=ecm_copy
 
         # general implementation of objective_callback_by_subgroup
         function objective_callback_by_subgroup(user_set_callback)
@@ -257,19 +268,59 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
             user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
 
             # check if at least one user is in the list
-            if length(user_set_no_EC) > 1
+            if length(user_set_no_EC) > 0
 
-                # change the set of the EC
-                set_user_set!(ecm_copy, user_set_no_EC)
+                gen_data = ECModel.gen_data
+                market_data = ECModel.market_data
+            
+                # get time set
+                init_step = field(gen_data, "init_step")
+                final_step = field(gen_data, "final_step")
+                n_steps = final_step - init_step + 1
+                time_set = 1:n_steps
+            
+                project_lifetime = field(gen_data, "project_lifetime")
+            
+                # Set definitions
+            
+                year_set = 1:project_lifetime
 
-                # build the model with the updated set of users
-                build_model!(ecm_copy)
+                # Shared power for the userset: the minimum between the supply and demand for each time step
+                P_shared_coal = JuMP.Containers.DenseAxisArray(
+                    [
+                        min(
+                            sum(ecm_copy.results[:P_P_us][u, t] for u in user_set_no_EC),
+                            sum(ecm_copy.results[:P_N_us][u, t] for u in user_set_no_EC)
+                        )
+                    for t in time_set],
+                    time_set
+                )
 
-                # optimize the model
-                optimize!(ecm_copy)
+                # Reward awarded to the subcoalition at each time step
+                R_Reward_coal = JuMP.Containers.DenseAxisArray(
+                    [
+                        profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
+                            profile(market_data, "reward_price")[t] * P_shared_coal[t]
+                    for t in time_set],
+                    time_set
+                )
 
+                # Total reward of the coalition
+                R_Reward_tot_coal = sum(R_Reward_coal)
+
+                # Total reward awarded to the aggregator in NPV terms
+                R_Reward_agg_NPV = (
+                    R_Reward_tot_coal * sum(1 / ((1 + field(gen_data, "d_rate"))^y) for y in year_set)
+                )
+
+                # objective of the users
+                obj_users = objective_by_user(ecm_copy)
+
+                # Total NPV
+                NPV_ANC = sum(obj_users[u] for u in user_set_no_EC) + R_Reward_agg_NPV
+                
                 # return the objective
-                return objective_value(ecm_copy)
+                return NPV_ANC
             else
                 # otherwise return the null return value as
                 # when the aggregator is not available, then no benefit

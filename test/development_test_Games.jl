@@ -39,7 +39,7 @@ optimize!(NCModel)
 
 ECModel.user_set = collect(keys(ECModel.users_data))
 
-utility_callback = to_utility_callback_by_subgroup(ECModel)
+utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC())
 worst_coalition_callback = to_least_profitable_coalition_callback(ECModel)
 
 ECModel.user_set = collect(keys(ECModel.users_data))
@@ -47,7 +47,7 @@ ECModel.user_set = collect(keys(ECModel.users_data))
 # enum_mode = EnumMode(ECModel)
 
 # save("enum_mode.jld2", enum_mode)
-enum_mode = load("enum_mode.jld2", EnumMode())
+#enum_mode = load("enum_mode.jld2", EnumMode())
 
 # test_coal = ["user1", "user2"]
 
@@ -55,7 +55,7 @@ enum_mode = load("enum_mode.jld2", EnumMode())
 
 # profit_distribution, min_surplus, history = least_core(mode, ECModel.optimizer)
 
-sh_val = shapley_value(enum_mode)
+#sh_val = shapley_value(enum_mode)
 
 # optimize!(ECModel)
 

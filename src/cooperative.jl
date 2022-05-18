@@ -812,6 +812,8 @@ Parameters
 ECModel : AbstractEC
     Cooperative EC Model of the EC to study.
     When the model is not cooperative an error is thrown.
+no_aggregator_group : AbstractGroup (otional, default NonCooperative)
+    EC group type when no aggregator is considered
 
 Return
 ------
@@ -819,18 +821,24 @@ objective_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_objective_callback_by_subgroup(::AbstractGroupCO, ECModel::AbstractEC)
+function to_objective_callback_by_subgroup(
+        ::AbstractGroupCO, ECModel::AbstractEC; 
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        kwargs...
+    )
+
+    callback_base=to_objective_callback_by_subgroup(ModelEC(ECModel, no_aggregator_group))
 
     # create a backup of the model and work on it
-    let ecm_copy = deepcopy(ECModel)
+    let ecm_copy=deepcopy(ECModel), callback_base=callback_base
 
         # general implementation of objective_callback_by_subgroup
         function objective_callback_by_subgroup(user_set_callback)
 
-            user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
-
             # check if at least one user is in the list
-            if length(user_set_no_EC) > 1
+            if (EC_CODE in user_set_callback) && length(user_set_callback) > 1
+
+                user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
 
                 # change the set of the EC
                 set_user_set!(ecm_copy, user_set_no_EC)
@@ -844,11 +852,8 @@ function to_objective_callback_by_subgroup(::AbstractGroupCO, ECModel::AbstractE
                 # return the objective
                 return objective_value(ecm_copy)
             else
-                # otherwise return the null return value as
-                # when the aggregator is not available, then no benefit
-                # can be achieved                
-
-                return 0.0
+                # otherwise return the value of the base case
+                return callback_base(user_set_callback)
             end
         end
 

@@ -26,6 +26,12 @@ function set_user_set!(ECModel::AbstractEC, user_set)
     ECModel.user_set = collect(user_set)
 end
 
+
+"Set the EC user set equal to the stored user_set"
+function reset_user_set!(ECModel::AbstractEC)
+    set_user_set!(ECModel::AbstractEC, collect(keys(ECModel.users_data)))
+end
+
 "Build the mathematical problem for the EC"
 function build_model!(ECModel::AbstractEC)
 
@@ -111,8 +117,8 @@ objective_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_objective_callback_by_subgroup(ECModel::AbstractEC)
-    return to_objective_callback_by_subgroup(ECModel.group_type, ECModel)
+function to_objective_callback_by_subgroup(ECModel::AbstractEC; kwargs...)
+    return to_objective_callback_by_subgroup(ECModel.group_type, ECModel; kwargs...)
 end
 
 
