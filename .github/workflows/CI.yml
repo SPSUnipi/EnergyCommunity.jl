@@ -21,11 +21,13 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      # - uses: webfactory/ssh-agent@v0.5.4
-      #   with:
-      #       ssh-private-key: ${{ secrets.SSH_SECRET }}
-      - name: Test clone
+      - uses: webfactory/ssh-agent@v0.5.4
+        with:
+            ssh-private-key: ${{ secrets.SSH_SECRET }}
+      - name: Clone Games.jl
         run: git clone https://github.com/davide-f/Games.jl
+      - name: Install private repo
+        run: julia --project -e 'using Pkg; Pkg.add(; url="Games.jl")'
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
@@ -36,8 +38,6 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - name: Install private repo
-        run: julia --project -e 'using Pkg; Pkg.add(; url="Games.jl")'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       #- uses: julia-actions/julia-processcoverage@v1
