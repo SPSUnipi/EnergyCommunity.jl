@@ -21,7 +21,7 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: webfactory/ssh-agent@v0.5.4
+      - uses: webfactory/ssh-agent@v0.5.3
         with:
             ssh-private-key: ${{ secrets.SSH_SECRET }}
       - name: Test clone
