@@ -25,7 +25,7 @@ jobs:
         with:
             ssh-private-key: ${{ secrets.SSH_SECRET }}
       - name: Test clone
-        run: git clone https://github.com/davide-f/Games.jl"
+        run: git clone https://github.com/davide-f/Games.jl
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
