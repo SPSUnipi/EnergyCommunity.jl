@@ -612,3 +612,14 @@ function objective_by_user(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true)
         return ECModel.results[:NPV_us]
     end
 end
+
+"""
+finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
+
+Function to finalize the results of the Non Cooperative model after the execution
+Nothing to do
+
+"""
+function finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
+    # Nothing to do
+end

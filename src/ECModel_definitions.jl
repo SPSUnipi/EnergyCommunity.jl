@@ -9,12 +9,12 @@ abstract type AbstractGroupCO <: AbstractGroup end
 # Abstract Non-Cooperative group
 abstract type AbstractGroupNC <: AbstractGroup end
 # Abstract Aggregated Non-Cooperative
-abstract type AbstractGroupANC <: AbstractGroupNC end
+abstract type AbstractGroupANC <: AbstractGroup end
 
 # Concrete structs
 struct GroupCO <: AbstractGroupCO end
-struct GroupANC <: AbstractGroupANC end
 struct GroupNC <: AbstractGroupNC end
+struct GroupANC <: AbstractGroupANC end
 
 GroupAny = [GroupCO(), GroupANC(), GroupNC()]
 GroupCONC = [GroupCO(), GroupNC()]
@@ -122,8 +122,9 @@ function ModelEC(file_name::AbstractString,
         optimizer=nothing
     )
     data = read_input(file_name)
+    user_set = user_names(general(data), users(data))
 
-    ModelEC(data=data, group_type=group_type, optimizer=optimizer)
+    ModelEC(data=data, group_type=group_type, optimizer=optimizer, user_set=user_set)
 end
 
 "Copy constructor"

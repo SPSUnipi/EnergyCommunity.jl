@@ -71,6 +71,7 @@ end
 function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
     optimize!(ECModel.model)
     ECModel.results = _jump_to_dict(ECModel.model)
+    finalize_results!(ECModel.group_type, ECModel)
     return ECModel
 end
 
@@ -135,15 +136,15 @@ function load!(output_file::AbstractString, ECModel::AbstractEC)
     ECModel.users_data = users(ECModel.data)
 
     # load user_set available from configuration file
-    user_set_from_user_list = collect(keys(ECModel.users_data))
+    user_set_from_user_set = collect(keys(ECModel.users_data))
 
     ## load user_set
-    ECModel.user_set = unique(get(raw_data, "user_set", user_set_from_user_list))
+    ECModel.user_set = unique(get(raw_data, "user_set", user_set_from_user_set))
 
     if isempty(ECModel.user_set)  # check if user_set is not empty
         throw(Error("user_set in configuration file $output_file is empty"))
     else  # check if all user_set names are available in the config
-        diffset = setdiff(Set(ECModel.user_set), Set(user_set_from_user_list))  # elements of user_set not in the config
+        diffset = setdiff(Set(ECModel.user_set), Set(user_set_from_user_set))  # elements of user_set not in the config
         if !isempty(diffset) #check that all user_set elements are in the list
             throw(Error("user_set in configuration file $output_file is empty: missing elements $(collect(diffset))"))
         end
@@ -561,8 +562,8 @@ function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
         edge_color=:gradient,
         compact=true,
         label_size=15,
-        force_layer=sank_data["layer"],
-        force_order=sank_data["order"]
+        force_layer=collect(pairs(sank_data["layer"])),
+        force_order=collect(pairs(sank_data["order"])),
         )  # SankeyPlots style
 
     # Version for ECharts

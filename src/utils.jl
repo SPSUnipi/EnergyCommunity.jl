@@ -106,16 +106,16 @@ has_asset(d, aname::AbstractString) = aname in keys(d)
 "Get the list of users"
 function user_names(gen_data, users_data)
     # get the list of users if set
-    user_list = field_d(gen_data, "user_list")
-    if isnothing(user_list)
+    user_set = field_d(gen_data, "user_set")
+    if isnothing(user_set)
         @info "List of users not specified: all users selected"
-        user_list = collect(keys(users_data))
-    elseif isempty(user_list)
+        user_set = collect(keys(users_data))
+    elseif isempty(user_set)
         throw(ErrorException("Input user list is empty"))
-    elseif !(user_list isa AbstractVector)
+    elseif !(user_set isa AbstractVector)
         throw(ErrorException("Input user list is not a vector"))
     end
-    return sort!(user_list)
+    return sort!(user_set)
 end
 
 

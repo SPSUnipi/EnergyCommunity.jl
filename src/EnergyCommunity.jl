@@ -29,11 +29,14 @@ module EnergyCommunity
     # add the base modelling for all Energy Communities
     include("base_model.jl")
     
-    # Main functions to build and print the model of the system where each user is on its own, thus no EC
+    # Main functions to build and print the Non-Cooperative model
     include("non_cooperative.jl")
     
-    # Functions to build and print the model of the system in the EC configuration
+    # Functions to build and print the Cooperative CO model
     include("cooperative.jl")
+    
+    # Main functions to build and print the Aggregated Non Cooperative model
+    include("aggregated_non_cooperative.jl")
 
     # include the abstract types for encapsuling the method
     include("ECModel.jl")

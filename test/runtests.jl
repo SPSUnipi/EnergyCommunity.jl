@@ -8,7 +8,7 @@ ENV["GKSwstype"]="nul"
 const MOI = MathOptInterface
 
 # EC groups to test
-const EC_GROUPS = [EnergyCommunity.GroupCO(), EnergyCommunity.GroupNC()]
+const EC_GROUPS = [EnergyCommunity.GroupCO(), EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
 
 const OPTIMIZER = HiGHS.Optimizer
 

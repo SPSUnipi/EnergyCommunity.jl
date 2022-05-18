@@ -36,7 +36,7 @@ function _base_test(input_file, group, optimizer)
     grid_shares_EC = calculate_grid_import(ECModel)
     energy_shares_EC = calculate_production_shares(ECModel)
     
-    @test_reference "refs/group_$(string(group)).png" plot_sankey(ECModel)
+    @test_reference "refs/sankeys/group_$(string(group)).png" plot_sankey(ECModel)
 
 end
 
@@ -101,10 +101,9 @@ function _profit_distribution_Games_jl_test(input_file, games_mode, distribution
 
     path_solution = (
         string(@__DIR__) * 
-        "\\testcases\\" * 
-        string(games_mode) * "\\" * 
-        string(distribution_function) * "\\" 
-        * example_name * ".yml"
+        "/refs/games/" * 
+        string(distribution_function) * "/" 
+        * string(games_mode) * ".yml"
     )
     
     if isfile(path_solution)
