@@ -21,9 +21,9 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: webfactory/ssh-agent@v0.5.3
-        with:
-            ssh-private-key: ${{ secrets.SSH_SECRET }}
+      # - uses: webfactory/ssh-agent@v0.5.4
+      #   with:
+      #       ssh-private-key: ${{ secrets.SSH_SECRET }}
       - name: Test clone
         run: git clone https://github.com/davide-f/Games.jl
       - uses: actions/cache@v1
