@@ -40,12 +40,12 @@ function _base_test(input_file, group, optimizer)
 
 end
 
-function _utility_callback_test(input_file, optimizer)
+function _utility_callback_test(input_file, optimizer, group_type)
 
     ## Initialization
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
 
-    callback = to_utility_callback_by_subgroup(ECModel)
+    callback = to_utility_callback_by_subgroup(ECModel, group_type)
 
     dist_base = callback([EC_CODE, get_user_set(ECModel)[1]])
 

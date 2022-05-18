@@ -33,7 +33,9 @@ end
 @testset "Games.jl interaction" begin
     
     @testset "Utility callback test" begin
-        _utility_callback_test(input_file, OPTIMIZER)
+        for group in EC_GROUPS
+            _utility_callback_test(input_file, OPTIMIZER, group)
+        end
     end
         
     @testset "Least profitable group callback test" begin

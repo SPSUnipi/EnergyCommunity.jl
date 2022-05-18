@@ -1,5 +1,5 @@
 """
-    to_utility_callback_by_subgroup(ECModel::AbstractEC; BaseUtility::AbstractDict=Dict())
+    to_utility_callback_by_subgroup(ECModel::AbstractEC, base_group_type::AbstractGroup)
 
 Function that returns a callback function that quantifies the benefit of a given subgroup of users
 The returned function utility_func accepts as arguments an AbstractVector of users and
@@ -10,10 +10,8 @@ Parameters
 ECModel : AbstractEC
     Cooperative EC Model of the EC to study.
     When the model is not cooperative an error is thrown.
-BaseUtility : AbstractDict (optional empty)
-    Base case utility for each user.
-    When not provided, an equivalent NonCooperative model is created and the corresponding
-    utilities by user are used as reference case.
+base_group_type : AbstractGroup
+    Type of the base case to consider
 
 Return
 ------
@@ -21,69 +19,22 @@ utility_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_utility_callback_by_subgroup(ECModel::AbstractEC; BaseUtility::AbstractDict=Dict())
+function to_utility_callback_by_subgroup(ECModel::AbstractEC, base_group_type::AbstractGroup)
 
-    if typeof(ECModel.group_type) <: AbstractGroupNC
-        # When a Non Cooperative method is given, no benefits are generated for the community
-        let ret_value = ret_value
-            return (uset) -> 0.0
-        end
-    end
+    ecm_copy=deepcopy(ECModel)
+    base_model=ModelEC(ECModel, base_group_type)
 
-    if isempty(BaseUtility)
-        # if the reference utility is empty, then calculated it as a NonCooperative model
+    objective_callback_EC = to_objective_callback_by_subgroup(ECModel)
+    objective_callback_base = to_objective_callback_by_subgroup(base_model)
 
-        # create NonCooperative model
-        NCModel = ModelEC(ECModel, GroupNC())
-
-        # build the model with the updated set of users
-        build_model!(NCModel)
-
-        # optimize the model
-        optimize!(NCModel)
-
-        # update base utility
-        BaseUtility = objective_by_user(NCModel)
-    end
 
     # create a backup of the model and work on it
-    let ecm_copy = ModelEC(ECModel, GroupCO()), BaseUtility=BaseUtility
+    let objective_callback_EC=objective_callback_EC, objective_callback_base=objective_callback_base
 
         # general implementation of utility_callback_by_subgroup
-        function utility_callback_by_subgroup(user_set_callback; BaseUtility=BaseUtility)
+        function utility_callback_by_subgroup(user_set_callback)
 
-            user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
-
-            # check if the EC is in the list and if at least two users are in the set
-            if ((EC_CODE in user_set_callback) && length(user_set_no_EC) > 1)
-                # if it is in the code, then execute the normal model
-
-                # change the set of the EC
-                set_user_set!(ecm_copy, user_set_no_EC)
-
-                # build the model with the updated set of users
-                build_model!(ecm_copy)
-
-                # optimize the model
-                optimize!(ecm_copy)
-
-                # get base utility by base model
-                base_utility = sum(Float64[
-                    BaseUtility[uname] for uname in user_set_no_EC
-                ])
-
-                # coalition benefit
-                utility_coal = objective_value(ecm_copy) - base_utility
-
-                # return the coalition benefit
-                return utility_coal
-            else
-                # otherwise return the null return value as
-                # when the aggregator is not available, then no benefit
-                # can be achieved                
-
-                return 0.0
-            end
+            return objective_callback_EC(user_set_callback) - objective_callback_base(user_set_callback)
         end
 
         return utility_callback_by_subgroup
@@ -355,15 +306,15 @@ end
 
 
 """
-    RobustMode(ECModel::AbstractEC)
+    RobustMode(ECModel::AbstractEC, base_group_type::AbstractGroup)
 
 Function to create the RobustMode item for the Games.jl package 
 """
-function Games.RobustMode(ECModel::AbstractEC; kwargs...)
-    utility_callback = to_utility_callback_by_subgroup(ECModel)
+function Games.RobustMode(ECModel::AbstractEC, base_group_type::AbstractGroup; kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type)
     worst_coalition_callback = to_least_profitable_coalition_callback(ECModel)
 
-    robust_mode = RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback; kwargs...)
+    robust_mode = Games.RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback; kwargs...)
 
     return robust_mode
 end
@@ -374,10 +325,10 @@ end
 
 Function to create the EnumMode item for the Games.jl package 
 """
-function Games.EnumMode(ECModel::AbstractEC; kwargs...)
-    utility_callback = to_utility_callback_by_subgroup(ECModel)
+function Games.EnumMode(ECModel::AbstractEC, base_group_type::AbstractGroup; kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type)
 
-    robust_mode = EnumMode([EC_CODE; ECModel.user_set], utility_callback; kwargs...)
+    robust_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; kwargs...)
 
     return robust_mode
 end

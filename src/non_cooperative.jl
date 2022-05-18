@@ -623,3 +623,61 @@ Nothing to do
 function finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
     # Nothing to do
 end
+
+
+
+"""
+    to_objective_callback_by_subgroup(::AbstractGroupNC, ECModel::AbstractEC)
+
+Function that returns a callback function that quantifies the objective of a given subgroup of users
+The returned function objective_func accepts as arguments an AbstractVector of users and
+returns the objective of the aggregation for Non Cooperative models
+
+Parameters
+----------
+ECModel : AbstractEC
+    Cooperative EC Model of the EC to study.
+    When the model is not cooperative an error is thrown.
+
+Return
+------
+objective_callback_by_subgroup : Function
+    Function that accepts as input an AbstractVector (or Set) of users and returns
+    as output the benefit of the specified community
+"""
+function to_objective_callback_by_subgroup(::AbstractGroupNC, ECModel::AbstractEC)
+
+    # create a backup of the model and work on it
+    let ecm_copy = deepcopy(ECModel)
+
+        # general implementation of objective_callback_by_subgroup
+        function objective_callback_by_subgroup(user_set_callback)
+
+            user_set_no_EC = setdiff(user_set_callback, [EC_CODE])
+
+            # check if at least one user is in the list
+            if length(user_set_no_EC) > 1
+
+                # change the set of the EC
+                set_user_set!(ecm_copy, user_set_no_EC)
+
+                # build the model with the updated set of users
+                build_model!(ecm_copy)
+
+                # optimize the model
+                optimize!(ecm_copy)
+
+                # return the objective
+                return objective_value(ecm_copy)
+            else
+                # otherwise return the null return value as
+                # when the aggregator is not available, then no benefit
+                # can be achieved                
+
+                return 0.0
+            end
+        end
+
+        return objective_callback_by_subgroup
+    end
+end
