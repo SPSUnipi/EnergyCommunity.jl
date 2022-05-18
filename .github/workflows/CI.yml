@@ -24,6 +24,7 @@ jobs:
       - uses: webfactory/ssh-agent@v0.5.4
         with:
             ssh-private-key: ${{ secrets.SSH_SECRET }}
+        run: git clone https://github.com/davide-f/Games.jl"
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
