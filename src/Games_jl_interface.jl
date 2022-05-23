@@ -120,12 +120,12 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
     _P_N_us_base = base_model.results[:P_N_us]
 
     # Shared energy shall be no greather than the available production
-    @contraint(ECModel.model, con_max_P_shared_base[t in time_set],
+    @constraint(ECModel.model, con_max_P_shared_base[t in time_set],
         P_shared_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
     )
 
     # Shared energy shall be no greather than the available consumption
-    @contraint(ECModel.model, con_max_N_shared_base[t in time_set],
+    @constraint(ECModel.model, con_max_N_shared_base[t in time_set],
         P_shared_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
     )
 
@@ -197,17 +197,17 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     _P_N_us_base = base_model.results[:P_N_us]
 
     # Shared energy shall be no greather than the available production
-    @contraint(ECModel.model, con_max_P_shared_noagg[t in time_set],
+    @constraint(ECModel.model, con_max_P_shared_noagg[t in time_set],
         P_shared_noagg_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
     )
 
     # Shared energy shall be no greather than the available consumption
-    @contraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
+    @constraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
         P_shared_noagg_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
     )
 
     # Shared energy in ANC mode shall non-zero only when the aggregator is not selected
-    @contraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
+    @constraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
         P_shared_noagg_agg[t] <= (1 - coalition_status[EC_CODE]) * min(sum(_P_N_us_base[:, t]), sum(_P_P_us_base[:, t]))
     )
 
@@ -470,7 +470,7 @@ function to_least_profitable_coalition_callback(
     ecm_copy = ModelEC(ECModel)
 
     # build the model in the backup
-    build_least_profitable!(ecm_copy; no_aggregator_group=no_aggregator_group, add_EC=true)
+    build_least_profitable!(ecm_copy, base_group; no_aggregator_group=no_aggregator_group, add_EC=true)
 
     # create a backup of the model and work on it
     let ecm_copy = ecm_copy
