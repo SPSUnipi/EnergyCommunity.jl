@@ -50,7 +50,7 @@ end
 """
 build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
 
-When in the CO case the NC model is used as reference case for when the aggregator is not in the group,
+When in the CO case the NC model is used as base case,
 then this function builds the corresponding constraint
 
 """
@@ -78,7 +78,7 @@ end
 """
 build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC)
 
-When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
+When in the CO case the ANC model is used as base case,
 then this function builds the corresponding constraint
 
 """
@@ -133,7 +133,7 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
     @expression(ECModel.model, R_Reward_tot_coal,
         sum(GenericAffExpr{Float64,VariableRef}[
                 profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_coal[t]
+                    profile(market_data, "reward_price")[t] * P_shared_agg[t]
             for t in time_set
         ])
     )
@@ -159,15 +159,15 @@ When in the CO case the ANC model is used as reference case for when the aggrega
 then this function builds the corresponding constraint
 
 """
-function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC, base_group::AbstractGroupNC)
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
     
     # create and optimize base model
-    base_model = ModelEC(ECModel, base_group)
+    base_model = ModelEC(ECModel, no_aggregator_group)
     build_model!(base_model)
     optimizer!(base_model)
 
     # obtain objectives by users
-    obj_users = objective_by_user(base_model)
+    obj_users = objective_by_user(no_aggregator_group)
 
     # get main parameters
     gen_data = ECModel.gen_data
@@ -190,42 +190,68 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     peak_set = unique(peak_categories)
 
     # define expression of BaseUtility
-    @variable(ECModel.model, P_shared_agg[t in time_set] >= 0)
+    @variable(ECModel.model, P_shared_noagg_agg[t in time_set] >= 0)
 
     coalition_status = ECModel.model[:coalition_status]
     _P_P_us_base = base_model.results[:P_P_us]
     _P_N_us_base = base_model.results[:P_N_us]
 
     # Shared energy shall be no greather than the available production
-    @contraint(ECModel.model, con_max_P_shared_base[t in time_set],
-        P_shared_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
+    @contraint(ECModel.model, con_max_P_shared_noagg[t in time_set],
+        P_shared_noagg_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
     )
 
     # Shared energy shall be no greather than the available consumption
-    @contraint(ECModel.model, con_max_N_shared_base[t in time_set],
-        P_shared_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
+    @contraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
+        P_shared_noagg_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
+    )
+
+    # Shared energy in ANC mode shall non-zero only when the aggregator is not selected
+    @contraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
+        P_shared_noagg_agg[t] <= (1 - coalition_status[EC_CODE]) * min(sum(_P_N_us_base[:, t]), sum(_P_P_us_base[:, t]))
     )
 
     # Reward awarded to the subcoalition at each time step
-    @expression(ECModel.model, R_Reward_tot_coal,
+    @expression(ECModel.model, R_Reward_tot_coal_noagg,
         sum(GenericAffExpr{Float64,VariableRef}[
                 profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_coal[t]
+                    profile(market_data, "reward_price")[t] * P_shared_noagg_agg[t]
             for t in time_set
         ])
     )
 
     # Total reward awarded to the aggregator in NPV terms
-    @expression(ECModel.model, R_Reward_agg_NPV_base,
-        R_Reward_tot_coal * sum(1 / ((1 + field(gen_data, "d_rate"))^y) for y in year_set)
+    @expression(ECModel.model, R_Reward_agg_NPV_noagg,
+        R_Reward_tot_coal_noagg * sum(1 / ((1 + field(gen_data, "d_rate"))^y) for y in year_set)
     )
 
-    # define expression of BaseUtility
-    @expression(ECModel.model, BaseUtility,
-        sum(obj_users[u]*coalition_status[u] for u in ECModel.user_set) + R_Reward_agg_NPV_base
-    )
+    # update social welfare value
+    add_to_expression!(ECModel.model[:SW], R_Reward_agg_NPV_noagg)
 
-    return BaseUtility
+    return ECModel.model[:SW]
+end
+
+
+"""
+build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC)
+
+When the NC case is the reference value when no aggregator is available,
+then no changes in the model are required
+
+"""
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC)
+    return ECModel.model[:SW]
+end
+
+
+"""
+build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any)
+
+Not implemented case
+
+"""
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any)
+    return throw(ArgumentError("Argument $(string(no_aggregator_group)) not valid"))
 end
 
 
@@ -359,9 +385,12 @@ function build_least_profitable!(
     # define expression of BaseUtility
     BaseUtility = build_base_utility!(ECModel, base_group)
 
+    # update social welfare to account for the expected output when no aggregator is included
+    SW = build_no_agg_utility!(ECModel, no_aggregator_group)
+
     # definition of the minimum surplus
     @expression(ECModel.model, coalition_benefit,
-        ECModel.model[:SW] - BaseUtility
+        SW - BaseUtility
     )
 
     # change objective to the minimum surplus
