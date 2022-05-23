@@ -50,7 +50,7 @@ include("tests.jl")
         # base case of the simulation
         base_group = GroupNC()
         for no_aggregator_group in [GroupNC(), GroupANC()]  # exclude CO as base case
-            _profit_distribution_Games_jl_test(input_file, EnumMode, shapley_value, OPTIMIZER, base_group; no_aggregator_group=group)
+            _profit_distribution_Games_jl_test(input_file, EnumMode, shapley_value, OPTIMIZER, base_group; no_aggregator_group=no_aggregator_group)
         end
     end
 
