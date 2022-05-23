@@ -39,14 +39,18 @@ include("tests.jl")
     end
         
     @testset "Least profitable group callback test" begin
+        # base case of the simulation
+        base_group = GroupNC()
         for no_aggregator_group in [GroupNC(), GroupANC()]
-            _least_profitable_callback_test(input_file, OPTIMIZER; no_aggregator_group=no_aggregator_group)
+            _least_profitable_callback_test(input_file, OPTIMIZER, base_group; no_aggregator_group=no_aggregator_group)
         end
     end
         
     @testset "Games.jl - Shapley" begin
-        for group in [GroupNC(), GroupANC()]  # exclude CO as base case
-            _profit_distribution_Games_jl_test(input_file, EnumMode, group, shapley_value, OPTIMIZER)
+        # base case of the simulation
+        base_group = GroupNC()
+        for no_aggregator_group in [GroupNC(), GroupANC()]  # exclude CO as base case
+            _profit_distribution_Games_jl_test(input_file, EnumMode, shapley_value, OPTIMIZER, base_group; no_aggregator_group=group)
         end
     end
 

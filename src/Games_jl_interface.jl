@@ -430,7 +430,7 @@ end
 
 
 """
-    to_least_profitable_coalition_callback(ECModel::AbstractEC; no_aggregator_group::AbstractGroup=GroupNC())
+    to_least_profitable_coalition_callback(ECModel::AbstractEC, base_group::AbstractGroup=GroupNC(); no_aggregator_group::AbstractGroup=GroupNC())
 
 Function that returns a callback function that, given as input a profit distribution scheme,
 returns the coalition that has the least benefit in remaining in the grand coalition.
@@ -442,7 +442,9 @@ Parameters
 ECModel : AbstractEC
     Cooperative EC Model of the EC to study.
     When the model is not cooperative an error is thrown.
-no_aggregator_group : AbstractGroup (optional GroupNC())
+base_group : AbstractGroup (optional, default GroupNC())
+    Base group with respect the benefit is calculated.
+no_aggregator_group : AbstractGroup (optional, default GroupNC())
     Type of aggregation group of the community when no aggregator is available
     When not provided, an equivalent NonCooperative model is created and the corresponding
     utilities by user are used as reference case.
@@ -550,8 +552,8 @@ end
 
 Function to create the EnumMode item for the Games.jl package 
 """
-function Games.EnumMode(ECModel::AbstractEC, base_group_type::AbstractGroup; verbose::Bool=true, kwargs...)
-    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; kwargs...)
+function Games.EnumMode(ECModel::AbstractEC, args...; verbose::Bool=true, kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, args...; kwargs...)
 
     enum_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
 
