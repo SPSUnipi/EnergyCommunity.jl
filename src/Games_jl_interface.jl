@@ -167,7 +167,7 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     optimize!(base_model)
 
     # obtain objectives by users
-    obj_users = objective_by_user(no_aggregator_group)
+    obj_users = objective_by_user(base_model)
 
     # get main parameters
     gen_data = ECModel.gen_data
@@ -207,7 +207,7 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     )
 
     # Shared energy in ANC mode shall non-zero only when the aggregator is not selected
-    @constraint(ECModel.model, con_max_N_shared_noagg[t in time_set],
+    @constraint(ECModel.model, con_max_shared_WHENNC_noagg[t in time_set],
         P_shared_noagg_agg[t] <= (1 - coalition_status[EC_CODE]) * min(sum(_P_N_us_base[:, t]), sum(_P_P_us_base[:, t]))
     )
 
@@ -457,7 +457,7 @@ least_profitable_coalition_callback : Function
 """
 function to_least_profitable_coalition_callback(
         ECModel::AbstractEC,
-        base_group::AbstractGroup=GroupNC();
+        base_group::AbstractGroup;
         no_aggregator_group::AbstractGroup=GroupNC(),
         kwargs...
     )
@@ -538,7 +538,7 @@ function Games.RobustMode(
         no_aggregator_type::AbstractGroup=GroupNC(), 
         kwargs...
     )
-    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
     worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
 
     robust_mode = Games.RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
@@ -552,8 +552,8 @@ end
 
 Function to create the EnumMode item for the Games.jl package 
 """
-function Games.EnumMode(ECModel::AbstractEC, args...; verbose::Bool=true, kwargs...)
-    utility_callback = to_utility_callback_by_subgroup(ECModel, args...; kwargs...)
+function Games.EnumMode(ECModel::AbstractEC, base_group::AbstractGroup; verbose::Bool=true, kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group; kwargs...)
 
     enum_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
 

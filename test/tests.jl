@@ -57,7 +57,7 @@ function _utility_callback_test(input_file, optimizer, group_type)
 
 end
 
-function _least_profitable_callback_test(input_file, optimizer, kargs...; kwargs...)
+function _least_profitable_callback_test(input_file, optimizer, base_group; no_aggregator_group=GroupNC())
 
     ## Initialization
     ## Model CO
@@ -77,34 +77,59 @@ function _least_profitable_callback_test(input_file, optimizer, kargs...; kwargs
     test_coal = Dict(EC_CODE=>0.0, "user1"=>total_surplus/2, "user2"=>total_surplus/2, "user3"=>0.0)
 
     # create callback
-    callback = to_least_profitable_coalition_callback(ECModel, kargs..., kwargs...)
+    callback = to_least_profitable_coalition_callback(ECModel, base_group; no_aggregator_group)
 
     # test to identify the least profitable coalition of the profit distribution test_coal
     # expected value are tested below
     least_profitable_coalition, coalition_benefit, min_surplus = callback(test_coal)
 
-    @test Set(least_profitable_coalition) == Set(["user1", "user3"])
-    @test coalition_benefit ≈ 9404.77 atol=1
-    @test min_surplus ≈ -1280.42 atol=1
+    path_solution = (
+        string(@__DIR__) * 
+        "/refs/least_profitable_coalition/" * 
+        string(base_group) * "/" 
+        * string(no_aggregator_group) * ".yml"
+    )
+    
+    if isfile(path_solution)
+        # if the file exists run tests
+        proven_solution = YAML.load_file(path_solution)
+
+        
+        @test Set(least_profitable_coalition) == Set(keys(proven_solution["worst_coalition"]))
+        @test coalition_benefit ≈ proven_solution["coalition_benefit"] atol=1
+        @test min_surplus ≈ proven_solution["min_surplus"] atol=1
+    else
+        # otherwise create the tests
+        mkpath(dirname(path_solution))
+
+        calc_solution = Dict(
+            "worst_coalition"=>least_profitable_coalition,
+            "coalition_benefit"=>coalition_benefit,
+            "min_surplus"=>min_surplus,
+        )
+
+        YAML.write_file(path_solution, calc_solution)
+        @warn("Preloaded solution not found, then it has been created")
+    end
 
 end
 
-function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer, kwargs...)
+function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; kwargs...)
 
     ## Initialization
     ## Model CO
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
     
-    mode = games_mode(ECModel, group_type)
+    mode = games_mode(ECModel, group_type; kwargs...)
 
-    calc_solution = distribution_function(mode, kwargs...)
+    calc_solution = distribution_function(mode)
 
     path_solution = (
         string(@__DIR__) * 
         "/refs/games/" * 
         string(distribution_function) * "/" 
         * string(games_mode) * "/"
-        * string(group_type) * ".yml"
+        * string(group_type) * "__" * join([string(p.first) * "-" * string(p.second) for p in kwargs], "_") * ".yml"
     )
     
     if isfile(path_solution)

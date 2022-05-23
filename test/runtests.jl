@@ -17,18 +17,18 @@ input_file = joinpath(@__DIR__, "./data/energy_community_model.yml")  # Input fi
 
 include("tests.jl")
 
-# @testset "EnergyCommunity tests" begin
+@testset "EnergyCommunity tests" begin
 
-#     # Loop over group types
-#     for group in EC_GROUPS
+    # Loop over group types
+    for group in EC_GROUPS
 
-#         @testset "Group $(string(group))" begin
-#             _base_test(input_file, group, OPTIMIZER)
-#         end
+        @testset "Group $(string(group))" begin
+            _base_test(input_file, group, OPTIMIZER)
+        end
 
-#     end
+    end
 
-# end
+end
 
 @testset "Games.jl interaction" begin
     
@@ -50,7 +50,7 @@ include("tests.jl")
         # base case of the simulation
         base_group = GroupNC()
         for no_aggregator_group in [GroupNC(), GroupANC()]  # exclude CO as base case
-            _profit_distribution_Games_jl_test(input_file, EnumMode, shapley_value, OPTIMIZER, base_group; no_aggregator_group=no_aggregator_group)
+            _profit_distribution_Games_jl_test(input_file, EnumMode, base_group, shapley_value, OPTIMIZER; no_aggregator_group=no_aggregator_group)
         end
     end
 
