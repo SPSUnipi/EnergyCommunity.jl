@@ -40,20 +40,44 @@ function _base_test(input_file, group, optimizer)
 
 end
 
-function _utility_callback_test(input_file, optimizer, group_type)
+function _utility_callback_test(input_file, optimizer, group_type; kwargs...)
 
     ## Initialization
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
 
-    callback = to_utility_callback_by_subgroup(ECModel, group_type)
+    callback = to_utility_callback_by_subgroup(ECModel, group_type; kwargs...)
 
-    dist_base = callback([EC_CODE, get_user_set(ECModel)[1]])
+    testing_coalitions = [
+        [EC_CODE, get_user_set(ECModel)[1]],
+        [EC_CODE; get_user_set(ECModel)],
+        get_user_set(ECModel),
+    ]
 
-    @test dist_base ≈ 0.0 atol=1e-6
+    dist_testing_coalitions = Dict(
+        coal=>callback(coal) for coal in testing_coalitions
+    )
 
-    dist_base = callback([EC_CODE; get_user_set(ECModel)])
+    path_solution = (
+        string(@__DIR__) * 
+        "/refs/utility_callback/" * 
+        string(group_type) * "__" * join([string(p.first) * "-" * string(p.second) for p in kwargs], "_") * ".yml"
+    )
+    
+    if isfile(path_solution)
+        # if the file exists run tests
+        proven_solution = YAML.load_file(path_solution)
 
-    @test !isnothing(dist_base)
+        @test Set(testing_coalitions) == Set(keys(proven_solution))
+        for coal in keys(proven_solution)
+            @test dist_testing_coalitions[coal] ≈ proven_solution[coal] atol=1e-4
+        end
+    else
+        # otherwise create the tests
+        mkpath(dirname(path_solution))
+
+        YAML.write_file(path_solution, dist_testing_coalitions)
+        @warn("Preloaded solution not found, then it has been created")
+    end
 
 end
 

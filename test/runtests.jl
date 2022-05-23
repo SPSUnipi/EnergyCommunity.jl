@@ -17,7 +17,7 @@ input_file = joinpath(@__DIR__, "./data/energy_community_model.yml")  # Input fi
 
 include("tests.jl")
 
-@testset "EnergyCommunity tests" begin
+@testset "Optimization tests" begin
 
     # Loop over group types
     for group in EC_GROUPS
@@ -33,8 +33,10 @@ end
 @testset "Games.jl interaction" begin
     
     @testset "Utility callback test" begin
-        for group in EC_GROUPS
-            _utility_callback_test(input_file, OPTIMIZER, group)
+        for base_group in [EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
+            for no_aggregator_group in [EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
+                _utility_callback_test(input_file, OPTIMIZER, base_group; no_aggregator_group=no_aggregator_group)
+            end
         end
     end
         
