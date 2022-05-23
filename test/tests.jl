@@ -95,7 +95,7 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; no_a
         proven_solution = YAML.load_file(path_solution)
 
         
-        @test Set(least_profitable_coalition) == Set(keys(proven_solution["worst_coalition"]))
+        @test Set(least_profitable_coalition) == Set(proven_solution["worst_coalition"])
         @test coalition_benefit ≈ proven_solution["coalition_benefit"] atol=1
         @test min_surplus ≈ proven_solution["min_surplus"] atol=1
     else
