@@ -54,12 +54,12 @@ When in the CO case the NC model is used as base case,
 then this function builds the corresponding constraint
 
 """
-function build_base_utility!(ECModel::AbstractEC, nbase_group::AbstractGroupNC)
+function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
     
     # create and optimize base model
     base_model = ModelEC(ECModel, base_group)
     build_model!(base_model)
-    optimizer!(base_model)
+    optimize!(base_model)
 
     # obtain objectives by users
     obj_users = objective_by_user(base_model)
@@ -82,12 +82,12 @@ When in the CO case the ANC model is used as base case,
 then this function builds the corresponding constraint
 
 """
-function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
+function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC)
     
     # create and optimize base model
     base_model = ModelEC(ECModel, base_group)
     build_model!(base_model)
-    optimizer!(base_model)
+    optimize!(base_model)
 
     # obtain objectives by users
     obj_users = objective_by_user(base_model)
@@ -113,7 +113,7 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
     peak_set = unique(peak_categories)
 
     # define expression of BaseUtility
-    @variable(ECModel.model, P_shared_agg[t in time_set] >= 0)
+    @variable(ECModel.model, P_shared_agg_base[t in time_set] >= 0)
 
     coalition_status = ECModel.model[:coalition_status]
     _P_P_us_base = base_model.results[:P_P_us]
@@ -121,19 +121,19 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
 
     # Shared energy shall be no greather than the available production
     @constraint(ECModel.model, con_max_P_shared_base[t in time_set],
-        P_shared_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
+    P_shared_agg_base[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
     )
 
     # Shared energy shall be no greather than the available consumption
     @constraint(ECModel.model, con_max_N_shared_base[t in time_set],
-        P_shared_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
+    P_shared_agg_base[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
     )
 
     # Reward awarded to the subcoalition at each time step
     @expression(ECModel.model, R_Reward_tot_coal,
         sum(GenericAffExpr{Float64,VariableRef}[
                 profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_agg[t]
+                    profile(market_data, "reward_price")[t] * P_shared_agg_base[t]
             for t in time_set
         ])
     )
@@ -164,7 +164,7 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     # create and optimize base model
     base_model = ModelEC(ECModel, no_aggregator_group)
     build_model!(base_model)
-    optimizer!(base_model)
+    optimize!(base_model)
 
     # obtain objectives by users
     obj_users = objective_by_user(no_aggregator_group)
@@ -531,8 +531,8 @@ end
 Function to create the RobustMode item for the Games.jl package 
 """
 function Games.RobustMode(
-        ECModel::AbstractEC;
-        base_group_type::AbstractGroup=GroupNC(), 
+        ECModel::AbstractEC,
+        base_group_type::AbstractGroup; 
         no_aggregator_type::AbstractGroup=GroupNC(), 
         kwargs...
     )
@@ -553,7 +553,7 @@ Function to create the EnumMode item for the Games.jl package
 function Games.EnumMode(ECModel::AbstractEC, base_group_type::AbstractGroup; verbose::Bool=true, kwargs...)
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; kwargs...)
 
-    robust_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
+    enum_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
 
-    return robust_mode
+    return enum_mode
 end

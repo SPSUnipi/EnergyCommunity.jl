@@ -37,12 +37,21 @@ NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), OPTIMIZER)
 build_model!(NCModel)
 optimize!(NCModel)
 
-ECModel.user_set = collect(keys(ECModel.users_data))
 
-utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC())
-worst_coalition_callback = to_least_profitable_coalition_callback(ECModel)
 
-ECModel.user_set = collect(keys(ECModel.users_data))
+ANCModel = ModelEC(input_file, EnergyCommunity.GroupANC(), OPTIMIZER)
+build_model!(ANCModel)
+optimize!(ANCModel)
+
+
+# ECModel.user_set = collect(keys(ECModel.users_data))
+
+utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupANC())
+worst_coalition_callback = to_least_profitable_coalition_callback(ECModel; no_aggregator_group=GroupNC())
+
+# ECModel.user_set = collect(keys(ECModel.users_data))
+
+utility_callback(ECModel.user_set)
 
 # enum_mode = EnumMode(ECModel)
 

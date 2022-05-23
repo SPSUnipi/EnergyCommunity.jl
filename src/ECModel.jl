@@ -53,7 +53,11 @@ end
 Function to return the objective function by User
 """
 function JuMP.objective_value(ECModel::AbstractEC)
-    return objective_value(ECModel.model)
+    if isempty(ECModel.results)
+        return throw(UndefVarError("Optimization not performed"))
+    else
+        return ECModel.results[:objective_value]
+    end
 end
 
 "Abstract build function model for generic EnergyCommunity model"

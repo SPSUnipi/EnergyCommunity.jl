@@ -223,6 +223,7 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
 
     # Social welfare of the entire aggregation
     ECModel.results[:SW] = ECModel.results[:SW_us] + ECModel.results[:R_Reward_agg_NPV]
+    ECModel.results[:objective_value] = ECModel.results[:SW]
 
 end
 

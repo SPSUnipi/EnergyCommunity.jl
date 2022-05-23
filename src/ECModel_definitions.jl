@@ -128,7 +128,10 @@ function ModelEC(file_name::AbstractString,
 end
 
 "Copy constructor"
-function ModelEC(model_copy::ModelEC, group_type; optimizer=nothing, user_set=nothing)
+function ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, user_set=nothing)
+    if isnothing(group_type)
+        group_type = model_copy.group_type
+    end
     if isnothing(optimizer)
         optimizer = deepcopy(model_copy.optimizer)
     end

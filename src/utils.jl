@@ -294,7 +294,7 @@ function _jump_to_dict(model::Model)
     # push the information on the optimization status
     results[:solve_time]  = solve_time(model)
     results[:termination_status] = Int(termination_status(model))
-    results[:objective_function] = objective_function(model)
+    results[:objective_value] = objective_value(model)
 
     # push all JuMP objects values into the dict
     for key_model in keys(model.obj_dict)

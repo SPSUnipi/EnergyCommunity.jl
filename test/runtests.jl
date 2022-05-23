@@ -39,7 +39,9 @@ include("tests.jl")
     end
         
     @testset "Least profitable group callback test" begin
-        _least_profitable_callback_test(input_file, OPTIMIZER)
+        for no_aggregator_group in [GroupNC(), GroupANC()]
+            _least_profitable_callback_test(input_file, OPTIMIZER; no_aggregator_group=no_aggregator_group)
+        end
     end
         
     @testset "Games.jl - Shapley" begin
