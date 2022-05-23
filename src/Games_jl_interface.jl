@@ -48,16 +48,16 @@ end
 
 
 """
-build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC)
+build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
 
 When in the CO case the NC model is used as reference case for when the aggregator is not in the group,
 then this function builds the corresponding constraint
 
 """
-function build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC, base_group::AbstractGroupNC)
+function build_base_utility!(ECModel::AbstractEC, nbase_group::AbstractGroupNC)
     
     # create and optimize base model
-    base_model = ModelEC(ECModel, no_aggregator_group)
+    base_model = ModelEC(ECModel, base_group)
     build_model!(base_model)
     optimizer!(base_model)
 
@@ -76,13 +76,90 @@ end
 
 
 """
-build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC)
 
 When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
 then this function builds the corresponding constraint
 
 """
-function build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC, base_group::AbstractGroupNC)
+function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
+    
+    # create and optimize base model
+    base_model = ModelEC(ECModel, base_group)
+    build_model!(base_model)
+    optimizer!(base_model)
+
+    # obtain objectives by users
+    obj_users = objective_by_user(base_model)
+
+    # get main parameters
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    n_users = length(users_data)
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    project_lifetime = field(gen_data, "project_lifetime")
+    peak_categories = profile(market_data, "peak_categories")
+
+    # Set definitions
+
+    user_set = ECModel.user_set
+    year_set = 1:project_lifetime
+    year_set_0 = 0:project_lifetime
+    time_set = 1:n_steps
+    peak_set = unique(peak_categories)
+
+    # define expression of BaseUtility
+    @variable(ECModel.model, P_shared_agg[t in time_set] >= 0)
+
+    coalition_status = ECModel.model[:coalition_status]
+    _P_P_us_base = base_model.results[:P_P_us]
+    _P_N_us_base = base_model.results[:P_N_us]
+
+    # Shared energy shall be no greather than the available production
+    @contraint(ECModel.model, con_max_P_shared_base[t in time_set],
+        P_shared_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
+    )
+
+    # Shared energy shall be no greather than the available consumption
+    @contraint(ECModel.model, con_max_N_shared_base[t in time_set],
+        P_shared_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
+    )
+
+    # Reward awarded to the subcoalition at each time step
+    @expression(ECModel.model, R_Reward_tot_coal,
+        sum(GenericAffExpr{Float64,VariableRef}[
+                profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
+                    profile(market_data, "reward_price")[t] * P_shared_coal[t]
+            for t in time_set
+        ])
+    )
+
+    # Total reward awarded to the aggregator in NPV terms
+    @expression(ECModel.model, R_Reward_agg_NPV_base,
+        R_Reward_tot_coal * sum(1 / ((1 + field(gen_data, "d_rate"))^y) for y in year_set)
+    )
+
+    # define expression of BaseUtility
+    @expression(ECModel.model, BaseUtility,
+        sum(obj_users[u]*coalition_status[u] for u in ECModel.user_set) + R_Reward_agg_NPV_base
+    )
+
+    return BaseUtility
+end
+
+
+"""
+build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+
+When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
+then this function builds the corresponding constraint
+
+"""
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC, base_group::AbstractGroupNC)
     
     # create and optimize base model
     base_model = ModelEC(ECModel, base_group)
