@@ -47,13 +47,133 @@ function to_utility_callback_by_subgroup(
 end
 
 
+"""
+build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC)
+
+When in the CO case the NC model is used as reference case for when the aggregator is not in the group,
+then this function builds the corresponding constraint
 
 """
-build_least_profitable!(ECModel::AbstractEC; add_EC=true)
+function build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC, base_group::AbstractGroupNC)
+    
+    # create and optimize base model
+    base_model = ModelEC(ECModel, no_aggregator_group)
+    build_model!(base_model)
+    optimizer!(base_model)
+
+    # obtain objectives by users
+    obj_users = objective_by_user(base_model)
+    
+    coalition_status = ECModel.model[:coalition_status]
+
+    # define expression of BaseUtility
+    @expression(ECModel.model, BaseUtility,
+        sum(obj_users[u]*coalition_status[u] for u in ECModel.user_set)
+    )
+
+    return BaseUtility
+end
+
+
+"""
+build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+
+When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
+then this function builds the corresponding constraint
+
+"""
+function build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC, base_group::AbstractGroupNC)
+    
+    # create and optimize base model
+    base_model = ModelEC(ECModel, base_group)
+    build_model!(base_model)
+    optimizer!(base_model)
+
+    # obtain objectives by users
+    obj_users = objective_by_user(base_model)
+
+    # get main parameters
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    n_users = length(users_data)
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    project_lifetime = field(gen_data, "project_lifetime")
+    peak_categories = profile(market_data, "peak_categories")
+
+    # Set definitions
+
+    user_set = ECModel.user_set
+    year_set = 1:project_lifetime
+    year_set_0 = 0:project_lifetime
+    time_set = 1:n_steps
+    peak_set = unique(peak_categories)
+
+    # define expression of BaseUtility
+    @variable(ECModel.model, P_shared_agg[t in time_set] >= 0)
+
+    coalition_status = ECModel.model[:coalition_status]
+    _P_P_us_base = base_model.results[:P_P_us]
+    _P_N_us_base = base_model.results[:P_N_us]
+
+    # Shared energy shall be no greather than the available production
+    @contraint(ECModel.model, con_max_P_shared_base[t in time_set],
+        P_shared_agg[t] <= sum(coalition_status[u] * _P_P_us_base[u, t] for u in user_set)
+    )
+
+    # Shared energy shall be no greather than the available consumption
+    @contraint(ECModel.model, con_max_N_shared_base[t in time_set],
+        P_shared_agg[t] <= sum(coalition_status[u] * _P_N_us_base[u, t] for u in user_set)
+    )
+
+    # Reward awarded to the subcoalition at each time step
+    @expression(ECModel.model, R_Reward_tot_coal,
+        sum(GenericAffExpr{Float64,VariableRef}[
+                profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
+                    profile(market_data, "reward_price")[t] * P_shared_coal[t]
+            for t in time_set
+        ])
+    )
+
+    # Total reward awarded to the aggregator in NPV terms
+    @expression(ECModel.model, R_Reward_agg_NPV_base,
+        R_Reward_tot_coal * sum(1 / ((1 + field(gen_data, "d_rate"))^y) for y in year_set)
+    )
+
+    # define expression of BaseUtility
+    @expression(ECModel.model, BaseUtility,
+        sum(obj_users[u]*coalition_status[u] for u in ECModel.user_set) + R_Reward_agg_NPV_base
+    )
+
+    return BaseUtility
+end
+
+
+"""
+build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+
+When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
+then this function builds the corresponding constraint
+
+"""
+function build_base_utility!(ECModel::AbstractEC, kwargs...)
+    return throw(ArgumentError("Model type $(string(typeof(no_aggregator_group))) not implemented"))
+end
+
+
+"""
+build_least_profitable!(ECModel::AbstractEC; no_aggregator_group::AbstractGroup=GroupNC(), add_EC=true)
 
 Function to build the model to identify the least profitable coalition
 """
-function build_least_profitable!(ECModel::AbstractEC, BaseUtility; add_EC=true)
+function build_least_profitable!(
+        ECModel::AbstractEC, base_group::AbstractGroup;
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        add_EC=true
+    )
     
     # list of variables to modify
     list_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :P_P_us, :P_N_us, :x_us]
@@ -160,13 +280,11 @@ function build_least_profitable!(ECModel::AbstractEC, BaseUtility; add_EC=true)
     end
 
     # define expression of BaseUtility
-    @expression(ECModel.model, BaseUtility[u in user_set_EC],
-        BaseUtility[u]
-    )
+    BaseUtility = build_base_utility!(ECModel, base_group)
 
     # definition of the minimum surplus
     @expression(ECModel.model, coalition_benefit,
-        ECModel.model[:SW] - sum(BaseUtility[u]*coalition_status[u] for u in user_set_EC)
+        ECModel.model[:SW] - BaseUtility
     )
 
     # change objective to the minimum surplus
@@ -206,7 +324,7 @@ end
 
 
 """
-    to_least_profitable_coalition_callback(ECModel::AbstractEC; BaseUtility::AbstractDict=Dict())
+    to_least_profitable_coalition_callback(ECModel::AbstractEC; no_aggregator_group::AbstractGroup=GroupNC())
 
 Function that returns a callback function that, given as input a profit distribution scheme,
 returns the coalition that has the least benefit in remaining in the grand coalition.
@@ -218,8 +336,8 @@ Parameters
 ECModel : AbstractEC
     Cooperative EC Model of the EC to study.
     When the model is not cooperative an error is thrown.
-BaseUtility : AbstractDict (optional empty)
-    Base case utility for each user.
+no_aggregator_group : AbstractGroup (optional GroupNC())
+    Type of aggregation group of the community when no aggregator is available
     When not provided, an equivalent NonCooperative model is created and the corresponding
     utilities by user are used as reference case.
 
@@ -230,7 +348,8 @@ least_profitable_coalition_callback : Function
     by user
 """
 function to_least_profitable_coalition_callback(
-        ECModel::AbstractEC;
+        ECModel::AbstractEC,
+        base_group::AbstractGroup=GroupNC();
         no_aggregator_group::AbstractGroup=GroupNC(),
         kwargs...
     )
@@ -241,25 +360,11 @@ function to_least_profitable_coalition_callback(
         return nothing
     end
 
-    if isempty(BaseUtility)
-        # if the reference utility is empty, then calculated it as a NonCooperative model
+    # create a bakup of the model to work with
+    ecm_copy = ModelEC(ECModel)
 
-        # create NonCooperative model
-        NCModel = ModelEC(ECModel, GroupNC())
-
-        # build the model with the updated set of users
-        build_model!(NCModel)
-
-        # optimize the model
-        optimize!(NCModel)
-
-        # update base utility
-        BaseUtility = objective_by_user(NCModel)
-    end
-
-    # create the model to work with
-    ecm_copy = ModelEC(ECModel, GroupCO())
-    build_least_profitable!(ecm_copy, BaseUtility)
+    # build the model in the backup
+    build_least_profitable!(ecm_copy; no_aggregator_group=no_aggregator_group, add_EC=true)
 
     # create a backup of the model and work on it
     let ecm_copy = ecm_copy
@@ -319,9 +424,14 @@ end
 
 Function to create the RobustMode item for the Games.jl package 
 """
-function Games.RobustMode(ECModel::AbstractEC, base_group_type::AbstractGroup; kwargs...)
+function Games.RobustMode(
+        ECModel::AbstractEC;
+        base_group_type::AbstractGroup=GroupNC(), 
+        no_aggregator_type::AbstractGroup=GroupNC(), 
+        kwargs...
+    )
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; kwargs...)
-    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; kwargs...)
+    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
 
     robust_mode = Games.RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
