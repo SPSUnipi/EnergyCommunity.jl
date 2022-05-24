@@ -528,11 +528,11 @@ end
 
 
 """
-    RobustMode(ECModel::AbstractEC, base_group_type::AbstractGroup)
+    IterMode(ECModel::AbstractEC, base_group_type::AbstractGroup)
 
-Function to create the RobustMode item for the Games.jl package 
+Function to create the IterMode item for the Games.jl package 
 """
-function Games.RobustMode(
+function Games.IterMode(
         ECModel::AbstractEC,
         base_group_type::AbstractGroup; 
         no_aggregator_type::AbstractGroup=GroupNC(), 
@@ -541,7 +541,7 @@ function Games.RobustMode(
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
     worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
 
-    robust_mode = Games.RobustMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
+    robust_mode = Games.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
     return robust_mode
 end
