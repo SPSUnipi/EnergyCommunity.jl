@@ -5,6 +5,7 @@ using HiGHS, Plots
 using JuMP
 using Gurobi
 using Games
+using TickTock
 
 
 ## Parameters
@@ -26,6 +27,16 @@ output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  #
 ## Initialization
 
 OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0)
+OPTIMIZER_MIPGAP = optimizer_with_attributes(Gurobi.Optimizer,
+    "OutputFlag"=>1,
+    "LogToConsole"=>0,
+    "MIPGap"=>0.5,
+    # "MIPFocus"=>1,
+    "TimeLimit"=>400,
+    "LogFile"=>"gurobi.log",
+    "Threads"=>10,
+    # "NoRelHeurTime"=>10
+)
 
 # Read data from excel file
 ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), OPTIMIZER)
@@ -44,16 +55,27 @@ build_model!(ANCModel)
 optimize!(ANCModel)
 
 
-# ECModel.user_set = collect(keys(ECModel.users_data))
+ECModel.user_set = collect(keys(ECModel.users_data))
 
 utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupANC())
-worst_coalition_callback = to_least_profitable_coalition_callback(ECModel; no_aggregator_group=GroupNC())
+worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, GroupNC(); no_aggregator_group=GroupNC())
 
 # ECModel.user_set = collect(keys(ECModel.users_data))
 
-utility_callback(ECModel.user_set)
+# utility_callback(ECModel.user_set)
 
-# enum_mode = EnumMode(ECModel)
+# enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupANC())
+
+# save("enum_mode.jld2", enum_mode)
+enum_mode = load("enum_mode.jld2", EnumMode())
+
+iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP)
+#iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupNC(), optimizer=OPTIMIZER_MIPGAP)
+
+lc_enum = var_least_core(enum_mode, OPTIMIZER)
+tick()
+lc_iter = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, use_start_value=true)
+time_elapsed=tok()
 
 # save("enum_mode.jld2", enum_mode)
 #enum_mode = load("enum_mode.jld2", EnumMode())

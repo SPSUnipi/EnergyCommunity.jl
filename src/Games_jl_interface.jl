@@ -285,6 +285,15 @@ function build_least_profitable!(
     # list of expressions to modify
     list_exprs = []  # [:R_Energy_us]
 
+    # get main parameters
+    gen_data = ECModel.gen_data
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+
+    # Set definitions
+    time_set = 1:n_steps
+
     # build model
     build_model!(ECModel)
 
@@ -393,6 +402,14 @@ function build_least_profitable!(
         SW - BaseUtility
     )
 
+    # Force shared energy to zero when aggregator is not selected
+    @constraint(ECModel.model, con_max_shared[t in time_set],
+        ECModel.model[:P_shared_agg][t] <= coalition_status[EC_CODE] * min(
+                sum(upper_bound.(ECModel.model[:P_N_us][:, t])),
+                sum(upper_bound.(ECModel.model[:P_P_us][:, t]))
+            )
+    )
+
     # change objective to the minimum surplus
     @objective(ECModel.model, Min, sum(profit_distribution[u]*coalition_status[u] for u in user_set_EC) - coalition_benefit)
 
@@ -459,6 +476,7 @@ function to_least_profitable_coalition_callback(
         ECModel::AbstractEC,
         base_group::AbstractGroup;
         no_aggregator_group::AbstractGroup=GroupNC(),
+        optimizer=nothing,
         kwargs...
     )
 
@@ -469,7 +487,7 @@ function to_least_profitable_coalition_callback(
     end
 
     # create a bakup of the model to work with
-    ecm_copy = ModelEC(ECModel)
+    ecm_copy = ModelEC(ECModel; optimizer=optimizer)
 
     # build the model in the backup
     build_least_profitable!(ecm_copy, base_group; no_aggregator_group=no_aggregator_group, add_EC=true)
@@ -535,11 +553,12 @@ Function to create the IterMode item for the Games.jl package
 function Games.IterMode(
         ECModel::AbstractEC,
         base_group_type::AbstractGroup; 
-        no_aggregator_type::AbstractGroup=GroupNC(), 
+        no_aggregator_type::AbstractGroup=GroupNC(),
+        optimizer=nothing,
         kwargs...
     )
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
-    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
+    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, optimizer=optimizer, kwargs...)
 
     robust_mode = Games.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
