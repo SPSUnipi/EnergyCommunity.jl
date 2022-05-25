@@ -23,6 +23,10 @@ end
 
 "Set the EC user set"
 function set_user_set!(ECModel::AbstractEC, user_set)
+    if EC_CODE in user_set
+        println("Aggregator code '$EC_CODE' removed from the list of users")
+        user_set = setdiff(user_set, [EC_CODE])
+    end
     ECModel.user_set = collect(user_set)
 end
 
