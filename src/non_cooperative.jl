@@ -649,7 +649,6 @@ function to_objective_callback_by_subgroup(::AbstractGroupNC, ECModel::AbstractE
 
     # work on a copy
     ecm_copy = deepcopy(ECModel)
-    reset_user_set!(ecm_copy)
 
     # build the model with the updated set of users
     build_model!(ecm_copy)

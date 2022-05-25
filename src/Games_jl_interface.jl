@@ -376,9 +376,11 @@ function build_least_profitable!(
     # coalition_status[i] <= 0.0
     # )
 
+    # test_coalition = ["EC", "user1", "user2", "user3", "user4"]
+
     # # remove keep only selected users
-    # @constraint(ECModel.model, keep_grand_coalition[i=["user3"]],
-    #     coalition_status[i] >= 1.0
+    # @constraint(ECModel.model, keep_grand_coalition[i=user_set_EC],
+    #     coalition_status[i] == ((i in test_coalition) ? 1.0 : 0.0)
     # )
 
     # change expression of SW
@@ -477,6 +479,7 @@ function to_least_profitable_coalition_callback(
         base_group::AbstractGroup;
         no_aggregator_group::AbstractGroup=GroupNC(),
         optimizer=nothing,
+        raw_outputs=false,
         kwargs...
     )
 
@@ -540,7 +543,11 @@ function to_least_profitable_coalition_callback(
             return least_profitable_coalition, coalition_benefit, min_surplus
         end
 
-        return least_profitable_coalition_callback  #, ecm_copy
+        if raw_outputs
+            return least_profitable_coalition_callback, ecm_copy
+        else
+            return least_profitable_coalition_callback
+        end
     end
 end
 

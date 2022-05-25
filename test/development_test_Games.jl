@@ -30,59 +30,101 @@ OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0)
 OPTIMIZER_MIPGAP = optimizer_with_attributes(Gurobi.Optimizer,
     "OutputFlag"=>1,
     "LogToConsole"=>0,
-    "MIPGap"=>0.5,
+    "MIPGap"=>0.4,
     # "MIPFocus"=>1,
-    "TimeLimit"=>400,
+    "TimeLimit"=>1000,
     "LogFile"=>"gurobi.log",
     "Threads"=>10,
     # "NoRelHeurTime"=>10
 )
 
+
 # Read data from excel file
 ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), OPTIMIZER)
+
+
 build_model!(ECModel)
 optimize!(ECModel)
 
 
-NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), OPTIMIZER)
+NCModel = ModelEC(ECModel, EnergyCommunity.GroupNC())
 build_model!(NCModel)
 optimize!(NCModel)
 
 
 
-ANCModel = ModelEC(input_file, EnergyCommunity.GroupANC(), OPTIMIZER)
+ANCModel = ModelEC(ECModel, EnergyCommunity.GroupANC())
 build_model!(ANCModel)
 optimize!(ANCModel)
 
-
-ECModel.user_set = collect(keys(ECModel.users_data))
-
 utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupANC())
-worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, GroupNC(); no_aggregator_group=GroupNC())
+worst_coalition_callback, ecm_copy = to_least_profitable_coalition_callback(ECModel, GroupNC(); raw_outputs=true, no_aggregator_group=GroupANC())
+
+
 
 # ECModel.user_set = collect(keys(ECModel.users_data))
 
 # utility_callback(ECModel.user_set)
 
-# enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupANC())
+# iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupNC(), optimizer=OPTIMIZER_MIPGAP)
 
-# save("enum_mode.jld2", enum_mode)
-enum_mode = load("enum_mode.jld2", EnumMode())
+coal_EC = [EC_CODE; ECModel.user_set]
 
-iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP)
-#iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupNC(), optimizer=OPTIMIZER_MIPGAP)
+profit_list = [23064.94534744716, 6825.297230565472, 44921.61629393777, 5175.039574246674, 5055.268214914409, 3487.4191783565184, 4680.009759817722, 66826.60688194631, 6156.843910783279, 4661.382228575006, 56295.61820125032]
+test_profit = Dict(
+    u=>0.0 for (i, u) in enumerate(coal_EC)  #profit_list[i]
+)
 
-lc_enum = var_least_core(enum_mode, OPTIMIZER)
-tick()
-lc_iter = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, use_start_value=true)
-time_elapsed=tok()
+least_profitable_coalition, coalition_benefit, min_surplus = worst_coalition_callback(test_profit)
+
+test_coalition = ["EC", "user1", "user2", "user3"]
+
+for u in coal_EC
+    fix(ecm_copy.model[:coalition_status][u], ((u in test_coalition) ? 1.0 : 0.0), force=true)
+end
+
+optimize!(ecm_copy)
+objective_value(ecm_copy)
+
+ECModel.user_set = setdiff(test_coalition, [EC_CODE])
+build_model!(ECModel)
+optimize!(ECModel)
+objective_value(ECModel)
+
+ANCModel.user_set = setdiff(test_coalition, [EC_CODE])
+build_model!(ANCModel)
+optimize!(ANCModel)
+objective_value(ANCModel)
+
+NCModel.user_set = setdiff(test_coalition, [EC_CODE])
+build_model!(NCModel)
+optimize!(NCModel)
+objective_value(NCModel)
+objective_value(ANCModel) - objective_value(NCModel)
+
+anc_obj_call = to_objective_callback_by_subgroup(ANCModel)
+
+anc_obj_call(ANCModel.user_set)
+anc_obj_call(test_coalition)
+
+# tick()
+# lc_iter = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, use_start_value=true)
+# time_elapsed=tok()
+
+
+# enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupNC())
+
+# save("enum_mode_NC.jld2", enum_mode)
+# enum_mode = load("enum_mode_NC.jld2", EnumMode())
+
+# lc_enum, value_min_surplus, model_dist = var_least_core(enum_mode, OPTIMIZER; raw_outputs=true)
 
 # save("enum_mode.jld2", enum_mode)
 #enum_mode = load("enum_mode.jld2", EnumMode())
 
 # test_coal = ["user1", "user2"]
 
-# least_profitable_coalition, coalition_benefit, min_surplus = worst_coalition_callback(test_coal)
+# least_profitable_coalition, coalition_benefit, min_surplus = worst_coalition_callback(test_profit)
 
 # profit_distribution, min_surplus, history = least_core(mode, ECModel.optimizer)
 

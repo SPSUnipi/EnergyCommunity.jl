@@ -222,7 +222,7 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     ECModel.results[:SW_us] = sum(ECModel.results[:NPV_us])
 
     # Social welfare of the entire aggregation
-    ECModel.results[:SW] = ECModel.results[:SW_us] + ECModel.results[:R_Reward_agg_NPV]
+    ECModel.results[:SW] = ECModel.results[:SW_us] + ECModel.results[:NPV_agg]
     ECModel.results[:objective_value] = ECModel.results[:SW]
 
 end
@@ -252,9 +252,6 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
     # create a backup of the model and work on it
     ecm_copy = deepcopy(ECModel)
 
-    # reset of the EC
-    reset_user_set!(ecm_copy)
-
     # build the model with the updated set of users
     build_model!(ecm_copy)
 
@@ -271,8 +268,8 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
             # check if at least one user is in the list
             if length(user_set_no_EC) > 0
 
-                gen_data = ECModel.gen_data
-                market_data = ECModel.market_data
+                gen_data = ecm_copy.gen_data
+                market_data = ecm_copy.market_data
             
                 # get time set
                 init_step = field(gen_data, "init_step")
