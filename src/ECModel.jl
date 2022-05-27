@@ -90,6 +90,12 @@ function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
 end
 
 
+"Solve the optimization problem for the EC"
+function JuMP.result_count(ECModel::AbstractEC)
+    return result_count(ECModel.model)
+end
+
+
 "Output results for the NC configuration"
 function output_results(ECModel::AbstractEC,
     output_file::AbstractString, output_file_plot::AbstractString,
