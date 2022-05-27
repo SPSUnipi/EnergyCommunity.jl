@@ -6,6 +6,7 @@ using JuMP
 using Gurobi
 using Games
 using TickTock
+using Combinatorics
 
 
 ## Parameters
@@ -26,22 +27,30 @@ output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  #
 
 ## Initialization
 
-OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0)
+OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0, "Threads"=>10)
 OPTIMIZER_MIPGAP = optimizer_with_attributes(Gurobi.Optimizer,
     "OutputFlag"=>1,
     "LogToConsole"=>0,
-    "MIPGap"=>0.4,
+    "MIPGap"=>0.2,
     # "MIPFocus"=>1,
     "TimeLimit"=>1000,
     "LogFile"=>"gurobi.log",
     "Threads"=>10,
-    # "NoRelHeurTime"=>10
+    # "NoRelHeurTime"=>10,
+    "PoolSolutions"=>100,
+    "PoolSearchMode"=>1,
 )
 
 
 # Read data from excel file
 ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), OPTIMIZER)
 
+
+# test_coalition = ["EC", "user1", "user2", "user3", "user4"]
+
+# set_user_set!(ECModel, test_coalition)
+
+reset_user_set!(ECModel)
 
 build_model!(ECModel)
 optimize!(ECModel)
@@ -52,14 +61,31 @@ build_model!(NCModel)
 optimize!(NCModel)
 
 
-
 ANCModel = ModelEC(ECModel, EnergyCommunity.GroupANC())
 build_model!(ANCModel)
 optimize!(ANCModel)
 
-utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupANC())
-worst_coalition_callback, ecm_copy = to_least_profitable_coalition_callback(ECModel, GroupNC(); raw_outputs=true, no_aggregator_group=GroupANC())
+# utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupNC())
+# worst_coalition_callback, ecm_copy_worst = to_least_profitable_coalition_callback(ECModel, GroupNC(); raw_outputs=true, no_aggregator_group=GroupNC())
 
+
+preload_coalitions = Iterators.flatten([combinations([EC_CODE; ECModel.user_set], k) for k = 1:3])
+
+iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupNC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0)
+
+tick()
+lc_iter, min_surplus, history, model_dist = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, raw_outputs=true, preload_coalitions=preload_coalitions)
+time_elapsed_iter=tok()
+
+
+tick()
+enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupNC())
+time_elapsed_enum=tok()
+
+save("C:/Users/Davide/Desktop/Nuova cartella/enum_mode_baseNC.jld2", enum_mode)
+enum_mode = load("enum_mode_baseNC.jld2", EnumMode())
+
+lc_enum, value_min_surplus_enum, model_dist_enum = var_least_core(enum_mode, OPTIMIZER; raw_outputs=true)
 
 
 # ECModel.user_set = collect(keys(ECModel.users_data))
@@ -68,44 +94,44 @@ worst_coalition_callback, ecm_copy = to_least_profitable_coalition_callback(ECMo
 
 # iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupNC(), optimizer=OPTIMIZER_MIPGAP)
 
-coal_EC = [EC_CODE; ECModel.user_set]
+# coal_EC = [EC_CODE; ECModel.user_set]
 
-profit_list = [23064.94534744716, 6825.297230565472, 44921.61629393777, 5175.039574246674, 5055.268214914409, 3487.4191783565184, 4680.009759817722, 66826.60688194631, 6156.843910783279, 4661.382228575006, 56295.61820125032]
-test_profit = Dict(
-    u=>0.0 for (i, u) in enumerate(coal_EC)  #profit_list[i]
-)
+# profit_list = [23064.94534744716, 6825.297230565472, 44921.61629393777, 5175.039574246674, 5055.268214914409, 3487.4191783565184, 4680.009759817722, 66826.60688194631, 6156.843910783279, 4661.382228575006, 56295.61820125032]
+# test_profit = Dict(
+#     u=>0.0 for (i, u) in enumerate(coal_EC)  #profit_list[i]
+# )
 
-least_profitable_coalition, coalition_benefit, min_surplus = worst_coalition_callback(test_profit)
+# least_profitable_coalition_worst, coalition_benefit_worst, min_surplus_worst = worst_coalition_callback(test_profit)
 
-test_coalition = ["EC", "user1", "user2", "user3"]
+# test_coalition = ["EC", "user1", "user2", "user3"]
 
-for u in coal_EC
-    fix(ecm_copy.model[:coalition_status][u], ((u in test_coalition) ? 1.0 : 0.0), force=true)
-end
+# for u in coal_EC
+#     fix(ecm_copy.model[:coalition_status][u], ((u in test_coalition) ? 1.0 : 0.0), force=true)
+# end
 
-optimize!(ecm_copy)
-objective_value(ecm_copy)
+# optimize!(ecm_copy)
+# objective_value(ecm_copy)
 
-ECModel.user_set = setdiff(test_coalition, [EC_CODE])
-build_model!(ECModel)
-optimize!(ECModel)
-objective_value(ECModel)
+# ECModel.user_set = setdiff(test_coalition, [EC_CODE])
+# build_model!(ECModel)
+# optimize!(ECModel)
+# objective_value(ECModel)
 
-ANCModel.user_set = setdiff(test_coalition, [EC_CODE])
-build_model!(ANCModel)
-optimize!(ANCModel)
-objective_value(ANCModel)
+# ANCModel.user_set = setdiff(test_coalition, [EC_CODE])
+# build_model!(ANCModel)
+# optimize!(ANCModel)
+# objective_value(ANCModel)
 
-NCModel.user_set = setdiff(test_coalition, [EC_CODE])
-build_model!(NCModel)
-optimize!(NCModel)
-objective_value(NCModel)
-objective_value(ANCModel) - objective_value(NCModel)
+# NCModel.user_set = setdiff(test_coalition, [EC_CODE])
+# build_model!(NCModel)
+# optimize!(NCModel)
+# objective_value(NCModel)
+# objective_value(ANCModel) - objective_value(NCModel)
 
-anc_obj_call = to_objective_callback_by_subgroup(ANCModel)
+# anc_obj_call = to_objective_callback_by_subgroup(ANCModel)
 
-anc_obj_call(ANCModel.user_set)
-anc_obj_call(test_coalition)
+# anc_obj_call(ANCModel.user_set)
+# anc_obj_call(test_coalition)
 
 # tick()
 # lc_iter = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, use_start_value=true)
