@@ -366,15 +366,15 @@ function build_least_profitable!(
         build_nullify_expr_by_binary!(ECModel.model[expr], coalition_status)
     end
 
-    # # remove the grand coalition from the analysis
-    # @constraint(ECModel.model, exclude_grand_coalition,
-    #     sum(coalition_status) <= length(ECModel.user_set) - 1
-    # )
+    # remove the grand coalition from the analysis
+    @constraint(ECModel.model, exclude_grand_coalition,
+        sum(coalition_status) <= length(user_set_EC) - 1
+    )
 
-    # # remove keep only selected users
-    # @constraint(ECModel.model, exclude_grand_coalition[i=["EC",  "user2"]],
-    # coalition_status[i] <= 0.0
-    # )
+    # assure at least a user to be in the coalition
+    @constraint(ECModel.model, exclude_null_coalition,
+        sum(coalition_status) >= 1.0
+    )
 
     # test_coalition = ["EC", "user1", "user2", "user3", "user4"]
 
@@ -467,6 +467,10 @@ no_aggregator_group : AbstractGroup (optional, default GroupNC())
     Type of aggregation group of the community when no aggregator is available
     When not provided, an equivalent NonCooperative model is created and the corresponding
     utilities by user are used as reference case.
+number_of_solutions : (optional, default 1)
+    Number of solutions to be returned at every iteration
+    number_of_solutions <= 0: all solutions are returned
+    number_of_solutions >= 1: specific number of solutions are returned
 
 Return
 ------
@@ -480,6 +484,7 @@ function to_least_profitable_coalition_callback(
         no_aggregator_group::AbstractGroup=GroupNC(),
         optimizer=nothing,
         raw_outputs=false,
+        number_of_solutions=1,
         kwargs...
     )
 
@@ -496,7 +501,7 @@ function to_least_profitable_coalition_callback(
     build_least_profitable!(ecm_copy, base_group; no_aggregator_group=no_aggregator_group, add_EC=true)
 
     # create a backup of the model and work on it
-    let ecm_copy = ecm_copy
+    let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions
 
         # general implementation of utility_callback_by_subgroup
         """
@@ -511,12 +516,13 @@ function to_least_profitable_coalition_callback(
 
         Returns
         -------
-        least_profitable_coalition : AbstractVector
-            Vector of the components of the coalition leading to the worst benefit,
-            given the current distribution scheme
-        coalition_benefit : Number
-            Total benefit of the least_profitable_coalition with respect to base case,
-            described by the argument BaseUtility
+        least_profitable_coalition : Vector{NamedTuple}
+            Vector of NamedTuple with the components of the coalition leading to the worst benefit,
+            given the current distribution scheme.
+            Each NamedTuple has the following fields of the vector entry o:
+            - least_profitable_coalition: members of the worst coalition, for result o
+            - coalition_benefit: benefit of the coalition, for result o
+            - min_surplus: minimum surplus of the coalition, for result o
 
         """
         function least_profitable_coalition_callback(profit_distribution)
@@ -529,18 +535,35 @@ function to_least_profitable_coalition_callback(
 
             user_set_tot = axes(ecm_copy.results[:profit_distribution])[1]
 
-            # define the set of the least profitable coalition
-            least_profitable_coalition = [
-                u for u in user_set_tot if ecm_copy.results[:coalition_status][u] >= 0.5
-            ]
+            # number of results of the current iteration
+            n_results = result_count(ecm_copy)
+            # number of outputs to return
+            n_outputs = (number_of_solutions <= 0) ? n_results : number_of_solutions
 
-            # get the benefit of the coalition
-            coalition_benefit = ecm_copy.results[:coalition_benefit]
+            output_data = Vector{NamedTuple}(undef, n_outputs)
 
-            # get minimum surplus of the coalition
-            min_surplus = objective_value(ecm_copy)
+            for o = 1:n_outputs
+
+                # define the set of the least profitable coalition
+                least_profitable_coalition = [
+                    u for u in user_set_tot if value(ecm_copy.model[:coalition_status][u], result=o) >= 0.5
+                ]
+
+                # get the benefit of the coalition
+                coalition_benefit = value(ecm_copy.model[:coalition_benefit], result=o)
+
+                # get minimum surplus of the coalition
+                min_surplus = objective_value(ecm_copy.model, result=o)
+
+                output_data[o] = (
+                    least_profitable_coalition=least_profitable_coalition,
+                    coalition_benefit=coalition_benefit,
+                    min_surplus=min_surplus,
+                )
+
+            end
             
-            return least_profitable_coalition, coalition_benefit, min_surplus
+            return output_data
         end
 
         if raw_outputs
@@ -562,10 +585,11 @@ function Games.IterMode(
         base_group_type::AbstractGroup; 
         no_aggregator_type::AbstractGroup=GroupNC(),
         optimizer=nothing,
+        number_of_solutions=1,
         kwargs...
     )
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
-    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, optimizer=optimizer, kwargs...)
+    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, optimizer=optimizer, number_of_solutions=number_of_solutions, kwargs...)
 
     robust_mode = Games.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
