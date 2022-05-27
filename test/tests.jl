@@ -105,7 +105,10 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; no_a
 
     # test to identify the least profitable coalition of the profit distribution test_coal
     # expected value are tested below
-    least_profitable_coalition, coalition_benefit, min_surplus = callback(test_coal)
+    outdata = callback(test_coal)
+
+    # get first output
+    outdata = outdata[1]
 
     path_solution = (
         string(@__DIR__) * 
@@ -119,17 +122,17 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; no_a
         proven_solution = YAML.load_file(path_solution)
 
         
-        @test Set(least_profitable_coalition) == Set(proven_solution["worst_coalition"])
-        @test coalition_benefit ≈ proven_solution["coalition_benefit"] atol=1
-        @test min_surplus ≈ proven_solution["min_surplus"] atol=1
+        @test Set(outdata.least_profitable_coalition) == Set(proven_solution["worst_coalition"])
+        @test outdata.coalition_benefit ≈ proven_solution["coalition_benefit"] atol=1
+        @test outdata.min_surplus ≈ proven_solution["min_surplus"] atol=1
     else
         # otherwise create the tests
         mkpath(dirname(path_solution))
 
         calc_solution = Dict(
-            "worst_coalition"=>least_profitable_coalition,
-            "coalition_benefit"=>coalition_benefit,
-            "min_surplus"=>min_surplus,
+            "worst_coalition"=>outdata.least_profitable_coalition,
+            "coalition_benefit"=>outdata.coalition_benefit,
+            "min_surplus"=>outdata.min_surplus,
         )
 
         YAML.write_file(path_solution, calc_solution)

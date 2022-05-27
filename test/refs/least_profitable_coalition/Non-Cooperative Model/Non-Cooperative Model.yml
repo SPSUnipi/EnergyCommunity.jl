@@ -1,5 +1,6 @@
-min_surplus: -1280.4198751222286
-coalition_benefit: 9404.772014430724
+min_surplus: -1280.4198751229806
+coalition_benefit: 9404.772014427348
 worst_coalition:
+  - "EC"
   - "user1"
   - "user3"

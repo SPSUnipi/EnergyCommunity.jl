@@ -46,7 +46,7 @@ OPTIMIZER_MIPGAP = optimizer_with_attributes(Gurobi.Optimizer,
 ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), OPTIMIZER)
 
 
-# test_coalition = ["EC", "user1", "user2", "user3", "user4"]
+# test_coalition = ["EC", "user1", "user2", "user3", "user4", "user5"]
 
 # set_user_set!(ECModel, test_coalition)
 
@@ -56,14 +56,14 @@ build_model!(ECModel)
 optimize!(ECModel)
 
 
-NCModel = ModelEC(ECModel, EnergyCommunity.GroupNC())
-build_model!(NCModel)
-optimize!(NCModel)
+# NCModel = ModelEC(ECModel, EnergyCommunity.GroupNC())
+# build_model!(NCModel)
+# optimize!(NCModel)
 
 
-ANCModel = ModelEC(ECModel, EnergyCommunity.GroupANC())
-build_model!(ANCModel)
-optimize!(ANCModel)
+# ANCModel = ModelEC(ECModel, EnergyCommunity.GroupANC())
+# build_model!(ANCModel)
+# optimize!(ANCModel)
 
 # utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupNC())
 # worst_coalition_callback, ecm_copy_worst = to_least_profitable_coalition_callback(ECModel, GroupNC(); raw_outputs=true, no_aggregator_group=GroupNC())
@@ -71,7 +71,7 @@ optimize!(ANCModel)
 
 preload_coalitions = Iterators.flatten([combinations([EC_CODE; ECModel.user_set], k) for k = 1:3])
 
-iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupNC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0)
+iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0)
 
 tick()
 lc_iter, min_surplus, history, model_dist = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, raw_outputs=true, preload_coalitions=preload_coalitions)
@@ -79,11 +79,11 @@ time_elapsed_iter=tok()
 
 
 tick()
-enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupNC())
+enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupANC())
 time_elapsed_enum=tok()
 
-save("C:/Users/Davide/Desktop/Nuova cartella/enum_mode_baseNC.jld2", enum_mode)
-enum_mode = load("enum_mode_baseNC.jld2", EnumMode())
+save("enum_mode_ANC.jld2", enum_mode)
+enum_mode = load("enum_mode_ANC.jld2", EnumMode())
 
 lc_enum, value_min_surplus_enum, model_dist_enum = var_least_core(enum_mode, OPTIMIZER; raw_outputs=true)
 
