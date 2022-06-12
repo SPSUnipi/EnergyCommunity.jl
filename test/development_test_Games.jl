@@ -51,10 +51,14 @@ ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), OPTIMIZER)
 # set_user_set!(ECModel, test_coalition)
 
 reset_user_set!(ECModel)
+#set_user_set!(ECModel, ["user$id" for id=1:5])
 
-build_model!(ECModel)
-optimize!(ECModel)
+# build_model!(ECModel)
+# optimize!(ECModel)
 
+enum_mode = load("test/enum_mode_datasest.jld2", EnumMode())
+
+nucleolus_dist_enum, b, model_nuc = nucleolus(enum_mode, OPTIMIZER; raw_outputs=true)  # nucleolus
 
 # NCModel = ModelEC(ECModel, EnergyCommunity.GroupNC())
 # build_model!(NCModel)
@@ -69,24 +73,36 @@ optimize!(ECModel)
 # worst_coalition_callback, ecm_copy_worst = to_least_profitable_coalition_callback(ECModel, GroupNC(); raw_outputs=true, no_aggregator_group=GroupNC())
 
 
-preload_coalitions = Iterators.flatten([combinations([EC_CODE; ECModel.user_set], k) for k = 1:3])
+# preload_coalitions = Iterators.flatten([combinations([EC_CODE; ECModel.user_set], k) for k = 1:2])
 
-iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0)
+# iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0)
 
-tick()
-lc_iter, min_surplus, history, model_dist = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, raw_outputs=true, preload_coalitions=preload_coalitions)
-time_elapsed_iter=tok()
+# tick()
+# lc_iter, min_surplus, history, model_dist = var_least_core(iter_mode, OPTIMIZER; lower_bound=0.0, atol=1e-4, raw_outputs=true, preload_coalitions=preload_coalitions)
+# time_elapsed_iter=tok()
 
 
-tick()
-enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupANC())
-time_elapsed_enum=tok()
+# tick()
+# enum_mode = EnumMode(ECModel, GroupNC(); no_aggregator_group=GroupANC())
+# time_elapsed_enum=tok()
 
-save("enum_mode_ANC.jld2", enum_mode)
-enum_mode = load("enum_mode_ANC.jld2", EnumMode())
+# save("enum_mode_ANC.jld2", enum_mode)
+# enum_mode = load("enum_mode_ANC.jld2", EnumMode())
 
-lc_enum, value_min_surplus_enum, model_dist_enum = var_least_core(enum_mode, OPTIMIZER; raw_outputs=true)
+# lc_enum, value_min_surplus_enum, model_dist_enum = var_least_core(enum_mode, OPTIMIZER; raw_outputs=true)
 
+
+# tick()
+# varcore_dist_iter, min_surplus_varcore_iter, history_varcore_iter, model_dist_varcore_iter = var_in_core(
+#     iter_mode,
+#     OPTIMIZER;
+#     lower_bound=0.0,
+#     atol=1e-4,
+#     raw_outputs=true,
+#     preload_coalitions=preload_coalitions,
+# )
+# time_elapsed_varcore_iter=tok()
+# println("Variance Core - IterMode calculated with elapsed time [min]: $(time_elapsed_varcore_iter/60)")
 
 # ECModel.user_set = collect(keys(ECModel.users_data))
 
