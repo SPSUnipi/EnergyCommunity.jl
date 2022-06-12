@@ -41,32 +41,29 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
     model_user = ECModel.model
 
     # Overestimation of the power exchanged by each POD when selling to the external market by each user
-    @expression(model_user, P_P_us_overestimate[u in user_set],
+    @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
         max(0,
             sum(Float64[field_component(users_data[u], c, "max_capacity") 
                 for c in asset_names(users_data[u], CONV)]) # Maximum capacity of the converters
-            + maximum(sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
-                for r = asset_names(users_data[u], REN)]) for t in time_set) # Maximum dispatch of renewable assets
-            - minimum(
-                sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
-                for t in time_set)  # Minimum demand
+            + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
+                for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
+            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
         )
     )
 
     # Overestimation of the power exchanged by each POD when buying from the external market bu each user
-    @expression(model_user, P_N_us_overestimate[u in user_set],
+    @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
         max(0,
-            maximum(
-                sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
-                for t in time_set)  # Maximum demand
+            sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+                # Maximum demand
             + sum(Float64[field_component(users_data[u], c, "max_capacity") 
                 for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
         )
     )
 
     # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
-    @expression(model_user, P_us_overestimate[u in user_set],
-        max(P_P_us_overestimate[u], P_N_us_overestimate[u])  # Max between the maximum values calculated previously
+    @expression(model_user, P_us_overestimate[u in user_set, t in time_set],
+        max(P_P_us_overestimate[u, t], P_N_us_overestimate[u, t])  # Max between the maximum values calculated previously
     )
 
 
@@ -91,15 +88,15 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
         0 <= P_max_us[u=user_set, peak_set]
-            <= P_us_overestimate[u])
+            <= P_us_overestimate[u, t])
     # Total dispatch of the user, positive when supplying to public grid
     @variable(model_user,
-        0 <= P_P_us[u=user_set, time_set]
-            <= P_P_us_overestimate[u])
+        0 <= P_P_us[u=user_set, t in time_set]
+            <= P_P_us_overestimate[u, t])
     # Total dispatch of the user, positive when absorbing from public grid
     @variable(model_user,
-        0 <= P_N_us[u=user_set, time_set]
-            <= P_N_us_overestimate[u])
+        0 <= P_N_us[u=user_set, t in time_set]
+            <= P_N_us_overestimate[u, t])
     # Design of assets of the user
     @variable(model_user,
         0 <= x_us[u=user_set, a=device_names(users_data[u])]
