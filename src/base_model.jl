@@ -30,7 +30,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
     user_set = ECModel.user_set
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
-    time_set = init_step:final_step
+    time_set = 1:n_steps
     peak_set = unique(peak_categories)
 
 
@@ -87,8 +87,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer)
             <= sum(Float64[field_component(users_data[u], r, "max_capacity") for r in asset_names(users_data[u], REN)]))
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
-        0 <= P_max_us[u=user_set, peak_set]
-            <= P_us_overestimate[u, t])
+        0 <= P_max_us[u=user_set, w in peak_set]
+            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[t] == w))
     # Total dispatch of the user, positive when supplying to public grid
     @variable(model_user,
         0 <= P_P_us[u=user_set, t in time_set]
