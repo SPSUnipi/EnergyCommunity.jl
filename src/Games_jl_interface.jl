@@ -520,6 +520,8 @@ function to_least_profitable_coalition_callback(
             Vector of NamedTuple with the components of the coalition leading to the worst benefit,
             given the current distribution scheme.
             Each NamedTuple has the following fields of the vector entry o:
+            - coalition_status: vector specifying whether each user belongs (1) or not (0) to
+              the worst coalition
             - least_profitable_coalition: members of the worst coalition, for result o
             - coalition_benefit: benefit of the coalition, for result o
             - min_surplus: minimum surplus of the coalition, for result o
@@ -544,9 +546,12 @@ function to_least_profitable_coalition_callback(
 
             for o = 1:n_outputs
 
+                # get the coalition status
+                coalition_status = value.(ecm_copy.model[:coalition_status], result=o)
+
                 # define the set of the least profitable coalition
                 least_profitable_coalition = [
-                    u for u in user_set_tot if value(ecm_copy.model[:coalition_status][u], result=o) >= 0.5
+                    u for u in user_set_tot if coalition_status[u] >= 0.5
                 ]
 
                 # get the benefit of the coalition
@@ -556,6 +561,7 @@ function to_least_profitable_coalition_callback(
                 min_surplus = objective_value(ecm_copy.model, result=o)
 
                 output_data[o] = (
+                    coalition_status=coalition_status,
                     least_profitable_coalition=least_profitable_coalition,
                     coalition_benefit=coalition_benefit,
                     min_surplus=min_surplus,
