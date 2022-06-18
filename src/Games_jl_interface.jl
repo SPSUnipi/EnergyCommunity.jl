@@ -275,7 +275,8 @@ Function to build the model to identify the least profitable coalition
 function build_least_profitable!(
         ECModel::AbstractEC, base_group::AbstractGroup;
         no_aggregator_group::AbstractGroup=GroupNC(),
-        add_EC=true
+        add_EC=true,
+        relax_combinatorial=false,
     )
     
     # list of variables to modify
@@ -347,7 +348,13 @@ function build_least_profitable!(
     end
 
     # create binary variable that identifies the status of what users are considered
-    @variable(ECModel.model, coalition_status[user_set_EC], Bin)
+    @variable(
+        ECModel.model,
+        coalition_status[user_set_EC],
+        set = (relax_combinatorial==false ? MOI.ZeroOne() : MOI.Semicontinuous(0.0, 1.0)),
+    )
+    
+
     # auxiliary variable used to fix the profit distribution using the fix function
     @expression(ECModel.model, profit_distribution[user_set_EC], 0.0)
 
@@ -471,6 +478,9 @@ number_of_solutions : (optional, default 1)
     Number of solutions to be returned at every iteration
     number_of_solutions <= 0: all solutions are returned
     number_of_solutions >= 1: specific number of solutions are returned
+relax_combinatorial : (optional, default false)
+    When true, the full least profitable coalition MILP problem is relaxed to continuous,
+    in the combinatorial part
 
 Return
 ------
@@ -485,6 +495,7 @@ function to_least_profitable_coalition_callback(
         optimizer=nothing,
         raw_outputs=false,
         number_of_solutions=1,
+        relax_combinatorial=false,
         kwargs...
     )
 
@@ -498,7 +509,13 @@ function to_least_profitable_coalition_callback(
     ecm_copy = ModelEC(ECModel; optimizer=optimizer)
 
     # build the model in the backup
-    build_least_profitable!(ecm_copy, base_group; no_aggregator_group=no_aggregator_group, add_EC=true)
+    build_least_profitable!(
+        ecm_copy,
+        base_group;
+        no_aggregator_group=no_aggregator_group,
+        add_EC=true,
+        relax_combinatorial=relax_combinatorial,
+    )
 
     # create a backup of the model and work on it
     let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions
