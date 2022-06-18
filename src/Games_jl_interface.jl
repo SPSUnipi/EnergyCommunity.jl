@@ -530,6 +530,8 @@ function to_least_profitable_coalition_callback(
         ----------
         profit_distribution : AbstractDict
             Dictionary of profit distribution by user
+        modify_solver_options : Vector{Pair} (optional)
+            Vector of the pairs of solver options to set or modify
 
         Returns
         -------
@@ -544,10 +546,19 @@ function to_least_profitable_coalition_callback(
             - min_surplus: minimum surplus of the coalition, for result o
 
         """
-        function least_profitable_coalition_callback(profit_distribution)
+        function least_profitable_coalition_callback(
+                profit_distribution;
+                modify_solver_options::Vector=[],
+                kwargs...
+            )
             
             # change the profit distribution
             set_least_profitable_profit!(ecm_copy, profit_distribution)
+
+            # change solver attributes
+            for opt in modify_solver_options
+                set_optimizer_attribute(ecm_copy.model, opt.first, opt.second)
+            end
 
             # optimize the problem
             optimize!(ecm_copy)
