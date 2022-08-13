@@ -30,21 +30,6 @@ using YAML
 # General optimizer
 OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0, "Threads"=>10)
 
-# Optimizer for row-generation techniques, used in the IterMode of Games.jl
-OPTIMIZER_ROW_GENERATION = optimizer_with_attributes(Gurobi.Optimizer,
-    "OutputFlag"=>1,
-    "LogToConsole"=>0,
-    "MIPGap"=>0.1,
-    # "MIPFocus"=>1,
-    "TimeLimit"=>1000,
-    "LogFile"=>"gurobi_poolmode0_poolsearch200_N12.log",
-    "Threads"=>10,
-    # "NoRelHeurTime"=>10,
-    "PoolSolutions"=>200,
-    "PoolSearchMode"=>0,
-    # "Crossover"=>0,  # disable crossover
-)
-
 ##= Energy Community options
 
 NO_AGG_GROUP = GroupANC();  # type of aggregation when the Aggregator does not belong to the coalition.
