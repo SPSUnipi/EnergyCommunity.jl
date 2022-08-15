@@ -9,10 +9,6 @@ latex_output = "latex_output_poolmode0_poolsearch200_poolsearch200_N12.txt"
 
 overwrite_files = true  # when true, output files are overwritten
 
-EC_size_list_iter = []#[10, 20, 50]  # List of sizes of the EC to test in iter mode
-EC_size_list_enum = [3,4] #[5, 10, 20]  # List of sizes of the EC to test in enum mode
-
-
 
 ##= Load imports
 
@@ -84,17 +80,19 @@ function build_nusers_EC_file(ECModel, n_users)
     )
 end
 
-
+"""
+Function to ease testing different solver options using defaults
+"""
 function build_row_options(optimizer=Gurobi.Optimizer; options...)
 
     default_options = Dict(
-        "OutputFlag"=>0,
+        "OutputFlag"=>1,
         "LogToConsole"=>0,
         "MIPGap"=>0.05,
-        "MIPGapAbs"=>0.01,
+        # "MIPGapAbs"=>0.01,
         # "MIPFocus"=>1,
         "TimeLimit"=>1000,
-        # "LogFile"=>"gurobi.log",
+        "LogFile"=>"gurobi.log",
         "Threads"=>10,
         # "NoRelHeurTime"=>10,
         "PoolSolutions"=>200,
@@ -109,9 +107,18 @@ function build_row_options(optimizer=Gurobi.Optimizer; options...)
     return optimizer_with_attributes(optimizer, merged_options...)
 end
 
+"""
+Function to ease creating history DataFrames
+"""
+function create_history_dataframe(vect, function_type)
+    df_history = select(DataFrame(vect), [:iteration, :benefit_coal, :value_min_surplus, :lower_problem_min_surplus])
+    df_history[!, :function] = fill(function_type, nrow(df_history))
+    return df_history
+end
+
 run_simulations = [
     # (EC_size=3, optimizer=build_row_options(; PoolSearchMode=1, PoolSolutions=10), precoal=[1], bestobjstop=true),
-    # (EC_size=3, optimizer=build_row_options(), precoal=[1], bestobjstop=true),
+    # (EC_size=4, optimizer=build_row_options(), precoal=[1], bestobjstop=true),
     (EC_size=10, optimizer=build_row_options(; PoolSearchMode=1, PoolSolutions=10), precoal=[1], bestobjstop=true),
     (EC_size=10, optimizer=build_row_options(; PoolSearchMode=1, PoolSolutions=50), precoal=[1], bestobjstop=true),
     (EC_size=10, optimizer=build_row_options(; PoolSearchMode=1, PoolSolutions=200), precoal=[1], bestobjstop=true),
@@ -133,8 +140,9 @@ EC_dict = Dict(
     EC_s => build_nusers_EC_file(ECModel, EC_s) for EC_s in EC_size_list
 )
 
+# (id_run, el) = first(collect(enumerate(run_simulations)))
 
-for (id_run, el) in enumerate(run_simulations)
+Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
 
     println("------------- ITER ID RUN $id_run --------------")
 
@@ -158,6 +166,7 @@ for (id_run, el) in enumerate(run_simulations)
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
     )
     time_elapsed_incore_iter=tok()
+
     println("In Core - IterMode calculated with elapsed time [min]: $(time_elapsed_incore_iter/60)")
 
     # LEASTCORE
@@ -244,17 +253,23 @@ for (id_run, el) in enumerate(run_simulations)
         "varleastcore_iter"=>min_surplus_varleastcore_iter,
     )
 
-    # dictionary of history values
-    dict_history = Dict(
-        "incore_iter"=>history_incore_iter,
-        "leastcore_iter"=>history_leastcore_iter,
-        "varcore_iter"=>history_varcore_iter,
-        "varleastcore_iter"=>history_varleastcore_iter,
-    )
+    df_history_incore = create_history_dataframe(history_incore_iter, "incore_iter")
+    df_history_leastcore = create_history_dataframe(history_leastcore_iter, "leastcore_iter")
+    df_history_varcore = create_history_dataframe(history_varcore_iter, "varcore_iter")
+    df_history_varleastcore = create_history_dataframe(history_varleastcore_iter, "varleastcore_iter")
+    df_history = vcat(df_history_incore, df_history_leastcore, df_history_varcore, df_history_varleastcore)
+
+    # # dictionary of history values
+    # dict_history = Dict(
+    #     "incore_iter"=>history_incore_iter,
+    #     "leastcore_iter"=>history_leastcore_iter,
+    #     "varcore_iter"=>history_varcore_iter,
+    #     "varleastcore_iter"=>history_varleastcore_iter,
+    # )
     
     # save results
     filepath = "$parent_dir/results_paper/iter/iter_simulations_results_$id_run.jld2"
     # create parent directory if missing
     mkpath(dirname(filepath))
-    jldsave(filepath; df_reward_iter, dict_time_iter, dict_iterations_iter, dict_surplus_values, dict_history)
+    jldsave(filepath; df_reward_iter, dict_time_iter, dict_iterations_iter, dict_surplus_values, df_history)
 end
