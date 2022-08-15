@@ -93,7 +93,11 @@ for EC_enum_s in EC_size_list_enum
     tick()
     enum_mode = EnumMode(current_EC, BASE_GROUP; no_aggregator_group=NO_AGG_GROUP)
     time_elapsed_enum=tok()
-    save("$parent_dir/results_paper/enum/file_enum_$EC_enum_s.jld2", enum_mode)
+
+    #save enum results
+    filepath = "$parent_dir/results_paper/enum/file_enum_$EC_enum_s.jld2"
+    mkpath(dirname(filepath))
+    save(filepath, enum_mode)
 
     tick()
     shapley_dist_enum = shapley_value(enum_mode)  # shapley value
