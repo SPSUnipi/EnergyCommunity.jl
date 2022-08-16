@@ -142,9 +142,9 @@ run_simulations = [
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 10], bestobjstop=false),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 2, 3], bestobjstop=false),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 9, 10], bestobjstop=false),
-    (EC_size=20, optimizer=build_row_options(), precoal=[1, 10], bestobjstop=false),
-    (EC_size=50, optimizer=build_row_options(), precoal=[1, 10], bestobjstop=false),
-    (EC_size=100, optimizer=build_row_options(), precoal=[1, 10], bestobjstop=false),
+    (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=false),
+    (EC_size=50, optimizer=build_row_options(), precoal=[1, 50], bestobjstop=false),
+    (EC_size=100, optimizer=build_row_options(), precoal=[1, 100], bestobjstop=false),
 ]
 
 
