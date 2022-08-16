@@ -26,15 +26,38 @@ output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  #
 
 # Read data from excel file
 ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), Gurobi.Optimizer)
-build_model!(ECModel)
-optimize!(ECModel)
+
+ECModel.user_set = ["user$i" for i=1:4]
+
+b = ModelEC(ECModel)
+b.user_set = ECModel.user_set[2:end]
+
+build_model!(b)
+optimize!(b)
 
 # NCModel = ModelEC(input_file, EnergyCommunity.GroupNC(), Gurobi.Optimizer)
 # build_model!(NCModel)
 # optimize!(NCModel)
 
+NO_AGG_GROUP = GroupANC();  # type of aggregation when the Aggregator does not belong to the coalition.
+# options: GroupANC() or GroupNC()
+BASE_GROUP = GroupNC();     # base type of aggregation (it shall be GroupNC)
 
-# lpc_callback = to_least_profitable_coalition_callback(ECModel)
+
+lpc_callback, ecm_copy = to_least_profitable_coalition_callback(ECModel, BASE_GROUP; no_aggregator_group=NO_AGG_GROUP, raw_outputs=true)
+
+fix(ecm_copy.model[:coalition_status]["user1"], 0.0, force=true)
+fix(ecm_copy.model[:coalition_status]["EC"], 1.0, force=true)
+fix(ecm_copy.model[:coalition_status]["user2"], 1.0, force=true)
+fix(ecm_copy.model[:coalition_status]["user3"], 1.0, force=true)
+fix(ecm_copy.model[:coalition_status]["user4"], 1.0, force=true)
+
+optimize!(ecm_copy)
+
+test_coal = Dict("EC"=>0.0, "user1"=>0.0, "user2"=>0.0, "user3"=>0.0, "user4"=>0.0)
+
+output_data = lpc_callback(test_coal)
+
 
 # spread = objective_value(ECModel) - objective_value(NCModel)
 
