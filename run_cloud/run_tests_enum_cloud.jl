@@ -1,7 +1,7 @@
 ##= Load parameters
 
 input_file = joinpath(@__DIR__, "../data/energy_community_model.yml")  # Input file
-parent_dir = "C:/Users/Davide/Il mio Drive/Universita/Dottorato/git/EnergyCommunity.jl/run_cloud"
+parent_dir = "C:/Users/Davide/git/gitdf/EnergyCommunity.jl/run_cloud"
 
 overwrite_files = true  # when true, output files are overwritten
 
@@ -133,8 +133,11 @@ for EC_enum_s in EC_size_list_enum
     )
 
     # dataframe of the time requirements
-    dict_time_enum = Dict(
-        "EnumMode"=>time_elapsed_enum,
+    df_time_enum = DataFrame(
+        "name"=>"enum_mode",
+        "id_run"=>0.0,
+        "EC_size"=>EC_enum_s,
+        "mode_time"=>time_elapsed_enum,
         "shapley_enum"=>time_elapsed_shapley_enum+time_elapsed_enum,
         "nucleolus_enum"=>time_elapsed_nucleolus_enum+time_elapsed_enum,
         "varcore_enum"=>time_elapsed_varcore_enum+time_elapsed_enum,
@@ -145,5 +148,5 @@ for EC_enum_s in EC_size_list_enum
     filepath = "$parent_dir/results_paper/enum/enum_simulations_results_$EC_enum_s.jld2"
     # create parent directory if missing
     mkpath(dirname(filepath))
-    jldsave(filepath; df_reward_enum, dict_time_enum)
+    jldsave(filepath; df_reward_enum, df_time_enum)
 end
