@@ -1,7 +1,7 @@
 ##= Load parameters
 
 input_file = joinpath(@__DIR__, "../data/energy_community_model.yml")  # Input file
-parent_dir = "C:/Users/Davide/Il mio Drive/Universita/Dottorato/git/EnergyCommunity.jl/run_cloud"
+parent_dir = "C:/Users/Davide/git/gitdf/EnergyCommunity.jl/run_cloud"
 
 enum_mode_file = "enum_mode_datasest.jld2"  # file used to store the enumerative results
 total_results_file = "total_results_file_poolmode0_poolsearch200_poolsearch200_N12.jld2"  # file to store all major results
@@ -88,7 +88,7 @@ function build_row_options(optimizer=Gurobi.Optimizer; options...)
     default_options = Dict(
         "OutputFlag"=>1,
         "LogToConsole"=>0,
-        "MIPGap"=>0.05,
+        "MIPGap"=>0.0,
         # "MIPGapAbs"=>0.01,
         # "MIPFocus"=>1,
         "TimeLimit"=>1000,
@@ -112,7 +112,21 @@ Function to ease creating history DataFrames
 """
 function create_history_dataframe(vect, function_type)
     df_history = select(DataFrame(vect), [:iteration, :benefit_coal, :value_min_surplus, :lower_problem_min_surplus])
-    df_history[!, :function] = fill(function_type, nrow(df_history))
+    df_history[!, :name] = fill(function_type, nrow(df_history))
+    df_history[!, :worst_coal] = [
+        join(
+            [u for u in axes(el.worst_coal_status)[1] if el.worst_coal_status[u] >= 0.5],
+            "; ",
+            ) 
+        for el in vect
+    ]
+    df_history[!, :profit_distribution] = [
+        join(
+            [string(el.current_profit[u]) for u in axes(el.current_profit)[1]],
+            "; ",
+            ) 
+        for el in vect
+    ]
     return df_history
 end
 
@@ -164,6 +178,7 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
+        exclude_visited_coalitions=!el.bestobjstop,
     )
     time_elapsed_incore_iter=tok()
 
@@ -179,6 +194,7 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
+        exclude_visited_coalitions=!el.bestobjstop,
     )
     time_elapsed_leastcore_iter=tok()
     println("Least Core - IterMode calculated with elapsed time [min]: $(time_elapsed_leastcore_iter/60)")
@@ -193,6 +209,7 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
+        exclude_visited_coalitions=!el.bestobjstop,
     )
     time_elapsed_varleastcore_iter=tok()
     println("Variance Least Core - IterMode calculated with elapsed time [min]: $(time_elapsed_varleastcore_iter/60)")
@@ -208,6 +225,7 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
+        exclude_visited_coalitions=!el.bestobjstop,
     )
     time_elapsed_varcore_iter=tok()
     println("Variance Core - IterMode calculated with elapsed time [min]: $(time_elapsed_varcore_iter/60)")
@@ -229,8 +247,11 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
     )
 
     # dictionary of the time requirements
-    dict_time_iter = Dict(
-        "IterMode"=>0.0,
+    df_time_iter = DataFrame(
+        "name"=>"iter_mode",
+        "id_run"=>id_run,
+        "EC_size"=>el.EC_size,
+        "mode_time"=>0.0,
         "incore_iter"=>time_elapsed_incore_iter,
         "leastcore_iter"=>time_elapsed_leastcore_iter,
         "varcore_iter"=>time_elapsed_varcore_iter,
@@ -238,7 +259,10 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
     )
 
     # dictionary iterations
-    dict_iterations_iter = Dict(
+    df_iterations_iter = DataFrame(
+        "name"=>"iter_mode",
+        "id_run"=>id_run,
+        "EC_size"=>el.EC_size,
         "incore_iter"=>history_incore_iter[end][1],
         "leastcore_iter"=>history_leastcore_iter[end][1],
         "varcore_iter"=>history_varcore_iter[end][1],
@@ -246,7 +270,10 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
     )
 
     # dictionary least core values
-    dict_surplus_values = Dict(
+    df_surplus_values = DataFrame(
+        "name"=>"iter_mode",
+        "id_run"=>id_run,
+        "EC_size"=>el.EC_size,
         "incore_iter"=>min_surplus_incore_iter,
         "leastcore_iter"=>min_surplus_leastcore_iter,
         "varcore_iter"=>min_surplus_varcore_iter,
@@ -271,5 +298,5 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
     filepath = "$parent_dir/results_paper/iter/iter_simulations_results_$id_run.jld2"
     # create parent directory if missing
     mkpath(dirname(filepath))
-    jldsave(filepath; df_reward_iter, dict_time_iter, dict_iterations_iter, dict_surplus_values, df_history)
+    jldsave(filepath; df_reward_iter, df_time_iter, df_iterations_iter, df_surplus_values, df_history)
 end
