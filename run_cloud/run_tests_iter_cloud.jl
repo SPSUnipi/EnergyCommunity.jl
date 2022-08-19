@@ -1,7 +1,7 @@
 ##= Load parameters
 
 input_file = joinpath(@__DIR__, "../data/energy_community_model.yml")  # Input file
-parent_dir = "C:/Users/Davide/git/gitdf/EnergyCommunity.jl/run_cloud"
+parent_dir = "/data/davidef/gitdf/EnergyCommunity.jl/run_cloud"
 
 enum_mode_file = "enum_mode_datasest.jld2"  # file used to store the enumerative results
 total_results_file = "total_results_file_poolmode0_poolsearch200_poolsearch200_N12.jld2"  # file to store all major results
@@ -88,10 +88,10 @@ function build_row_options(optimizer=Gurobi.Optimizer; options...)
     default_options = Dict(
         "OutputFlag"=>1,
         "LogToConsole"=>0,
-        "MIPGap"=>0.0,
+        "MIPGap"=>0.05,
         # "MIPGapAbs"=>0.01,
         # "MIPFocus"=>1,
-        "TimeLimit"=>1000,
+        "TimeLimit"=>3600,
         "LogFile"=>"gurobi.log",
         "Threads"=>10,
         # "NoRelHeurTime"=>10,
@@ -114,18 +114,22 @@ function create_history_dataframe(vect, function_type)
     df_history = select(DataFrame(vect), [:iteration, :benefit_coal, :value_min_surplus, :lower_problem_min_surplus])
     df_history[!, :name] = fill(function_type, nrow(df_history))
     df_history[!, :worst_coal] = [
-        join(
-            [u for u in axes(el.worst_coal_status)[1] if el.worst_coal_status[u] >= 0.5],
-            "; ",
-            ) 
-        for el in vect
+        (
+            isnothing(el.worst_coal_status) ? "" : join(
+                [u for u in axes(el.worst_coal_status)[1] if el.worst_coal_status[u] >= 0.5],
+                "; ",
+                )
+        ) for el in vect
     ]
     df_history[!, :profit_distribution] = [
-        join(
-            [string(el.current_profit[u]) for u in axes(el.current_profit)[1]],
-            "; ",
-            ) 
-        for el in vect
+        (
+            isnothing(el.current_profit) ? "" : join(
+                join(
+                    [string(el.current_profit[u]) for u in axes(el.current_profit)[1]],
+                    "; ",
+                )
+            )
+        ) for el in vect
     ]
     return df_history
 end
@@ -178,7 +182,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
-        exclude_visited_coalitions=!el.bestobjstop,
+        exclude_visited_coalitions=false,
+        max_iter=1000,
     )
     time_elapsed_incore_iter=tok()
 
@@ -194,7 +199,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
-        exclude_visited_coalitions=!el.bestobjstop,
+        exclude_visited_coalitions=false,
+        max_iter=1000,
     )
     time_elapsed_leastcore_iter=tok()
     println("Least Core - IterMode calculated with elapsed time [min]: $(time_elapsed_leastcore_iter/60)")
@@ -209,7 +215,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
-        exclude_visited_coalitions=!el.bestobjstop,
+        exclude_visited_coalitions=false,
+        max_iter=1000,
     )
     time_elapsed_varleastcore_iter=tok()
     println("Variance Least Core - IterMode calculated with elapsed time [min]: $(time_elapsed_varleastcore_iter/60)")
@@ -225,7 +232,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? "BestObjStop" : nothing),
-        exclude_visited_coalitions=!el.bestobjstop,
+        exclude_visited_coalitions=false,
+        max_iter=1000,
     )
     time_elapsed_varcore_iter=tok()
     println("Variance Core - IterMode calculated with elapsed time [min]: $(time_elapsed_varcore_iter/60)")
