@@ -61,37 +61,28 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
 
     ## Constant expressions
     # Overestimation of the power exchanged by each POD when selling to the external market
-    @expression(model, P_P_agg_overestimate,
-        sum(model[:P_P_us_overestimate])
+    @expression(model, P_P_agg_overestimate[t=time_set],
+        sum(model[:P_P_us_overestimate][:, t])
     )
 
     # Overestimation of the power exchanged by each POD when selling to the external market
-    @expression(model, P_N_agg_overestimate,
-        sum(model[:P_N_us_overestimate])
+    @expression(model, P_N_agg_overestimate[t=time_set],
+        sum(model[:P_N_us_overestimate][:, t])
     )
 
     ## Variable definition
 
-    @variable(model, 0 <= P_P_agg[t=time_set] <= P_P_agg_overestimate)  # Power supplied to the public market
-    @variable(model, 0 <= P_N_agg[t=time_set] <= P_N_agg_overestimate)  # Power absorbed from the public market
-
+    @variable(model, -P_N_agg_overestimate[t] <= P_agg[t=time_set] <= P_P_agg_overestimate[t])  # Power supplied to the public market (positive when supplied, negative otherwise)
+    @variable(model,
+        0 <= P_shared_agg[t in time_set] <= min(P_P_agg_overestimate[t], P_N_agg_overestimate[t])
+    ) # Power shared among the users
 
     # NPV of the aggregator
     @variable(model, NPV_agg >= 0)
 
     ## Expressions
 
-    # Power shared among the users
-    @expression(model, P_shared_agg[t in time_set],
-        sum(model[:P_P_us][:, t]) - P_P_agg[t]
-    )
-
-    # Total net power exchanged by a virtual POD corresponding to the entire EC:
-    #      positive when supplying power to the external market
-    @expression(model, P_agg[t in time_set],
-        P_P_agg[t] - P_N_agg[t]
-    )
-
+    # Power shared 
 
     # Total reward awarded to the community at each time step
     @expression(model, R_Reward_agg[t in time_set],
@@ -143,16 +134,16 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
         P_agg[t] == sum(model[:P_us][:, t])
     )
 
-    # Simmetry constraints: the energy sold by the aggregate cannot be higher than its production
+    # Max shared power: excess energy
     @constraint(model,
-        con_simmetry_P[t in time_set],
-        P_P_agg[t] <= sum(model[:P_P_us][:, t])
+        max_shared_power_P[t in time_set],
+        P_shared_agg[t] <= sum(model[:P_P_us][:, t])
     )
 
-    # Simmetry constraints: the energy bought by the aggregate cannot be higher than its total consumption
+    # Max shared power: demand
     @constraint(model,
-        con_simmetry_N[t in time_set],
-        P_N_agg[t] <= sum(model[:P_N_us][:, t])
+        max_shared_power_N[t in time_set],
+        P_shared_agg[t] <= sum(model[:P_N_us][:, t])
     )
 end
 
