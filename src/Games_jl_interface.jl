@@ -619,7 +619,7 @@ function Games.IterMode(
         base_group_type::AbstractGroup; 
         no_aggregator_type::AbstractGroup=GroupNC(),
         optimizer=nothing,
-        number_of_solutions=1,
+        number_of_solutions=0,
         kwargs...
     )
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
