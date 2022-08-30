@@ -11,7 +11,7 @@ Creates the base optimization model for all the EC models
 data: structure of data
 '''
 """
-function build_base_model!(ECModel::AbstractEC, optimizer; direct_model=false)
+function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # get main parameters
     gen_data = ECModel.gen_data
@@ -37,7 +37,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; direct_model=false)
     ## Model definition
 
     # Definition of JuMP model
-    ECModel.model = (direct_model ? direct_model(optimizer) : Model(optimizer))
+    ECModel.model = (use_notations ? direct_model(optimizer) : Model(optimizer))
     model_user = ECModel.model
 
     # Overestimation of the power exchanged by each POD when selling to the external market by each user

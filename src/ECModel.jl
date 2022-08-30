@@ -65,10 +65,10 @@ function JuMP.objective_value(ECModel::AbstractEC)
 end
 
 "Abstract build function model for generic EnergyCommunity model"
-function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer; direct_model=false)
+function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer; use_notations=false)
 
     # the build model for the NC/ANC case is eqvuivalent to the base model
-    build_base_model!(ECModel, optimizer; direct_model=direct_model)
+    build_base_model!(ECModel, optimizer; use_notations=use_notations)
 
     # add the NC/ANC-specific model
     build_specific_model!(group_type, ECModel)
