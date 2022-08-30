@@ -14,6 +14,11 @@ module EnergyCommunity
     import XLSX
     import FileIO
     import YAML
+    try
+        import CPLEX
+    catch e
+        @warn "CPLEX not loaded; features may be limited"
+    end
 
     const MOI = MathOptInterface
     

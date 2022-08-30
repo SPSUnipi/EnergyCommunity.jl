@@ -454,6 +454,21 @@ function set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
 end
 
 
+function add_notations!(ECModel::AbstractEC, ::Any)
+    @warn "Annotations not supported for the current solver"
+end
+
+try
+    """
+        Add notations for CPLEX backend
+    """
+    function add_notations!(ECModel::AbstractEC, ::CPLEX)
+
+    end
+catch e
+
+end
+
 
 """
     to_least_profitable_coalition_callback(ECModel::AbstractEC, base_group::AbstractGroup=GroupNC(); no_aggregator_group::AbstractGroup=GroupNC())
@@ -520,6 +535,10 @@ function to_least_profitable_coalition_callback(
         relax_combinatorial=relax_combinatorial,
         direct_model=use_notations,
     )
+
+    if use_notations
+        
+    end
 
     # create a backup of the model and work on it
     let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions
