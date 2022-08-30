@@ -37,10 +37,10 @@ function reset_user_set!(ECModel::AbstractEC)
 end
 
 "Build the mathematical problem for the EC"
-function build_model!(ECModel::AbstractEC)
+function build_model!(ECModel::AbstractEC; kwargs...)
 
     # build the model
-    build_model!(ECModel.group_type, ECModel, ECModel.optimizer)
+    build_model!(ECModel.group_type, ECModel, ECModel.optimizer; kwargs...)
 
     # return the model
     return ECModel
@@ -65,10 +65,10 @@ function JuMP.objective_value(ECModel::AbstractEC)
 end
 
 "Abstract build function model for generic EnergyCommunity model"
-function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer)
+function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer; direct_model=false)
 
     # the build model for the NC/ANC case is eqvuivalent to the base model
-    build_base_model!(ECModel, optimizer)
+    build_base_model!(ECModel, optimizer; direct_model=direct_model)
 
     # add the NC/ANC-specific model
     build_specific_model!(group_type, ECModel)

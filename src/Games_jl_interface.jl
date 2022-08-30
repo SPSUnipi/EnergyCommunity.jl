@@ -277,6 +277,7 @@ function build_least_profitable!(
         no_aggregator_group::AbstractGroup=GroupNC(),
         add_EC=true,
         relax_combinatorial=false,
+        direct_model=false,
     )
     
     # list of variables to modify
@@ -296,7 +297,7 @@ function build_least_profitable!(
     time_set = 1:n_steps
 
     # build model
-    build_model!(ECModel)
+    build_model!(ECModel; direct_model=direct_model)
 
     # create list of users including EC if edd_EC is enabled
     user_set_EC = ECModel.user_set
@@ -454,7 +455,6 @@ end
 
 
 
-
 """
     to_least_profitable_coalition_callback(ECModel::AbstractEC, base_group::AbstractGroup=GroupNC(); no_aggregator_group::AbstractGroup=GroupNC())
 
@@ -481,6 +481,8 @@ number_of_solutions : (optional, default 1)
 relax_combinatorial : (optional, default false)
     When true, the full least profitable coalition MILP problem is relaxed to continuous,
     in the combinatorial part
+direct_model : (optional, default false)
+    When true the JuMP model is direct
 
 Return
 ------
@@ -496,6 +498,7 @@ function to_least_profitable_coalition_callback(
         raw_outputs=false,
         number_of_solutions=1,
         relax_combinatorial=false,
+        use_notations=false,
         kwargs...
     )
 
@@ -508,13 +511,14 @@ function to_least_profitable_coalition_callback(
     # create a bakup of the model to work with
     ecm_copy = ModelEC(ECModel; optimizer=optimizer)
 
-    # build the model in the backup
+    # build the model in the backup variable ecm_copy
     build_least_profitable!(
         ecm_copy,
         base_group;
         no_aggregator_group=no_aggregator_group,
         add_EC=true,
         relax_combinatorial=relax_combinatorial,
+        direct_model=use_notations,
     )
 
     # create a backup of the model and work on it

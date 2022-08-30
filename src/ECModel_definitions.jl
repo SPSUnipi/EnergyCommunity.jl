@@ -77,12 +77,25 @@ mutable struct ModelEC <: AbstractEC
 end
 
 
+"""
+    Constructor of a ModelEC
 
+Inputs
+------
+    data : Dict 
+        Data of the EC
+    group_type : AbstractGroup
+        Type of EC
+    optimizer
+        Optimizer of the model
+    user_set : Vector
+        Vector of the users
+"""
 function ModelEC(
     data::Dict=ZERO_DD,
     group_type=GroupNC(),
     optimizer=nothing,
-    user_set::Vector=Vector()
+    user_set::Vector=Vector(),
 )
     check_valid_data_dict(data)
     gen_data, users_data, market_data = explode_data(data)
