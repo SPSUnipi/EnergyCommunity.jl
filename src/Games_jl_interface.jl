@@ -277,7 +277,7 @@ function build_least_profitable!(
         no_aggregator_group::AbstractGroup=GroupNC(),
         add_EC=true,
         relax_combinatorial=false,
-        direct_model=false,
+        use_notations=false,
     )
     
     # list of variables to modify
@@ -297,7 +297,7 @@ function build_least_profitable!(
     time_set = 1:n_steps
 
     # build model
-    build_model!(ECModel; direct_model=direct_model)
+    build_model!(ECModel; use_notations=use_notations)
 
     # create list of users including EC if edd_EC is enabled
     user_set_EC = ECModel.user_set
@@ -453,20 +453,110 @@ function set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
     end
 end
 
+"Get variables related to the user u_name for a DenseAxisArray"
+function get_subproblem_vars_by_user(var::Containers.DenseAxisArray{T}, u_name) where T <: VariableRef
+    list_axes = axes(var)
 
-function add_notations!(ECModel::AbstractEC, ::Any)
-    @warn "Annotations not supported for the current solver"
+    if length(list_axes) == 1
+        return T[var[u_name]]
+    else
+        return vec(T[var[k...] for k in Iterators.product([u_name], list_axes[2:end]...)])
+    end
 end
 
-try
-    """
-        Add notations for CPLEX backend
-    """
-    function add_notations!(ECModel::AbstractEC, ::CPLEX)
+"Get variables related to the user u_name for a SparseAxisArray"
+function get_subproblem_vars_by_user(var::Containers.SparseAxisArray{T}, u_name) where T <: VariableRef
+    key_set = eachindex(var)
+    
+    return T[var[k...] for k in key_set if k[1] == u_name]
+end
 
+"Get annotations for Benders decomposition"
+function get_annotations(ECModel::AbstractEC)
+    variable_annotations = Dict{Int, Vector{VariableRef}}()
+    
+    # Master problem
+    variable_annotations[0] = [
+        vec(ECModel.model[:coalition_status].data);  # coaliion status
+        vec(ECModel.model[:P_shared_agg].data);  # shared energy
+        vec(ECModel.model[:P_agg].data);  # dispatch of the aggregation
+        ECModel.model[:NPV_agg];  # obj value of the coalition
+        vec(ECModel.model[:P_P_us].data);  # energy supplied by users
+        vec(ECModel.model[:P_N_us].data);  # energy bought by users
+    ]
+
+    # variables by users: one subproblem for every user
+    list_user_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :x_us]
+    for (u_id, u_name) in enumerate(get_user_set(ECModel))
+        variable_annotations[u_id] = vcat([
+            get_subproblem_vars_by_user(ECModel.model[var], u_name) for var in list_user_vars
+        ]...)
     end
-catch e
 
+    # # Master problem: only binaries
+    # variable_annotations[0] = vec(ECModel.model[:coalition_status].data)  #coalition status (binaries)
+
+    # # Lower problem: all the rest
+    # list_sub_vars = [
+    #     :P_P_us, :P_N_us, :P_agg, :P_shared_agg, :E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :x_us
+    # ]
+    # variable_annotations[1] = [
+    #     ECModel.model[:NPV_agg];  # obj value of the coalition
+    #     vcat([vec(collect(values(ECModel.model[var_symb].data))) for var_symb in list_sub_vars]...);
+    # ]
+
+    return variable_annotations
+end
+
+"General fallback"
+function add_notations!(ECModel::AbstractEC, ::Any)
+    @warn "Annotations not supported for the current solver; annotations are ignored"
+    return
+end
+
+"""
+    Add notations for CPLEX backend
+"""
+function add_notations!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
+
+    model = ECModel.model
+
+    variable_classification = get_annotations(ECModel)
+
+    num_variables = sum(length(it) for it in values(variable_classification))
+    if num_variables != JuMP.num_variables(model)
+        @warn "Annotation for $num_variables out of the total $(JuMP.num_variables(model)) variables"
+    end
+    indices, annotations = CPLEX.CPXINT[], CPLEX.CPXLONG[]
+    for (key, value) in variable_classification
+        indices_value = map(x->CPLEX.CPXINT(x.index.value-1), value)
+        append!(indices, indices_value)
+        append!(annotations, fill(CPLEX.CPXLONG(CPLEX.CPX_BENDERS_MASTERVALUE + key), length(indices_value)))
+    end
+    cplex = JuMP.backend(model)
+    index_p = Ref{CPLEX.CPXINT}()
+    CPLEX.CPXnewlongannotation(
+        cplex.env,
+        cplex.lp,
+        CPLEX.CPX_BENDERS_ANNOTATION,
+        CPLEX.CPX_BENDERS_MASTERVALUE,
+    )
+    CPLEX.CPXgetlongannotationindex(
+        cplex.env,
+        cplex.lp,
+        CPLEX.CPX_BENDERS_ANNOTATION,
+        index_p,
+    )
+    CPLEX.CPXsetlongannotations(
+        cplex.env,
+        cplex.lp,
+        index_p[],
+        CPLEX.CPX_ANNOTATIONOBJ_COL,
+        length(indices),
+        indices,
+        annotations,
+    )
+    return
 end
 
 
@@ -533,11 +623,17 @@ function to_least_profitable_coalition_callback(
         no_aggregator_group=no_aggregator_group,
         add_EC=true,
         relax_combinatorial=relax_combinatorial,
-        direct_model=use_notations,
+        use_notations=use_notations,
     )
 
     if use_notations
-        
+        if isnothing(optimizer)
+            @error "Customer optimizer shall be specified when notations are enabled"
+        end
+
+        optimizer_constructor = (isa(optimizer, MOI.OptimizerWithAttributes) ? optimizer.optimizer_constructor : optimizer)
+
+        add_notations!(ecm_copy, optimizer_constructor)
     end
 
     # create a backup of the model and work on it
@@ -643,10 +739,11 @@ function Games.IterMode(
         no_aggregator_type::AbstractGroup=GroupNC(),
         optimizer=nothing,
         number_of_solutions=0,
+        use_notations=false,
         kwargs...
     )
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
-    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, optimizer=optimizer, number_of_solutions=number_of_solutions, kwargs...)
+    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, optimizer=optimizer, number_of_solutions=number_of_solutions, use_notations=use_notations, kwargs...)
 
     robust_mode = Games.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
