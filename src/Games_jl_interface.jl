@@ -514,49 +514,54 @@ function add_notations!(ECModel::AbstractEC, ::Any)
     return
 end
 
-"""
-    Add notations for CPLEX backend
-"""
-function add_notations!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
+try
 
-    model = ECModel.model
+    """
+        Add notations for CPLEX backend
+    """
+    function add_notations!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
 
-    variable_classification = get_annotations(ECModel)
+        model = ECModel.model
 
-    num_variables = sum(length(it) for it in values(variable_classification))
-    if num_variables != JuMP.num_variables(model)
-        @warn "Annotation for $num_variables out of the total $(JuMP.num_variables(model)) variables"
+        variable_classification = get_annotations(ECModel)
+
+        num_variables = sum(length(it) for it in values(variable_classification))
+        if num_variables != JuMP.num_variables(model)
+            @warn "Annotation for $num_variables out of the total $(JuMP.num_variables(model)) variables"
+        end
+        indices, annotations = CPLEX.CPXINT[], CPLEX.CPXLONG[]
+        for (key, value) in variable_classification
+            indices_value = map(x->CPLEX.CPXINT(x.index.value-1), value)
+            append!(indices, indices_value)
+            append!(annotations, fill(CPLEX.CPXLONG(CPLEX.CPX_BENDERS_MASTERVALUE + key), length(indices_value)))
+        end
+        cplex = JuMP.backend(model)
+        index_p = Ref{CPLEX.CPXINT}()
+        CPLEX.CPXnewlongannotation(
+            cplex.env,
+            cplex.lp,
+            CPLEX.CPX_BENDERS_ANNOTATION,
+            CPLEX.CPX_BENDERS_MASTERVALUE,
+        )
+        CPLEX.CPXgetlongannotationindex(
+            cplex.env,
+            cplex.lp,
+            CPLEX.CPX_BENDERS_ANNOTATION,
+            index_p,
+        )
+        CPLEX.CPXsetlongannotations(
+            cplex.env,
+            cplex.lp,
+            index_p[],
+            CPLEX.CPX_ANNOTATIONOBJ_COL,
+            length(indices),
+            indices,
+            annotations,
+        )
+        return
     end
-    indices, annotations = CPLEX.CPXINT[], CPLEX.CPXLONG[]
-    for (key, value) in variable_classification
-        indices_value = map(x->CPLEX.CPXINT(x.index.value-1), value)
-        append!(indices, indices_value)
-        append!(annotations, fill(CPLEX.CPXLONG(CPLEX.CPX_BENDERS_MASTERVALUE + key), length(indices_value)))
-    end
-    cplex = JuMP.backend(model)
-    index_p = Ref{CPLEX.CPXINT}()
-    CPLEX.CPXnewlongannotation(
-        cplex.env,
-        cplex.lp,
-        CPLEX.CPX_BENDERS_ANNOTATION,
-        CPLEX.CPX_BENDERS_MASTERVALUE,
-    )
-    CPLEX.CPXgetlongannotationindex(
-        cplex.env,
-        cplex.lp,
-        CPLEX.CPX_BENDERS_ANNOTATION,
-        index_p,
-    )
-    CPLEX.CPXsetlongannotations(
-        cplex.env,
-        cplex.lp,
-        index_p[],
-        CPLEX.CPX_ANNOTATIONOBJ_COL,
-        length(indices),
-        indices,
-        annotations,
-    )
-    return
+catch e
+    @warn "Notation by CPLEX are not enabled"
 end
 
 
