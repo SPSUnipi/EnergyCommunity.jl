@@ -102,7 +102,7 @@ function build_row_options(optimizer=DEFAULT_OPTIMIZER; options...)
             # "MIPGap"=>0.05,
             # "MIPGapAbs"=>0.01,
             # "MIPFocus"=>1,
-            "TimeLimit"=>3600*12,
+            "TimeLimit"=>3600*2,
             "LogFile"=>"gurobi.log",
             "Threads"=>10,
             # "NoRelHeurTime"=>10,
@@ -169,6 +169,19 @@ function simulation(EC_size, optimizer, precoal, bestobjstop)
     return (EC_size=EC_size, optimizer=optimizer, precoal=precoal, bestobjstop=bestobjstop)
 end
 
+# Callback to set Benders decomposition and increase comp. time if TIME_LIMIT occurs
+function callback_solution_time_limit(ecm_copy)
+    # reinitialize start value to current solution
+    set_start_value.(all_variables(ecm_copy.model), value.(all_variables(ecm_copy.model)))
+    # set desired parameters
+    JuMP.set_optimizer_attribute(ecm_copy.model, "CPXPARAM_Benders_Strategy", 3)
+    JuMP.set_optimizer_attribute(ecm_copy.model, "TimeLimit", 3600*24)
+    # reoptimize the solution
+    optimize!(ecm_copy)
+end
+
+dict_callback = Dict(JuMP.TIME_LIMIT=>callback_solution_time_limit)
+
 # Gurobi
 # run_simulations = [
 #     (EC_size=3, optimizer=build_row_options(; PoolSearchMode=1, PoolSolutions=10), precoal=[1], bestobjstop=true),
@@ -202,11 +215,10 @@ run_simulations = [
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 2, 3], bestobjstop=false),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 9, 10], bestobjstop=false),
     (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=false),
-    (EC_size=20, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3), precoal=[1, 20], bestobjstop=false),
     (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=true),
-    (EC_size=20, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3), precoal=[1, 20], bestobjstop=true),
-    (EC_size=50, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3), precoal=[1, 50], bestobjstop=true),
-    (EC_size=100, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3), precoal=[1, 100], bestobjstop=true),
+    (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=true),
+    (EC_size=50, optimizer=build_row_options(), precoal=[1, 50], bestobjstop=true),
+    (EC_size=100, optimizer=build_row_options(), precoal=[1, 100], bestobjstop=true),
 ]
 
 
@@ -224,7 +236,7 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
 
     current_EC = EC_dict[el.EC_size]
 
-    iter_mode = IterMode(current_EC, BASE_GROUP; no_aggregator_group=NO_AGG_GROUP, optimizer=el.optimizer)
+    iter_mode = IterMode(current_EC, BASE_GROUP; no_aggregator_group=NO_AGG_GROUP, optimizer=el.optimizer, callback_solution=dict_callback)
 
     # include all coalitions having no more than preload_max_size users
     preload_combs_set = el.precoal
