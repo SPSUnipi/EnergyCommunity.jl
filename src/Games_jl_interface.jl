@@ -593,6 +593,9 @@ relax_combinatorial : (optional, default false)
     in the combinatorial part
 direct_model : (optional, default false)
     When true the JuMP model is direct
+callback_solution : Dict (optional, default empty)
+    Dictionary of callbacks depending on the termination status of the optimization.
+    Keys shall be of type JuMP.TerminationStatusCode, and outputs a function with as argument a ModelEC
 
 Return
 ------
@@ -609,6 +612,7 @@ function to_least_profitable_coalition_callback(
         number_of_solutions=1,
         relax_combinatorial=false,
         use_notations=false,
+        callback_solution=Dict(),
         kwargs...
     )
 
@@ -642,7 +646,7 @@ function to_least_profitable_coalition_callback(
     end
 
     # create a backup of the model and work on it
-    let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions
+    let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions, callback_solution=callback_solution
 
         # general implementation of utility_callback_by_subgroup
         """
@@ -686,6 +690,12 @@ function to_least_profitable_coalition_callback(
 
             # optimize the problem
             optimize!(ecm_copy)
+
+            # postprocess result by termination status
+            t_status = termination_status(EC_CODE)
+            if t_status in keys(callback_solution)
+                callback_solution[t_status](ecm_copy)
+            end
 
             user_set_tot = axes(ecm_copy.results[:profit_distribution])[1]
 
