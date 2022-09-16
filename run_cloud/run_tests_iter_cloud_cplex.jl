@@ -47,6 +47,8 @@ NO_AGG_GROUP = GroupANC();  # type of aggregation when the Aggregator does not b
                             # options: GroupANC() or GroupNC()
 BASE_GROUP = GroupNC();     # base type of aggregation (it shall be GroupNC)
 
+ATOL = 0.1
+RTOL = 1e-2
 
 ##= Load base EC model
 
@@ -99,10 +101,10 @@ function build_row_options(optimizer=DEFAULT_OPTIMIZER; options...)
         default_options = Dict(
             "OutputFlag"=>1,
             "LogToConsole"=>0,
-            # "MIPGap"=>0.05,
-            # "MIPGapAbs"=>0.01,
+            "MIPGap"=>RTOL,
+            "MIPGapAbs"=>ATOL,
             # "MIPFocus"=>1,
-            "TimeLimit"=>3600*2,
+            "TimeLimit"=>3600*6,
             "LogFile"=>"gurobi.log",
             "Threads"=>10,
             # "NoRelHeurTime"=>10,
@@ -112,14 +114,15 @@ function build_row_options(optimizer=DEFAULT_OPTIMIZER; options...)
         )
     elseif optimizer <: CPLEX.Optimizer
         default_options = Dict(
-            # "CPX_PARAM_EPGAP"=>0.05,
-            # "CPX_PARAM_TILIM"=>3600,
-            "CPX_PARAM_THREADS"=>15,
+            "CPX_PARAM_EPGAP"=>RTOL,
+            "CPX_PARAM_EPAGAP"=>ATOL,
+            "CPX_PARAM_TILIM"=>3600,
+            "CPX_PARAM_THREADS"=>10,
             "CPX_PARAM_PARALLELMODE"=>-1,  #-1: opportunistic, 1:deterministic
             # "NoRelHeurTime"=>10,
             "CPX_PARAM_POPULATELIM"=>200,
             "CPX_PARAM_SOLNPOOLINTENSITY"=>2,
-            "CPXPARAM_Benders_Strategy"=>-1,
+            # "CPXPARAM_Benders_Strategy"=>-1,
             # "CPXPARAM_Benders_Strategy"=>3,
             # "CPXPARAM_Benders_Strategy"=>1,
             # "CPXPARAM_SOLNPOOLREPLACE"=>1,
@@ -248,7 +251,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         iter_mode,
         OPTIMIZER;
         lower_bound=0.0,
-        atol=1e-4,
+        atol=ATOL,
+        rtol=RTOL,
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? BESTOBJSTOP_param : nothing),
@@ -265,7 +269,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         iter_mode,
         OPTIMIZER;
         lower_bound=0.0,
-        atol=1e-4,
+        atol=ATOL,
+        rtol=RTOL,
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? BESTOBJSTOP_param : nothing),
@@ -281,7 +286,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         iter_mode,
         OPTIMIZER;
         lower_bound=0.0,
-        atol=1e-4,
+        atol=ATOL,
+        rtol=RTOL,
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? BESTOBJSTOP_param : nothing),
@@ -298,7 +304,8 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
         iter_mode,
         OPTIMIZER;
         lower_bound=0.0,
-        atol=1e-4,
+        atol=ATOL,
+        rtol=RTOL,
         raw_outputs=true,
         preload_coalitions=preload_coalitions,
         best_objective_stop_option=(el.bestobjstop ? BESTOBJSTOP_param : nothing),
