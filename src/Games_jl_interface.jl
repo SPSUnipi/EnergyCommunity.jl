@@ -692,7 +692,7 @@ function to_least_profitable_coalition_callback(
             optimize!(ecm_copy)
 
             # postprocess result by termination status
-            t_status = termination_status(EC_CODE)
+            t_status = termination_status(ecm_copy)
             if t_status in keys(callback_solution)
                 callback_solution[t_status](ecm_copy)
             end
