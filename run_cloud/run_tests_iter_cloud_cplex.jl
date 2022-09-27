@@ -1,7 +1,7 @@
 ##= Load parameters
 
 input_file = joinpath(@__DIR__, "../data/energy_community_model.yml")  # Input file
-parent_dir = "/data/davidef/gitdf/EnergyCommunity.jl/run_cloud"
+save_iter_dir = "/data/davidef/gitdf/EnergyCommunity.jl/run_cloud/results_paper/iter"
 
 enum_mode_file = "enum_mode_datasest.jld2"  # file used to store the enumerative results
 total_results_file = "total_results_file_poolmode0_poolsearch200_poolsearch200_N12.jld2"  # file to store all major results
@@ -26,6 +26,7 @@ using JLD2
 using Latexify, LaTeXStrings
 using YAML
 using CPLEX
+using CSV
 
 ##= Solver settings
 
@@ -116,13 +117,13 @@ function build_row_options(optimizer=DEFAULT_OPTIMIZER; options...)
         default_options = Dict(
             "CPX_PARAM_EPGAP"=>RTOL,
             "CPX_PARAM_EPAGAP"=>ATOL,
-            "CPX_PARAM_TILIM"=>3600,
+            "CPX_PARAM_TILIM"=>3*3600,
             "CPX_PARAM_THREADS"=>10,
             "CPX_PARAM_PARALLELMODE"=>-1,  #-1: opportunistic, 1:deterministic
             # "NoRelHeurTime"=>10,
             "CPX_PARAM_POPULATELIM"=>200,
             "CPX_PARAM_SOLNPOOLINTENSITY"=>2,
-            # "CPXPARAM_Benders_Strategy"=>-1,
+            "CPXPARAM_Benders_Strategy"=>-1,
             # "CPXPARAM_Benders_Strategy"=>3,
             # "CPXPARAM_Benders_Strategy"=>1,
             # "CPXPARAM_SOLNPOOLREPLACE"=>1,
@@ -178,7 +179,7 @@ function callback_solution_time_limit(ecm_copy)
     set_start_value.(all_variables(ecm_copy.model), value.(all_variables(ecm_copy.model)))
     # set desired parameters
     JuMP.set_optimizer_attribute(ecm_copy.model, "CPXPARAM_Benders_Strategy", 3)
-    JuMP.set_optimizer_attribute(ecm_copy.model, "TimeLimit", 3600*24)
+    JuMP.set_optimizer_attribute(ecm_copy.model, "CPX_PARAM_TILIM", 3600*24)
     # reoptimize the solution
     optimize!(ecm_copy)
 end
@@ -213,16 +214,42 @@ run_simulations = [
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 2], bestobjstop=false),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 10], bestobjstop=false),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 10], bestobjstop=true),
-    (EC_size=10, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3), precoal=[1, 10], bestobjstop=false),
-    (EC_size=10, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3), precoal=[1, 10], bestobjstop=true),
+    (EC_size=10, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3, CPX_PARAM_TILIM=24*3600), precoal=[1, 10], bestobjstop=false),
+    (EC_size=10, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3, CPX_PARAM_TILIM=24*3600), precoal=[1, 10], bestobjstop=true),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 2, 3], bestobjstop=false),
     (EC_size=10, optimizer=build_row_options(), precoal=[1, 9, 10], bestobjstop=false),
     (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=false),
     (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=true),
-    (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=true),
+    (EC_size=20, optimizer=build_row_options(), precoal=[1, 20], bestobjstop=false),
+    (EC_size=20, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3, CPX_PARAM_TILIM=24*3600), precoal=[1, 20], bestobjstop=true),
+    (EC_size=20, optimizer=build_row_options(; CPXPARAM_Benders_Strategy=3, CPX_PARAM_TILIM=24*3600), precoal=[1, 20], bestobjstop=false),
     (EC_size=50, optimizer=build_row_options(), precoal=[1, 50], bestobjstop=true),
     (EC_size=100, optimizer=build_row_options(), precoal=[1, 100], bestobjstop=true),
 ]
+
+# parse run_simulations to store a backup csv file
+base_names_named_tuple = unique(vcat([string.(collect(keys(c))) for c in run_simulations]...))
+setdiff!(base_names_named_tuple, ["optimizer"])  # drop optimizer
+options_named_tuple = unique(vcat([map(x -> x.first.name, c.optimizer.params) for c in run_simulations]...))
+
+"Function to return the value of the desired option_named given a list of parameters params"
+function get_value_option(params, option_name, default="")
+    id = findfirst(p -> p.first.name == option_name, params)
+    isnothing(id) && return default
+    return params[id].second
+end
+
+df_run_simulations = DataFrame(
+    permutedims(hcat([
+        [[c[Symbol(bn)] for bn in base_names_named_tuple];
+        [get_value_option(c.optimizer.params, on) for on in options_named_tuple]]
+        for c in run_simulations
+    ]...)),
+    [base_names_named_tuple; options_named_tuple],
+)
+
+CSV.write("$save_iter_dir/options_backup.csv", df_run_simulations)
+
 
 
 # models of the ec
@@ -233,7 +260,8 @@ EC_dict = Dict(
 
 # (id_run, el) = first(collect(enumerate(run_simulations)))
 
-Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
+# Threads.@threads 
+for (id_run, el) in collect(enumerate(run_simulations))
 
     println("------------- ITER ID RUN $id_run --------------")
 
@@ -380,7 +408,7 @@ Threads.@threads for (id_run, el) in collect(enumerate(run_simulations))
     # )
     
     # save results
-    filepath = "$parent_dir/results_paper/iter/iter_simulations_results_$id_run.jld2"
+    filepath = "$save_iter_dir/iter_simulations_results_$id_run.jld2"
     # create parent directory if missing
     mkpath(dirname(filepath))
     jldsave(filepath; df_reward_iter, df_time_iter, df_iterations_iter, df_surplus_values, df_history)
