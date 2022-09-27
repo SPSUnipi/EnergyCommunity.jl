@@ -9,6 +9,8 @@ latex_output = "latex_output_poolmode0_poolsearch200_poolsearch200_N12.txt"
 
 overwrite_files = true  # when true, output files are overwritten
 
+mkpath(save_iter_dir)
+
 
 ##= Load imports
 
