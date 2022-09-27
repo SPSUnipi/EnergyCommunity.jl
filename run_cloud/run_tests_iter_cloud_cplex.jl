@@ -42,7 +42,8 @@ else
     OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0, "Threads"=>10)
 end
 
-BESTOBJSTOP_param = ((DEFAULT_OPTIMIZER <: CPLEX.Optimizer) ? "CPX_PARAM_MIP_Limits_UpperObjStop" : "BestObjStop")
+BESTOBJSTOP_param = ((DEFAULT_OPTIMIZER <: CPLEX.Optimizer) ? "CPXPARAM_MIP_Limits_LowerObjStop" : "BestObjStop")  # "CPXPARAM_MIP_Limits_UpperObjStop"
+LOWEROBJSTOP_param = ((DEFAULT_OPTIMIZER <: CPLEX.Optimizer) ? "CPXPARAM_MIP_Limits_UpperObjStop" : "BestBdStop")  # "CPXPARAM_MIP_Limits_LowerObjStop"
 
 ##= Energy Community options
 
