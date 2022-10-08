@@ -117,6 +117,14 @@ for EC_enum_s in EC_size_list_enum
     )  # variance least core (include raw outputs for comparison purposes)
     time_elapsed_varleastcore_enum=tok();
 
+    tick()
+    incore_dist_enum = in_core(enum_mode, OPTIMIZER)  # in core
+    time_elapsed_incore_enum=tok()
+
+    tick()
+    leastcore_dist_enum = least_core(enum_mode, OPTIMIZER)  # least core
+    time_elapsed_leastcore_enum=tok()
+
     # vector of the users
     user_set_agg = [EC_CODE; get_user_set(current_EC)]
 
@@ -130,6 +138,8 @@ for EC_enum_s in EC_size_list_enum
         nucleolus_enum=vectorize_rewards(nucleolus_dist_enum),
         varcore_enum=vectorize_rewards(varcore_dist_enum),
         varleastcore_enum=vectorize_rewards(varleastcore_dist_enum),
+        incore_enum=vectorize_rewards(incore_dist_enum),
+        leastcore_enum=vectorize_rewards(leastcore_dist_enum),
     )
 
     # dataframe of the time requirements
@@ -142,6 +152,8 @@ for EC_enum_s in EC_size_list_enum
         "nucleolus_enum"=>time_elapsed_nucleolus_enum+time_elapsed_enum,
         "varcore_enum"=>time_elapsed_varcore_enum+time_elapsed_enum,
         "varleastcore_enum"=>time_elapsed_varleastcore_enum+time_elapsed_enum,
+        "incore_enum"=>time_elapsed_incore_enum+time_elapsed_enum,
+        "leastcore_enum"=>time_elapsed_leastcore_enum+time_elapsed_enum,
     )
     
     # save results
