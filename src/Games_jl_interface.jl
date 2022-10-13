@@ -508,10 +508,31 @@ function get_annotations(ECModel::AbstractEC)
     return variable_annotations
 end
 
-"General fallback"
+"General fallback for notations"
 function add_notations!(ECModel::AbstractEC, ::Any)
     @warn "Annotations not supported for the current solver; annotations are ignored"
     return
+end
+
+"General fallback for branching priorities"
+function add_branching_priorities!(ECModel::AbstractEC, ::Any) end
+
+try
+
+    """
+        Add branching priorities for Gurobi backend
+    """
+    function add_branching_priorities!(ECModel::AbstractEC, ::Type{Gurobi.Optimizer})
+
+        # setup priority for the EC variable
+        id_coal_ec = ECModel.model[:coalition_status].index.value
+        
+        MOI.set(model, Gurobi.VariableAttribute("BranchPriority"), id_coal_ec, 10)
+
+        @info "Gurobi: branching priorities successfully added"
+    end
+catch e
+    @warn "Special features by Gurobi are not enabled"
 end
 
 try
@@ -560,8 +581,35 @@ try
         )
         return
     end
+    
+
+    """
+        Add branching priorities for CPLEX backend
+    """
+    function add_branching_priorities!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
+
+        # setup priority for the EC variable
+        id_coal_ec = ECModel.model[:coalition_status].index.value
+        cplex_id_coal_ec = CPLEX.CPXINT(id_coal_ec-1)
+        priority_ec = 10
+
+        cplex = JuMP.backend(ECModel.model)
+
+        if CPLEX.CPXcopyorder(
+                cplex.env,
+                cplex.lp,
+                1,
+                [cplex_id_coal_ec],
+                [priority_ec],
+                C_NULL,
+            ) == 0
+            @info "CPLEX: branching priorities successfully added"
+        else
+            @warn "ERROR CPLEX: impossible to add branching priorities in CPLEX"
+        end
+    end
 catch e
-    @warn "Notation by CPLEX are not enabled"
+    @warn "Special features by CPLEX are not enabled"
 end
 
 
@@ -635,15 +683,16 @@ function to_least_profitable_coalition_callback(
         use_notations=use_notations,
     )
 
-    if use_notations
-        if isnothing(optimizer)
-            @error "Customer optimizer shall be specified when notations are enabled"
-        end
+    optimizer_constructor = (isa(optimizer, MOI.OptimizerWithAttributes) ? optimizer.optimizer_constructor : optimizer)
 
-        optimizer_constructor = (isa(optimizer, MOI.OptimizerWithAttributes) ? optimizer.optimizer_constructor : optimizer)
+    if use_notations
+        isnothing(optimizer) && @error "Customer optimizer shall be specified when notations are enabled"
 
         add_notations!(ecm_copy, optimizer_constructor)
     end
+
+    # add branching priorities
+    add_branching_priorities!(ecm_copy, optimizer_constructor)
 
     # create a backup of the model and work on it
     let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions, callback_solution=callback_solution

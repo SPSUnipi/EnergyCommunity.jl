@@ -19,6 +19,11 @@ module EnergyCommunity
     catch e
         @warn "CPLEX not loaded; features may be limited"
     end
+    try
+        import Gurobi
+    catch e
+        @warn "Gurobi not loaded; features may be limited"
+    end
 
     const MOI = MathOptInterface
     
