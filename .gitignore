@@ -27,6 +27,8 @@ docs/site/
 # environment.
 Manifest.toml
 
+# results folders
+run_cloud/results*
 
 # folders
 results
