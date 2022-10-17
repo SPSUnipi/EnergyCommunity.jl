@@ -644,6 +644,8 @@ direct_model : (optional, default false)
 callback_solution : Dict (optional, default empty)
     Dictionary of callbacks depending on the termination status of the optimization.
     Keys shall be of type JuMP.TerminationStatusCode, and outputs a function with as argument a ModelEC
+branching_priorities : Bool (optional, default true) 
+    Option to specify if add the branching priorities
 
 Return
 ------
@@ -661,6 +663,7 @@ function to_least_profitable_coalition_callback(
         relax_combinatorial=false,
         use_notations=false,
         callback_solution=Dict(),
+        branching_prioties=true,
         kwargs...
     )
 
@@ -692,7 +695,9 @@ function to_least_profitable_coalition_callback(
     end
 
     # add branching priorities
-    add_branching_priorities!(ecm_copy, optimizer_constructor)
+    if branching_prioties
+        add_branching_priorities!(ecm_copy, optimizer_constructor)
+    end
 
     # create a backup of the model and work on it
     let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions, callback_solution=callback_solution
