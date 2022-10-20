@@ -101,7 +101,7 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; no_a
     test_coal = Dict(EC_CODE=>0.0, "user1"=>total_surplus/2, "user2"=>total_surplus/2, "user3"=>0.0)
 
     # create callback
-    callback = to_least_profitable_coalition_callback(ECModel, base_group; no_aggregator_group)
+    callback = to_least_profitable_coalition_callback(ECModel, base_group; no_aggregator_group=no_aggregator_group)
 
     # test to identify the least profitable coalition of the profit distribution test_coal
     # expected value are tested below
