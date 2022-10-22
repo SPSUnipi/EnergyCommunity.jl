@@ -78,25 +78,25 @@ end
 
 
 """
-    Constructor of a ModelEC
+Constructor of a ModelEC
 
 Inputs
 ------
-    data : Dict 
-        Data of the EC
-    group_type : AbstractGroup
-        Type of EC
-    optimizer
-        Optimizer of the model
-    user_set : Vector
-        Vector of the users
+data : Dict 
+    Data of the EC
+group_type : AbstractGroup
+    Type of EC
+optimizer
+    Optimizer of the model
+user_set : Vector
+    Vector of the users
 """
 function ModelEC(
     data::Dict=ZERO_DD,
     group_type=GroupNC(),
     optimizer=nothing,
     user_set::Vector=Vector(),
-)
+    )
     check_valid_data_dict(data)
     gen_data, users_data, market_data = explode_data(data)
 
@@ -113,16 +113,15 @@ function ModelEC(
     ModelEC(data, gen_data, market_data, users_data, group_type, user_set, model, optimizer, results)
 end
 
+# function ModelEC(;
+#     data::Dict,
+#     group_type,
+#     optimizer=nothing,
+#     user_set::Vector=Vector()
+# )
 
-function ModelEC(;
-    data::Dict,
-    group_type,
-    optimizer=nothing,
-    user_set::Vector=Vector()
-)
-
-    ModelEC(data, group_type, optimizer, user_set)
-end
+#     ModelEC(data, group_type, optimizer, user_set)
+# end
 
 """
 Load Model from disk
@@ -137,7 +136,7 @@ function ModelEC(file_name::AbstractString,
     data = read_input(file_name)
     user_set = user_names(general(data), users(data))
 
-    ModelEC(data=data, group_type=group_type, optimizer=optimizer, user_set=user_set)
+    ModelEC(data, group_type, optimizer, user_set)
 end
 
 "Copy constructor"
