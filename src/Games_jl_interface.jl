@@ -890,10 +890,23 @@ function Games.IterMode(
         optimizer=nothing,
         number_of_solutions=0,
         use_notations=false,
+        decompose_ANC=true,
         kwargs...
     )
-    utility_callback = to_utility_callback_by_subgroup(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, kwargs...)
-    worst_coalition_callback = to_least_profitable_coalition_callback(ECModel, base_group_type; no_aggregator_type=no_aggregator_type, optimizer=optimizer, number_of_solutions=number_of_solutions, use_notations=use_notations, kwargs...)
+    utility_callback = to_utility_callback_by_subgroup(
+        ECModel, base_group_type;
+        no_aggregator_type=no_aggregator_type,
+        kwargs...
+    )
+    worst_coalition_callback = to_least_profitable_coalition_callback(
+        ECModel, base_group_type;
+        no_aggregator_type=no_aggregator_type,
+        optimizer=optimizer,
+        number_of_solutions=number_of_solutions,
+        use_notations=use_notations,
+        decompose_ANC=decompose_ANC,
+        kwargs...
+    )
 
     robust_mode = Games.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
