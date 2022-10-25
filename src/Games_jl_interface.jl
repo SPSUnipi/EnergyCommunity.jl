@@ -742,7 +742,7 @@ function to_least_profitable_coalition_callback(
         relax_combinatorial=false,
         use_notations=false,
         callback_solution=Dict(),
-        branching_prioties=true,
+        branching_priorities=true,
         decompose_ANC=true,
         decompose_tolerance=0.05,
         kwargs...
@@ -776,7 +776,7 @@ function to_least_profitable_coalition_callback(
     end
 
     # add branching priorities
-    if branching_prioties
+    if branching_priorities
         add_branching_priorities!(ecm_copy, optimizer_constructor)
     end
     
