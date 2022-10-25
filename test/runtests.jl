@@ -1,5 +1,5 @@
 using EnergyCommunity, JuMP, Plots
-using Test, FileIO, GLPK, HiGHS, MathOptInterface, Games, YAML
+using Test, FileIO, HiGHS, MathOptInterface, Games, YAML
 using ReferenceTests
 
 # needed to avoid problems with qt when plotting
