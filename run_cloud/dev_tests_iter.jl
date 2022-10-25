@@ -84,10 +84,10 @@ function build_nusers_EC_file(ECModel, n_users)
     )
 
     return ModelEC(
-        data=data_new,
-        group_type=ECModel.group_type,
-        optimizer=ECModel.optimizer,
-        user_set=user_list
+        data_new,
+        ECModel.group_type,
+        ECModel.optimizer,
+        user_list
     )
 end
 
