@@ -789,7 +789,7 @@ function to_least_profitable_coalition_callback(
     if decompose_ANC
         ecm_copy_anc = ModelEC(ECModel; optimizer=optimizer)
 
-        build_noagg_least_profitable!(ecm_copy_anc; build_direct_model=true, optimizer=optimizer)
+        build_noagg_least_profitable!(ecm_copy_anc; optimizer=optimizer)
         fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
     end
 
