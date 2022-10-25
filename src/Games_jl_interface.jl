@@ -226,7 +226,7 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     )
 
     # update social welfare value
-    add_to_expression!(ECModel.model[:SW], R_Reward_agg_NPV_noagg)
+    ECModel.model[:SW] = R_Reward_agg_NPV_noagg
 
     return ECModel.model[:SW]
 end
@@ -427,6 +427,39 @@ end
 
 
 """
+build_noagg_least_profitable(ECModel::ModelEC; use_notations=false, optimizer=nothing)
+
+Function to create an ecmodel that returns the least profitable coalition for ANC models
+"""
+function build_noagg_least_profitable!(ECModel::ModelEC; build_direct_model=false, optimizer=nothing)
+    isnothing(optimizer) && (optimizer = ECModel.optimizer)
+
+    user_set_EC = [EC_CODE; ECModel.user_set]
+
+    ECModel.model = (build_direct_model ? direct_model(optimizer) : Model(optimizer))
+
+    @variable(ECModel.model, coalition_status[u=user_set_EC], set = MOI.ZeroOne())  # setup coalition variable
+    fix(coalition_status[EC_CODE], 0.0, force=true)  # force EC not to be part of the coalition
+    @expression(ECModel.model, SW, 0.0)  # initialize SW expression
+
+    # auxiliary variable used to fix the profit distribution using the fix function
+    @expression(ECModel.model, profit_distribution[user_set_EC], 0.0)
+
+    SW = build_no_agg_utility!(ECModel, GroupANC())
+
+    # definition of the minimum surplus
+    @expression(ECModel.model, coalition_benefit, SW)
+
+    # assure at least a user to be in the coalition
+    @constraint(ECModel.model, exclude_null_coalition,
+        sum(coalition_status) >= 1.0
+    )
+
+    # change objective to the minimum surplus
+    @objective(ECModel.model, Min, sum(profit_distribution[u]*coalition_status[u] for u in user_set_EC) - SW)
+end
+
+"""
 set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
 
 Function to set the profit distribution of the least profitable problem
@@ -612,6 +645,44 @@ catch e
     @warn "Special features by CPLEX are not enabled"
 end
 
+"""Function to create output data after the optimization for Games.jl"""
+function create_output_data(ecm_copy::ModelEC, number_of_solutions)
+    user_set_tot = axes(ecm_copy.results[:profit_distribution])[1]
+
+    # number of results of the current iteration
+    n_results = result_count(ecm_copy)
+    # number of outputs to return
+    n_outputs = (number_of_solutions <= 0) ? n_results : number_of_solutions
+
+    output_data = Vector{NamedTuple}(undef, n_outputs)
+
+    for o = 1:n_outputs
+
+        # get the coalition status
+        coalition_status = value.(ecm_copy.model[:coalition_status], result=o)
+
+        # define the set of the least profitable coalition
+        least_profitable_coalition = [
+            u for u in user_set_tot if coalition_status[u] >= 0.5
+        ]
+
+        # get the benefit of the coalition
+        coalition_benefit = value(ecm_copy.model[:coalition_benefit], result=o)
+
+        # get minimum surplus of the coalition
+        min_surplus = objective_value(ecm_copy.model, result=o)
+
+        output_data[o] = (
+            least_profitable_coalition_status=coalition_status,
+            least_profitable_coalition=least_profitable_coalition,
+            coalition_benefit=coalition_benefit,
+            min_surplus=min_surplus,
+        )
+
+    end
+
+    return output_data
+end
 
 """
     to_least_profitable_coalition_callback(ECModel::AbstractEC, base_group::AbstractGroup=GroupNC(); no_aggregator_group::AbstractGroup=GroupNC())
@@ -646,6 +717,14 @@ callback_solution : Dict (optional, default empty)
     Keys shall be of type JuMP.TerminationStatusCode, and outputs a function with as argument a ModelEC
 branching_priorities : Bool (optional, default true) 
     Option to specify if add the branching priorities
+decompose_ANC : Bool (optional, default false)
+    When True, if the no_aggregator_group is ANC and, then the main optimization model is decomposed
+    into two models: (a) when no Aggregator is in the coalition and (b) when the aggregator is in the coalition
+    In this case, (a) is optimized first and if the optimization is beyond a given threshold,
+    the execution is terminated without optimizing (b). The threshold is provided as an optional input
+    in the callback function returned by the function. Otherwise the optimization continues with (b).
+decompose_tolerance : Float
+    Relative tolerance of the decompose_ANC procedure that compares the stopping criterion with the current result
 
 Return
 ------
@@ -664,6 +743,8 @@ function to_least_profitable_coalition_callback(
         use_notations=false,
         callback_solution=Dict(),
         branching_prioties=true,
+        decompose_ANC=true,
+        decompose_tolerance=0.05,
         kwargs...
     )
 
@@ -698,9 +779,18 @@ function to_least_profitable_coalition_callback(
     if branching_prioties
         add_branching_priorities!(ecm_copy, optimizer_constructor)
     end
+    
+    # optional model used for the special decomposition of ANC and NC problems
+    ecm_copy_anc = nothing
+    if decompose_ANC
+        ecm_copy_anc = ModelEC(ECModel; optimizer=optimizer)
+
+        build_noagg_least_profitable!(ecm_copy_anc; build_direct_model=true, optimizer=optimizer)
+        fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
+    end
 
     # create a backup of the model and work on it
-    let ecm_copy=ecm_copy, number_of_solutions=number_of_solutions, callback_solution=callback_solution
+    let ecm_copy=ecm_copy, callback_solution=callback_solution
 
         # general implementation of utility_callback_by_subgroup
         """
@@ -731,8 +821,12 @@ function to_least_profitable_coalition_callback(
         function least_profitable_coalition_callback(
                 profit_distribution;
                 modify_solver_options::Vector=[],
+                decompose_ANC_lower_obj_stop=-Inf,
                 kwargs...
             )
+
+            # initialize output
+            output_data = []
             
             # change the profit distribution
             set_least_profitable_profit!(ecm_copy, profit_distribution)
@@ -740,6 +834,24 @@ function to_least_profitable_coalition_callback(
             # change solver attributes
             for opt in modify_solver_options
                 set_optimizer_attribute(ecm_copy.model, opt.first, opt.second)
+            end
+
+            if (decompose_ANC) && isfinite(decompose_ANC_lower_obj_stop)
+                # change the profit distribution
+                set_least_profitable_profit!(ecm_copy_anc, profit_distribution)
+
+                # optimize decomposed ANC problem
+                optimize!(ecm_copy_anc)
+
+                # get outputs
+                output_data = create_output_data(ecm_copy_anc, number_of_solutions)
+
+                if output_data[1].min_surplus < decompose_ANC_lower_obj_stop * (1 - decompose_tolerance)
+                    println("Current surplus ($(output_data[1].min_surplus)) < objective stop + tol ($decompose_ANC_lower_obj_stop)")
+                    return output_data
+                else
+                    println("Current surplus ($(output_data[1].min_surplus)) > objective stop ($decompose_ANC_lower_obj_stop)")
+                end
             end
 
             # optimize the problem
@@ -751,39 +863,8 @@ function to_least_profitable_coalition_callback(
                 callback_solution[t_status](ecm_copy)
             end
 
-            user_set_tot = axes(ecm_copy.results[:profit_distribution])[1]
-
-            # number of results of the current iteration
-            n_results = result_count(ecm_copy)
-            # number of outputs to return
-            n_outputs = (number_of_solutions <= 0) ? n_results : number_of_solutions
-
-            output_data = Vector{NamedTuple}(undef, n_outputs)
-
-            for o = 1:n_outputs
-
-                # get the coalition status
-                coalition_status = value.(ecm_copy.model[:coalition_status], result=o)
-
-                # define the set of the least profitable coalition
-                least_profitable_coalition = [
-                    u for u in user_set_tot if coalition_status[u] >= 0.5
-                ]
-
-                # get the benefit of the coalition
-                coalition_benefit = value(ecm_copy.model[:coalition_benefit], result=o)
-
-                # get minimum surplus of the coalition
-                min_surplus = objective_value(ecm_copy.model, result=o)
-
-                output_data[o] = (
-                    least_profitable_coalition_status=coalition_status,
-                    least_profitable_coalition=least_profitable_coalition,
-                    coalition_benefit=coalition_benefit,
-                    min_surplus=min_surplus,
-                )
-
-            end
+            # append any previous results to total results
+            output_data = [output_data; create_output_data(ecm_copy, number_of_solutions)]
             
             return output_data
         end
