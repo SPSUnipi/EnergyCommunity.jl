@@ -226,7 +226,11 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     )
 
     # update social welfare value
-    ECModel.model[:SW] = R_Reward_agg_NPV_noagg
+    if isa(ECModel.model[:SW], JuMP.AbstractJuMPScalar)
+        add_to_expression!(ECModel.model[:SW], R_Reward_agg_NPV_noagg)
+    else
+        ECModel.model[:SW] = R_Reward_agg_NPV_noagg
+    end
 
     return ECModel.model[:SW]
 end
