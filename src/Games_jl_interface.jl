@@ -790,7 +790,7 @@ function to_least_profitable_coalition_callback(
         ecm_copy_anc = ModelEC(ECModel; optimizer=optimizer)
 
         build_noagg_least_profitable!(ecm_copy_anc; optimizer=optimizer)
-        fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
+        # fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
     end
 
     # create a backup of the model and work on it
