@@ -5,7 +5,7 @@ parent_dir = "C:/Users/Davide/git/gitdf/EnergyCommunity.jl/run_cloud"
 
 overwrite_files = true  # when true, output files are overwritten
 
-EC_size_list_enum = [10, 20] #[5, 10, 20]  # List of sizes of the EC to test in enum mode
+EC_size_list_enum = [10] #, 20] #[5, 10, 20]  # List of sizes of the EC to test in enum mode
 
 
 
@@ -72,10 +72,10 @@ function build_nusers_EC_file(ECModel, n_users)
     )
 
     return ModelEC(
-        data=data_new,
-        group_type=ECModel.group_type,
-        optimizer=ECModel.optimizer,
-        user_set=user_list
+        data_new,
+        ECModel.group_type,
+        ECModel.optimizer,
+        user_list
     )
 end
 
