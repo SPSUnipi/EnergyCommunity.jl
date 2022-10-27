@@ -727,8 +727,10 @@ decompose_ANC : Bool (optional, default false)
     In this case, (a) is optimized first and if the optimization is beyond a given threshold,
     the execution is terminated without optimizing (b). The threshold is provided as an optional input
     in the callback function returned by the function. Otherwise the optimization continues with (b).
-decompose_tolerance : Float
+decompose_rel_tolerance : Float
     Relative tolerance of the decompose_ANC procedure that compares the stopping criterion with the current result
+decompose_abs_tolerance : Float
+    Absolute tolerance of the decompose_ANC procedure that compares the stopping criterion with the current result
 
 Return
 ------
@@ -748,7 +750,8 @@ function to_least_profitable_coalition_callback(
         callback_solution=Dict(),
         branching_priorities=true,
         decompose_ANC=true,
-        decompose_tolerance=0.05,
+        decompose_rel_tolerance=0.05,
+        decompose_abs_tolerance=1e-2,
         kwargs...
     )
 
@@ -826,6 +829,8 @@ function to_least_profitable_coalition_callback(
                 profit_distribution;
                 modify_solver_options::Vector=[],
                 decompose_ANC_lower_obj_stop=-Inf,
+                rtol=1e-4,
+                atol=1e-4,
                 kwargs...
             )
 
@@ -850,11 +855,11 @@ function to_least_profitable_coalition_callback(
                 # get outputs
                 output_data = create_output_data(ecm_copy_anc, number_of_solutions)
 
-                if output_data[1].min_surplus < decompose_ANC_lower_obj_stop * (1 - decompose_tolerance)
-                    println("Current surplus ($(output_data[1].min_surplus)) < objective stop + tol ($decompose_ANC_lower_obj_stop)")
+                if output_data[1].min_surplus < decompose_ANC_lower_obj_stop * (1 - decompose_rel_tolerance) - decompose_abs_tolerance
+                    println("Full model NOT EXECUTED: Current surplus ($(output_data[1].min_surplus)) < objective stop ($decompose_ANC_lower_obj_stop)")
                     return output_data
                 else
-                    println("Current surplus ($(output_data[1].min_surplus)) > objective stop ($decompose_ANC_lower_obj_stop)")
+                    println("Full model EXECUTED: Current surplus ($(output_data[1].min_surplus)) > objective stop ($decompose_ANC_lower_obj_stop)")
                 end
             end
 
