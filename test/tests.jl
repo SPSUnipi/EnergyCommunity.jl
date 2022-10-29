@@ -141,7 +141,7 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; atol
 
 end
 
-function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; atol=atol, rtol=rtol, kwargs...)
+function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; atol=1e-4, rtol=1e-4, kwargs...)
 
     ## Initialization
     ## Model CO
