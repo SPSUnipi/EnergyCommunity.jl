@@ -54,12 +54,14 @@ When in the CO case the NC model is used as base case,
 then this function builds the corresponding constraint
 
 """
-function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
+function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC; base_model=nothing)
     
     # create and optimize base model
-    base_model = ModelEC(ECModel, base_group)
-    build_model!(base_model)
-    optimize!(base_model)
+    if isnothing(base_model)
+        base_model = ModelEC(ECModel, base_group)
+        build_model!(base_model)
+        optimize!(base_model)
+    end
 
     # obtain objectives by users
     obj_users = objective_by_user(base_model)
@@ -82,12 +84,14 @@ When in the CO case the ANC model is used as base case,
 then this function builds the corresponding constraint
 
 """
-function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC)
+function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; base_model=nothing)
     
     # create and optimize base model
-    base_model = ModelEC(ECModel, base_group)
-    build_model!(base_model)
-    optimize!(base_model)
+    if isnothing(base_model)
+        base_model = ModelEC(ECModel, base_group)
+        build_model!(base_model)
+        optimize!(base_model)
+    end
 
     # obtain objectives by users
     obj_users = objective_by_user(base_model)
@@ -153,18 +157,20 @@ end
 
 
 """
-build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC; base_model=nothing)
 
 When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
 then this function builds the corresponding constraint
 
 """
-function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC; base_model=nothing)
     
     # create and optimize base model
-    base_model = ModelEC(ECModel, no_aggregator_group)
-    build_model!(base_model)
-    optimize!(base_model)
+    if isnothing(base_model)
+        base_model = ModelEC(ECModel, no_aggregator_group)
+        build_model!(base_model)
+        optimize!(base_model)
+    end
 
     # obtain objectives by users
     obj_users = objective_by_user(base_model)
@@ -237,13 +243,13 @@ end
 
 
 """
-build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC)
+build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC; kwargs...)
 
 When the NC case is the reference value when no aggregator is available,
 then no changes in the model are required
 
 """
-function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC)
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC; kwargs...)
     return ECModel.model[:SW]
 end
 
@@ -254,7 +260,7 @@ build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any)
 Not implemented case
 
 """
-function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any)
+function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any; kwargs...)
     return throw(ArgumentError("Argument $(string(no_aggregator_group)) not valid"))
 end
 
@@ -282,6 +288,7 @@ function build_least_profitable!(
         add_EC=true,
         relax_combinatorial=false,
         use_notations=false,
+        base_model=nothing,
     )
     
     # list of variables to modify
@@ -406,10 +413,10 @@ function build_least_profitable!(
     end
 
     # define expression of BaseUtility
-    BaseUtility = build_base_utility!(ECModel, base_group)
+    BaseUtility = build_base_utility!(ECModel, base_group; base_model=base_model)
 
     # update social welfare to account for the expected output when no aggregator is included
-    SW = build_no_agg_utility!(ECModel, no_aggregator_group)
+    SW = build_no_agg_utility!(ECModel, no_aggregator_group; base_model=base_model)
 
     # definition of the minimum surplus
     @expression(ECModel.model, coalition_benefit,
@@ -435,7 +442,12 @@ build_noagg_least_profitable(ECModel::ModelEC; use_notations=false, optimizer=no
 
 Function to create an ecmodel that returns the least profitable coalition for ANC models
 """
-function build_noagg_least_profitable!(ECModel::ModelEC; build_direct_model=false, optimizer=nothing)
+function build_noagg_least_profitable!(
+        ECModel::ModelEC;
+        build_direct_model=false,
+        optimizer=nothing,
+        base_model=nothing,
+    )
     isnothing(optimizer) && (optimizer = ECModel.optimizer)
 
     user_set_EC = [EC_CODE; ECModel.user_set]
@@ -449,7 +461,7 @@ function build_noagg_least_profitable!(ECModel::ModelEC; build_direct_model=fals
     # auxiliary variable used to fix the profit distribution using the fix function
     @expression(ECModel.model, profit_distribution[user_set_EC], 0.0)
 
-    SW = build_no_agg_utility!(ECModel, GroupANC())
+    SW = build_no_agg_utility!(ECModel, GroupANC(); base_model=base_model)
 
     # definition of the minimum surplus
     @expression(ECModel.model, coalition_benefit, SW)
@@ -763,6 +775,9 @@ function to_least_profitable_coalition_callback(
 
     # create a bakup of the model to work with
     ecm_copy = ModelEC(ECModel; optimizer=optimizer)
+    
+    # base model
+    ecm_base = ModelEC(ECModel, GroupNC())
 
     # build the model in the backup variable ecm_copy
     build_least_profitable!(
@@ -772,6 +787,7 @@ function to_least_profitable_coalition_callback(
         add_EC=true,
         relax_combinatorial=relax_combinatorial,
         use_notations=use_notations,
+        base_model=ecm_base,
     )
 
     optimizer_constructor = (isa(optimizer, MOI.OptimizerWithAttributes) ? optimizer.optimizer_constructor : optimizer)
@@ -792,7 +808,7 @@ function to_least_profitable_coalition_callback(
     if decompose_ANC
         ecm_copy_anc = ModelEC(ECModel; optimizer=optimizer)
 
-        build_noagg_least_profitable!(ecm_copy_anc; optimizer=optimizer)
+        build_noagg_least_profitable!(ecm_copy_anc; optimizer=optimizer, base_model=ecm_base)
         # fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
     end
 
