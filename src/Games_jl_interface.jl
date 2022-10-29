@@ -778,6 +778,8 @@ function to_least_profitable_coalition_callback(
     
     # base model
     ecm_base = ModelEC(ECModel, GroupNC())
+    build_model!(ecm_base)
+    optimize!(ecm_base)
 
     # build the model in the backup variable ecm_copy
     build_least_profitable!(
