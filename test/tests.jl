@@ -40,7 +40,7 @@ function _base_test(input_file, group, optimizer)
 
 end
 
-function _utility_callback_test(input_file, optimizer, group_type; kwargs...)
+function _utility_callback_test(input_file, optimizer, group_type; atol=1e-4, rtol=1e-4, kwargs...)
 
     ## Initialization
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
@@ -69,7 +69,7 @@ function _utility_callback_test(input_file, optimizer, group_type; kwargs...)
 
         @test Set(testing_coalitions) == Set(keys(proven_solution))
         for coal in keys(proven_solution)
-            @test dist_testing_coalitions[coal] ≈ proven_solution[coal] atol=1e-4
+            @test dist_testing_coalitions[coal] ≈ proven_solution[coal] atol=atol rtol=rtol
         end
     else
         # otherwise create the tests
@@ -81,7 +81,7 @@ function _utility_callback_test(input_file, optimizer, group_type; kwargs...)
 
 end
 
-function _least_profitable_callback_test(input_file, optimizer, base_group; no_aggregator_group=GroupNC())
+function _least_profitable_callback_test(input_file, optimizer, base_group; atol=1e-4, rtol=1e-4, no_aggregator_group=GroupNC())
 
     ## Initialization
     ## Model CO
@@ -123,8 +123,8 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; no_a
 
         
         @test Set(outdata.least_profitable_coalition) == Set(proven_solution["worst_coalition"])
-        @test outdata.coalition_benefit ≈ proven_solution["coalition_benefit"] atol=1
-        @test outdata.min_surplus ≈ proven_solution["min_surplus"] atol=1
+        @test outdata.coalition_benefit ≈ proven_solution["coalition_benefit"] atol=atol rtol=rtol
+        @test outdata.min_surplus ≈ proven_solution["min_surplus"] atol=atol rtol=rtol
     else
         # otherwise create the tests
         mkpath(dirname(path_solution))
@@ -141,7 +141,7 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; no_a
 
 end
 
-function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; kwargs...)
+function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; atol=atol, rtol=rtol, kwargs...)
 
     ## Initialization
     ## Model CO
@@ -164,7 +164,7 @@ function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, 
         proven_solution = YAML.load_file(path_solution)
         
         @test Set(keys(calc_solution)) == Set(keys(proven_solution))
-        @test all(isapprox(calc_solution[k] - proven_solution[k], 0.0, atol=1e-4) for k in keys(proven_solution))
+        @test all(isapprox(calc_solution[k] - proven_solution[k], 0.0; atol=atol, rtol=rtol) for k in keys(proven_solution))
     else
         # otherwise create the tests
         mkpath(dirname(path_solution))
