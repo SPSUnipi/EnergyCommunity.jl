@@ -918,6 +918,8 @@ function Games.IterMode(
         number_of_solutions=0,
         use_notations=false,
         decompose_ANC=true,
+        decompose_abs_tolerance=1e-4,
+        decompose_rel_tolerance=1e-4,
         kwargs...
     )
     utility_callback = to_utility_callback_by_subgroup(
@@ -932,6 +934,8 @@ function Games.IterMode(
         number_of_solutions=number_of_solutions,
         use_notations=use_notations,
         decompose_ANC=decompose_ANC,
+        decompose_rel_tolerance=decompose_rel_tolerance,
+        decompose_abs_tolerance=decompose_abs_tolerance,
         kwargs...
     )
 

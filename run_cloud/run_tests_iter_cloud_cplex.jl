@@ -270,7 +270,15 @@ for (id_run, el) in collect(enumerate(run_simulations))
 
     current_EC = EC_dict[el.EC_size]
 
-    iter_mode = IterMode(current_EC, BASE_GROUP; no_aggregator_group=NO_AGG_GROUP, optimizer=el.optimizer, callback_solution=dict_callback)
+    iter_mode = IterMode(
+        current_EC,
+        BASE_GROUP;
+        no_aggregator_group=NO_AGG_GROUP,
+        optimizer=el.optimizer,
+        callback_solution=dict_callback,
+        decompose_rel_tolerance=RTOL*0.5,
+        decompose_abs_tolerance=ATOL*0.5;
+    )
 
     # include all coalitions having no more than preload_max_size users
     preload_combs_set = el.precoal
