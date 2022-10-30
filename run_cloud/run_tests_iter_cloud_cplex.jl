@@ -277,7 +277,7 @@ for (id_run, el) in collect(enumerate(run_simulations))
         optimizer=el.optimizer,
         callback_solution=dict_callback,
         decompose_rel_tolerance=RTOL*0.5,
-        decompose_abs_tolerance=ATOL*0.5;
+        decompose_abs_tolerance=ATOL*0.5,
     )
 
     # include all coalitions having no more than preload_max_size users
