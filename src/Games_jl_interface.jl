@@ -873,7 +873,7 @@ function to_least_profitable_coalition_callback(
                 # get outputs
                 output_data = create_output_data(ecm_copy_anc, number_of_solutions)
 
-                if output_data[1].min_surplus < decompose_ANC_lower_obj_stop * (1 - decompose_rel_tolerance) - decompose_abs_tolerance
+                if output_data[1].min_surplus + abs(output_data[1].min_surplus) * decompose_rel_tolerance + decompose_abs_tolerance <= decompose_ANC_lower_obj_stop
                     println("Full model NOT EXECUTED: Current surplus ($(output_data[1].min_surplus)) < objective stop ($decompose_ANC_lower_obj_stop)")
                     return output_data
                 else
@@ -890,8 +890,8 @@ function to_least_profitable_coalition_callback(
                 callback_solution[t_status](ecm_copy)
             end
 
-            # append any previous results to total results
-            output_data = [output_data; create_output_data(ecm_copy, number_of_solutions)]
+            # replace any previous results to total results
+            output_data = create_output_data(ecm_copy, number_of_solutions)
             
             return output_data
         end
