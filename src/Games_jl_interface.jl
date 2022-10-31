@@ -806,6 +806,7 @@ function to_least_profitable_coalition_callback(
     end
     
     # optional model used for the special decomposition of ANC and NC problems
+    decompose_ANC &= (no_aggregator_group <: AbstractGroupANC)  # reset decompose ANC is group is not ANC
     ecm_copy_anc = nothing
     if decompose_ANC
         ecm_copy_anc = ModelEC(ECModel; optimizer=optimizer)
