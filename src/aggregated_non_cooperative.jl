@@ -240,6 +240,8 @@ Parameters
 ECModel : AbstractEC
     Cooperative EC Model of the EC to study.
     When the model is not cooperative an error is thrown.
+base_model : AbstractEC optional
+    When provided, it represents the base model used to perform the calculations
 
 Return
 ------
@@ -247,16 +249,22 @@ objective_callback_by_subgroup : Function
     Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
-function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC; kwargs...)
+function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC; base_model=nothing, kwargs...)
 
-    # create a backup of the model and work on it
-    ecm_copy = deepcopy(ECModel)
+    ecm_copy = nothing
+    
+    if isnothing(base_model)
+        # create a backup of the model and work on it
+        ecm_copy = deepcopy(ECModel)
 
-    # build the model with the updated set of users
-    build_model!(ecm_copy)
+        # build the model with the updated set of users
+        build_model!(ecm_copy)
 
-    # optimize the model
-    optimize!(ecm_copy)
+        # optimize the model
+        optimize!(ecm_copy)
+    else
+        ecm_copy = deepcopy(base_model)
+    end
 
     let ecm_copy=ecm_copy
 
