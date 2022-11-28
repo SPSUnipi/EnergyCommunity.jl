@@ -663,10 +663,10 @@ end
 
 """Function to create output data after the optimization for Games.jl"""
 function create_output_data(ecm_copy::ModelEC, number_of_solutions)
-    user_set_tot = axes(ecm_copy.results[:profit_distribution])[1]
+    user_set_tot = axes(ecm_copy.model[:profit_distribution])[1]
 
     # number of results of the current iteration
-    n_results = result_count(ecm_copy)
+    n_results = result_count(ecm_copy.model)
     # number of outputs to return
     n_outputs = (number_of_solutions <= 0) ? n_results : number_of_solutions
 
@@ -812,7 +812,7 @@ function to_least_profitable_coalition_callback(
         ecm_copy_anc = ModelEC(ECModel; optimizer=optimizer)
 
         build_noagg_least_profitable!(ecm_copy_anc; optimizer=optimizer, base_model=ecm_base)
-        # fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
+        fix(ecm_copy.model[:coalition_status][EC_CODE], 1.0, force=true)
     end
 
     # create a backup of the model and work on it
@@ -869,12 +869,12 @@ function to_least_profitable_coalition_callback(
                 set_least_profitable_profit!(ecm_copy_anc, profit_distribution)
 
                 # optimize decomposed ANC problem
-                optimize!(ecm_copy_anc)
+                optimize!(ecm_copy_anc.model)
 
                 # get outputs
                 output_data = create_output_data(ecm_copy_anc, number_of_solutions)
 
-                if output_data[1].min_surplus + abs(output_data[1].min_surplus) * decompose_rel_tolerance + decompose_abs_tolerance <= decompose_ANC_lower_obj_stop
+                if output_data[1].min_surplus + max(abs(output_data[1].min_surplus) * decompose_rel_tolerance, decompose_abs_tolerance) <= decompose_ANC_lower_obj_stop
                     println("Full model NOT EXECUTED: Current surplus ($(output_data[1].min_surplus)) < objective stop ($decompose_ANC_lower_obj_stop)")
                     return output_data
                 else
@@ -883,10 +883,10 @@ function to_least_profitable_coalition_callback(
             end
 
             # optimize the problem
-            optimize!(ecm_copy)
+            optimize!(ecm_copy.model)
 
             # postprocess result by termination status
-            t_status = termination_status(ecm_copy)
+            t_status = termination_status(ecm_copy.model)
             if t_status in keys(callback_solution)
                 callback_solution[t_status](ecm_copy)
             end
