@@ -838,10 +838,10 @@ function to_objective_callback_by_subgroup(
                 build_model!(ecm_copy)
 
                 # optimize the model
-                optimize!(ecm_copy)
+                optimize!(ecm_copy.model)
 
                 # return the objective
-                return objective_value(ecm_copy)
+                return objective_value(ecm_copy.model)
             else
                 # otherwise return the value of the base case
                 return callback_base(user_set_callback)
