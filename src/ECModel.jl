@@ -533,8 +533,14 @@ function data_sankey(ECModel::AbstractEC;
     end
 
     # s = sankey(name_units, source_sank.-1, target_sank.-1, value_sank)  # ECharts style
-    tot_colors = [market_color; users_colors[1:length(user_set)]; community_color;
-        market_color; users_colors[1:length(user_set)]]
+    colors_ids_users = mod1.(1:length(user_set), length(users_colors))
+    tot_colors = [
+        market_color;
+        users_colors[colors_ids_users];
+        community_color;
+        market_color;
+        users_colors[colors_ids_users]
+    ]
 
     # Check and remove the ids that do not appear in the lists
     no_shows = []
