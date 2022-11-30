@@ -96,7 +96,7 @@ generator_names(d) = asset_names(d, GENS)
 
 
 "Function to check whether an user has an asset type"
-has_asset(d, atype::ASSET_TYPE) = !isempty(asset_names(d, a_type))
+has_asset(d, atype::ASSET_TYPE) = !isempty(asset_names(d, atype))
 
 
 "Function to check whether an user has an asset given its name"

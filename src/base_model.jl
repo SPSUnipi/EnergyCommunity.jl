@@ -343,10 +343,10 @@ function calculate_production(ECModel::AbstractEC)
 
     _P_ren = ECModel.results[:P_ren_us]
 
-    data_production = Float64[sum(
-                sum(_P_ren[u, :] .* time_res)
-                    for r in asset_names(users_data[u], REN)
-            ) for u in user_set]
+    data_production = Float64[
+        has_asset(users_data[u], REN) ? sum(_P_ren[u, :] .* time_res) : 0.0
+        for u in user_set
+    ]
 
     # sum of the load power by user and EC
     production_us_EC = JuMP.Containers.DenseAxisArray(
