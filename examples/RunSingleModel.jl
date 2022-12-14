@@ -66,4 +66,4 @@ print_summary(NC_Model)
 save_summary(NC_Model, output_file_isolated)
 
 # plot Sankey plot of NC model
-plot_sankey(NCModel)
+plot_sankey(NC_Model)
