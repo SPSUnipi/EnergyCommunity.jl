@@ -769,7 +769,7 @@ function objective_by_user(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true)
         user_set_EC = vcat(EC_CODE, axes(ret_value)[1])
         # add the EC to the users
         ret_tot = JuMP.Containers.DenseAxisArray(
-            [0.0; ret_value.data],
+            [ECModel.results[:NPV_agg]; ret_value.data],
             user_set_EC
         )
         return ret_tot

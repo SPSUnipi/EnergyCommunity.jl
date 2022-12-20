@@ -658,12 +658,22 @@ end
 """
     split_financial_terms(ECModel::AbstractEC, profit_distribution)
 
-    Function to describe the cost term distributions by all users.
-    In particular, the following cost terms are considered:
+Function to describe the cost term distributions by all users.
+
+Parameters
+----------
+- ECModel : AbstractEC
+    EnergyCommunity model
+- profit_distribution
+    Final objective function
+
+Returns
+-------
+    The output value is a NamedTuple with the following elements
     - NPV: the NPV of each user given the final profit_distribution adjustment
-      by game theory techniques
+    by game theory techniques
     - CAPEX: the annualized CAPEX
-    - OPEX: the annualized operating costs (yearly maintenance and yearly grid charges)
+    - OPEX: the annualized operating costs (yearly maintenance and yearly peak and energy grid charges)
     - REP: the annualized replacement costs
     - RV: the annualized recovery charges
     - REWARD: the annualized reward distribution by user
@@ -764,10 +774,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     OPEX = Ann_Maintenance .+ Ann_peak_charges .+ Ann_net_energy_costs
 
     # get NPV given the reward allocation
-    NPV = JuMP.Containers.DenseAxisArray(
-        [get_value(ECModel.results[:NPV_us], u) + profit_distribution[u] for u in user_set]
-        , user_set
-    )
+    NPV = profit_distribution
 
     # Total reward
     Ann_reward = JuMP.Containers.DenseAxisArray(
@@ -789,5 +796,15 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
         EN_SELL=Ann_energy_revenues,
         EN_CONS=Ann_energy_costs,
         EN_NET=Ann_net_energy_costs,
+    )
+end
+
+function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distribution::Dict)
+    return split_financial_terms(
+        ECModel,
+        JuMP.Containers.DenseAxisArray(
+            collect(values(profit_distribution)),
+            collect(keys(profit_distribution)),
+        )
     )
 end
