@@ -346,6 +346,44 @@ function calculate_grid_export(ECModel::AbstractEC; per_unit::Bool=true)
     return calculate_grid_export(ECModel.group_type, ECModel, per_unit=per_unit)
 end
 
+"""
+    calculate_time_shared_production(ECModel::AbstractEC; kwargs...)
+
+Calculate the time series of the shared consumed energy for the Energy Community.
+
+For every time step and user, this time series highlight the quantity of production that meets
+needs by other users.
+
+'''
+Outputs
+-------
+shared_prod_us : DenseAxisArray
+    Shared production for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_production(ECModel::AbstractEC; kwargs...)
+    return calculate_time_shared_production(ECModel.group_type, ECModel; kwargs...)
+end
+
+"""
+    calculate_time_shared_consumption(ECModel::AbstractEC)
+
+Calculate the time series of the shared consumed energy for the Energy Community.
+
+For every time step and user, this time series highlight the quantity of load that is met
+by using shared energy.
+
+'''
+Outputs
+-------
+shared_cons_us : DenseAxisArray
+    Shared consumption for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_consumption(ECModel::AbstractEC; kwargs...)
+    return calculate_time_shared_consumption(ECModel.group_type, ECModel; kwargs...)
+end
+
 
 """
     calculate_shared_consumption(ECModel::AbstractEC; per_unit::Bool=true)

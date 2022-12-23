@@ -87,6 +87,46 @@ function calculate_grid_export(::AbstractGroupANC, ECModel::AbstractEC; per_unit
 end
 
 """
+    calculate_time_shared_production(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+Calculate the time series of the shared produced energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+
+For every time step and user, this time series highlight the quantity of production that meets
+needs by other users.
+
+'''
+Outputs
+-------
+shared_prod_us : DenseAxisArray
+    Shared production for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_production(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
+    return calculate_time_shared_production(GroupCO(), ECModel; add_EC=add_EC, kwargs...)
+end
+
+"""
+    calculate_time_shared_consumption(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+Calculate the time series of the shared consumed energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+
+For every time step and user, this time series highlight the quantity of load that is met
+by using shared energy.
+
+'''
+Outputs
+-------
+shared_cons_us : DenseAxisArray
+    Shared consumption for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_consumption(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
+    return calculate_time_shared_consumption(GroupCO(), ECModel; add_EC=add_EC, kwargs...)
+end
+
+"""
     calculate_shared_production(::AbstractGroupANC, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
 
 Calculate the shared produced energy for the Aggregated Non Cooperative case.

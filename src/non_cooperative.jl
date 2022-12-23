@@ -539,6 +539,68 @@ function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
 end
 
 """
+    calculate_time_shared_production(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+Calculate the time series of the shared produced energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+
+For every time step and user, this time series highlight the quantity of production that meets
+needs by other users.
+
+'''
+Outputs
+-------
+shared_prod_us : DenseAxisArray
+    Shared production for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_production(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true, kwargs...)
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+    
+    # shared energy produced by user and EC
+    shared_prod_us = JuMP.Containers.DenseAxisArray(
+        fill(0.0, add_EC ? length(user_set_EC) : length(user_set), length(time_set)),
+        add_EC ? user_set_EC : user_set,
+        time_set
+    )
+
+    return shared_prod_us
+end
+
+"""
+    calculate_time_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+Calculate the time series of the shared consumed energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+
+For every time step and user, this time series highlight the quantity of load that is met
+by using shared energy.
+
+'''
+Outputs
+-------
+shared_cons_us : DenseAxisArray
+    Shared consumption for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true, kwargs...)
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+    
+    # shared energy produced by user and EC
+    shared_cons_us = JuMP.Containers.DenseAxisArray(
+        fill(0.0, add_EC ? length(user_set_EC) : length(user_set), length(time_set)),
+        add_EC ? user_set_EC : user_set,
+        time_set
+    )
+
+    return shared_cons_us
+end
+
+"""
     calculate_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
 
 Calculate the demand that each user meets using its own sources or other users for the Non-Cooperative case.

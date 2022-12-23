@@ -588,6 +588,140 @@ function calculate_grid_export(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
 end
 
 """
+    calculate_time_shared_production(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+Calculate the time series of the shared produced energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+
+For every time step and user, this time series highlight the quantity of production that meets
+needs by other users.
+
+'''
+Outputs
+-------
+shared_prod_us : DenseAxisArray
+    Shared production for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_production(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+    _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    # total shared production for every time step
+    shared_prod_by_time = JuMP.Containers.DenseAxisArray(
+        Float64[(sum(max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        time_set
+    )
+    
+    # shared energy produced by user and EC
+    data = add_EC ? [shared_prod_by_time.data] : []
+    append!(
+        data,
+        [
+            Float64[
+                shared_prod_by_time[t] <= 0.0 ? 0.0 : 
+                    shared_prod_by_time[t]*max(_P_us[u,t], 0.0)/sum(max.(_P_us[:,t], 0.0))  # time_res already accounted for
+                for t in time_set
+            ]
+            for u in user_set
+        ]
+    )
+
+    shared_prod_us = JuMP.Containers.DenseAxisArray(
+        hcat(data...)',
+        add_EC ? user_set_EC : user_set,
+        time_set
+    )
+
+    return shared_prod_us
+end
+
+"""
+    calculate_time_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+Calculate the time series of the shared consumed energy for the Cooperative case.
+In the Cooperative case, there can be shared energy between users, not only self production.
+
+For every time step and user, this time series highlight the quantity of load that is met
+by using shared energy.
+
+'''
+Outputs
+-------
+shared_cons_us : DenseAxisArray
+    Shared consumption for each user and the aggregation and time step
+'''
+"""
+function calculate_time_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true, kwargs...)
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
+    _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
+    _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
+
+    # time step resolution
+    time_res = profile(ECModel.market_data, "time_res")
+
+    # total shared consumption for every time step
+    shared_cons_by_time = JuMP.Containers.DenseAxisArray(
+        Float64[(sum(-min.(_P_us[:, t], 0.0)) + min(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        time_set
+    )
+    
+    # shared energy produced by user and EC
+    data = add_EC ? [shared_cons_by_time.data] : []
+    append!(
+        data,
+        [
+            Float64[
+                shared_cons_by_time[t] <= 0.0 ? 0.0 :
+                    shared_cons_by_time[t]*min(_P_us[u,t], 0.0)/sum(min.(_P_us[:,t], 0.0))  # time_res already accounted for
+                                                                                            # simplification of two -
+                for t in time_set
+            ]
+            for u in user_set
+        ]
+    )
+    shared_cons_us = JuMP.Containers.DenseAxisArray(
+        hcat(data...)',
+        add_EC ? user_set_EC : user_set,
+        time_set
+    )
+
+    return shared_cons_us
+end
+
+"""
     calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
 
 Calculate the shared produced energy for the Cooperative case.

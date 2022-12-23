@@ -13,6 +13,8 @@ data: structure of data
 """
 function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
+    TOL_BOUNDS = 1.05
+
     # get main parameters
     gen_data = ECModel.gen_data
     users_data = ECModel.users_data
@@ -48,7 +50,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
             - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
-        )
+        ) * TOL_BOUNDS
     )
 
     # Overestimation of the power exchanged by each POD when buying from the external market bu each user
@@ -58,7 +60,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 # Maximum demand
             + sum(Float64[field_component(users_data[u], c, "max_capacity") 
                 for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
-        )
+        ) * TOL_BOUNDS
     )
 
     # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
