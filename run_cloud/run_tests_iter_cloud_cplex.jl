@@ -29,6 +29,7 @@ using Latexify, LaTeXStrings
 using YAML
 using CPLEX
 using CSV
+using FileIO
 
 ##= Solver settings
 
@@ -51,7 +52,7 @@ NO_AGG_GROUP = GroupANC();  # type of aggregation when the Aggregator does not b
                             # options: GroupANC() or GroupNC()
 BASE_GROUP = GroupNC();     # base type of aggregation (it shall be GroupNC)
 
-ATOL = 0.1
+ATOL = 10
 RTOL = 1e-2
 
 ##= Load base EC model
@@ -260,6 +261,13 @@ EC_size_list = unique([el.EC_size for el in run_simulations])
 EC_dict = Dict(
     EC_s => build_nusers_EC_file(ECModel, EC_s) for EC_s in EC_size_list
 )
+
+for (ec_s, ec_m) in EC_dict
+    build_model!(ec_m)
+    optimize!(ec_m)
+
+    save("$save_iter_dir/ec_model_$ec_s.csv", ec_m)
+end
 
 # (id_run, el) = first(collect(enumerate(run_simulations)))
 
