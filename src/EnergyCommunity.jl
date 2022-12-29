@@ -14,6 +14,7 @@ module EnergyCommunity
     import XLSX
     import FileIO
     import YAML
+    import InteractiveUtils
     try
         import CPLEX
     catch e

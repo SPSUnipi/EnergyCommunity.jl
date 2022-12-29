@@ -167,12 +167,21 @@ function load!(output_file::AbstractString, ECModel::AbstractEC)
         end
     end
 
+    function _all_types(x)
+        sub_x = InteractiveUtils.subtypes(x)
+        if length(sub_x) > 0
+            return [sub_x; [_all_types(sx) for sx in sub_x]...]
+        else
+            return sub_x
+        end
+    end
+
     # check if the group_type is compatible with the available instances
-    if !any([string(g) == raw_data["group_type"] for g in subtypes(AbstractGroup)])
+    if !any([string(g) == raw_data["group_type"] for g in _all_types(AbstractGroup)])
         throw(ArgumentError("File $output_file not a valid EC group type"))
     end
 
-    ## load data
+    ## load data 
     ECModel.data = raw_data["data"]
     ECModel.gen_data = general(ECModel.data)
     ECModel.market_data = market(ECModel.data)
