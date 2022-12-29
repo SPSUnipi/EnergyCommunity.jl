@@ -266,7 +266,15 @@ for (ec_s, ec_m) in EC_dict
     build_model!(ec_m)
     optimize!(ec_m)
 
-    save("$save_iter_dir/ec_model_$ec_s.csv", ec_m)
+    save("$save_iter_dir/ec_model_$ec_s.jld2", ec_m)
+end
+
+for (ec_s, ec_m) in EC_dict
+    nc_m = MovelEC(ec_m, EnergyCommunity.GroupNC())
+    build_model!(nc_m)
+    optimize!(nc_m)
+
+    save("$save_iter_dir/nc_model_$ec_s.jld2", nc_m)
 end
 
 # (id_run, el) = first(collect(enumerate(run_simulations)))
