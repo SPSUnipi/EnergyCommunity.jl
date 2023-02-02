@@ -3,7 +3,7 @@
 # EnergyCommunity.jl
 Optimization of Energy Communities becomes easy with EnergyCommunity.jl!
 
-A simple optimization of the model can be performed with
+A simple optimization of the model can be performed with APPLE
 
 
 ```julia
