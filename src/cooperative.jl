@@ -801,7 +801,7 @@ function calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per
         # add self production
         self_prod = calculate_self_production(ECModel, per_unit=per_unit)
 
-        return self_prod + shared_prod_us
+        return self_prod .+ shared_prod_us
     end
 end
 
@@ -886,7 +886,7 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
         # add self consumption
         self_consump = calculate_self_consumption(ECModel, per_unit=per_unit)
 
-        return self_consump + shared_cons_us
+        return self_consump .+ shared_cons_us
     end
 end
 
