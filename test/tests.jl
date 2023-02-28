@@ -40,7 +40,7 @@ function _base_test(input_file, group, optimizer)
 
 end
 
-function _utility_callback_test(input_file, optimizer, group_type; atol=1e-4, rtol=1e-4, kwargs...)
+function _utility_callback_test(input_file, optimizer, group_type; atol=ATOL, rtol=RTOL, kwargs...)
 
     ## Initialization
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
@@ -81,7 +81,7 @@ function _utility_callback_test(input_file, optimizer, group_type; atol=1e-4, rt
 
 end
 
-function _least_profitable_callback_test(input_file, optimizer, base_group; atol=1e-4, rtol=1e-4, no_aggregator_group=GroupNC())
+function _least_profitable_callback_test(input_file, optimizer, base_group; atol=ATOL, rtol=RTOL, no_aggregator_group=GroupNC())
 
     ## Initialization
     ## Model CO
@@ -141,7 +141,7 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; atol
 
 end
 
-function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; atol=1e-4, rtol=1e-4, kwargs...)
+function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; atol=ATOL, rtol=RTOL, kwargs...)
 
     ## Initialization
     ## Model CO
