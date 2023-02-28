@@ -306,9 +306,10 @@ function calculate_demand(ECModel::AbstractEC)
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     data_load = Float64[sum(sum(
-                profile_component(users_data[u], l, "load") .* time_res)
+                profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
                 for l in asset_names(users_data[u], LOAD)
             ) for u in user_set]
 
@@ -342,11 +343,12 @@ function calculate_production(ECModel::AbstractEC)
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     _P_ren = ECModel.results[:P_ren_us]
 
     data_production = Float64[
-        has_asset(users_data[u], REN) ? sum(_P_ren[u, :] .* time_res) : 0.0
+        has_asset(users_data[u], REN) ? sum(_P_ren[u, :] .* time_res .* energy_weight) : 0.0
         for u in user_set
     ]
 
@@ -399,6 +401,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
     # time step resolution
     time_res = profile(market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # Available renewable production
     _P_ren_available = JuMP.Containers.DenseAxisArray(
@@ -416,7 +419,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
                     _P_ren_us[u,t] <= 0.0 ? 0.0 : _P_ren_us[u,t] * sum(
                         Float64[profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
                         for r in asset_names(users_data[u], REN) if r == t_ren]
-                    ) / _P_ren_available[u, t] * time_res[t]
+                    ) / _P_ren_available[u, t] * time_res[t] * energy_weight[t]
                     for t in time_set
             ]) for u in user_set
             ))
@@ -433,7 +436,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
                     _P_ren_us[u,t] <= 0.0 ? 0.0 : _P_ren_us[u,t] * sum(Float64[
                         profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
                             for r in asset_names(users_data[u], REN) if r == t_ren
-                    ]) / _P_ren_available[u,t] * time_res[t]
+                    ]) / _P_ren_available[u,t] * time_res[t] * energy_weight[t]
                     for t in time_set
                 ])
                 for u in user_set, t_ren in ren_set_unique
@@ -485,10 +488,11 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # self consumption by user only
     shared_en_us = JuMP.Containers.DenseAxisArray(
-        Float64[sum(time_res .* max.(
+        Float64[sum(time_res .* energy_weight .* max.(
                 0.0, _P_ren_us[u, :] - max.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set
@@ -544,10 +548,11 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # self consumption by user only
     shared_cons_us = JuMP.Containers.DenseAxisArray(
-        Float64[sum(time_res .* max.(0.0, 
+        Float64[sum(time_res .* energy_weight .* max.(0.0, 
                 sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
