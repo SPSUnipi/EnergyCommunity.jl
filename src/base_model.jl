@@ -25,7 +25,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+    #Creiamo un base profile con i non_commercial perché più conservativo
+    base_market_profile= market_data["non_commercial"]
+    peak_categories = profile(base_market_profile, "peak_categories")
 
     # Set definitions
 

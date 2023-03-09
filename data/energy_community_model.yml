@@ -10,24 +10,44 @@ general:  # general input parameters
     - market_data.csv
 
 market:  # market characteristics
-  profile:
-    buy_price: buy_price  # name of the column for the buying electricity price
-    sell_price: sell_price  # name of the column for the selling electricity price
-    consumption_price: consumption_price  # name of the column for the consumption price
-    reward_price: reward_price  # name of the column describing the reward value
-    peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
-    peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
-      function: parse_peak_quantity_by_time_vectors
-      inputs: 
-        - peak_categories
-        - peak_tariff
-    energy_weight: energy_weight
-    peak_weight:
-      function: parse_peak_quantity_by_time_vectors
-      inputs: 
-        - peak_categories
-        - peak_weight
-    time_res: time_res  # time resolution column
+  non_commercial:
+    profile:
+      buy_price: buy_price  # name of the column for the buying electricity price
+      sell_price: sell_price  # name of the column for the selling electricity price
+      consumption_price: consumption_price  # name of the column for the consumption price
+      reward_price: reward_price  # name of the column describing the reward value
+      peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
+      peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
+        function: parse_peak_quantity_by_time_vectors
+        inputs: 
+          - peak_categories
+          - peak_tariff
+      energy_weight: energy_weight
+      peak_weight:
+        function: parse_peak_quantity_by_time_vectors
+        inputs: 
+          - peak_categories
+          - peak_weight
+      time_res: time_res  # time resolution column
+  commercial:
+    profile:
+      buy_price: buy_price  # name of the column for the buying electricity price
+      sell_price: sell_price  # name of the column for the selling electricity price
+      consumption_price: consumption_price  # name of the column for the consumption price
+      reward_price: reward_price  # name of the column describing the reward value
+      peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
+      peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
+        function: parse_peak_quantity_by_time_vectors
+        inputs: 
+          - peak_categories
+          - peak_tariff
+      energy_weight: energy_weight
+      peak_weight:
+        function: parse_peak_quantity_by_time_vectors
+        inputs: 
+          - peak_categories
+          - peak_weight
+      time_res: time_res  # time resolution column
 
 users:  # list of users and the corresponding assets
 
