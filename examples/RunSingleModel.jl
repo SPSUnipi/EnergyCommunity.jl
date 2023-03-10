@@ -7,7 +7,7 @@ using HiGHS, Plots
 
 
 ## Parameters
-
+#New version
 input_file = joinpath(@__DIR__, "../data/energy_community_model.yml")  # Input file
 
 output_file_isolated = joinpath(@__DIR__, "../results/output_file_NC.xlsx")  # Output file - model users alone
