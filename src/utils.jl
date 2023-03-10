@@ -242,7 +242,7 @@ function read_input(file_name::AbstractString)
         end
     end
 
-    #New profile
+    #New profile 2#
     change_profile!(market_data, opt_data)
 
     for u_name in keys(users_data)
