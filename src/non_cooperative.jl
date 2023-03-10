@@ -448,17 +448,18 @@ function calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
 
     # time step resolution
     time_res = profile(market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
     # fraction of grid resiliance of the aggregate case noagg
-    grid_frac_tot = sum(Float64[-sum(min.(_P_tot_us[u,:], 0) .* time_res) for u in user_set])
+    grid_frac_tot = sum(Float64[-sum(min.(_P_tot_us[u,:], 0) .* time_res .* energy_weight) for u in user_set])
     
     # fraction of grid reliance with respect to demand by user noagg case
     grid_frac = JuMP.Containers.DenseAxisArray(
         vcat(
             grid_frac_tot,
-            [-sum(min.(_P_tot_us[u,:] .* time_res, 0))
+            [-sum(min.(_P_tot_us[u,:] .* time_res .* energy_weight, 0))
                 for u in user_set]
         ),
         user_set_EC
@@ -508,17 +509,18 @@ function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
 
     # time step resolution
     time_res = profile(market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
     # fraction of grid resiliance of the aggregate case noagg
-    grid_frac_tot = sum(Float64[sum(min.(_P_tot_us[u,:], 0) .* time_res) for u in user_set])
+    grid_frac_tot = sum(Float64[sum(min.(_P_tot_us[u,:], 0) .* time_res .* energy_weight) for u in user_set])
 
     # fraction of grid reliance with respect to demand by user noagg case
     grid_frac = JuMP.Containers.DenseAxisArray(
         vcat(
             grid_frac_tot,
-            [sum(max.(_P_tot_us[u,:] .* time_res, 0))
+            [sum(max.(_P_tot_us[u,:] .* time_res .* energy_weight, 0))
                 for u in user_set]
         ),
         user_set_EC

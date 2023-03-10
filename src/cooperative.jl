@@ -485,11 +485,12 @@ function calculate_grid_import(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
     _P_agg = ECModel.results[:P_agg]  # Ren production dispatch of users - users mode
 
-    # fraction of grid resiliance of the aggregate case agg
-    grid_frac_tot = sum(max.(-_P_agg, 0))
-
     # time step resolution
     time_res = profile(market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
+
+    # fraction of grid resiliance of the aggregate case agg
+    grid_frac_tot = sum(max.(-_P_agg, 0) .* time_res .* energy_weight)
 
     # fraction of grid reliance with respect to demand by user agg case
     grid_frac = JuMP.Containers.DenseAxisArray(
@@ -498,7 +499,7 @@ function calculate_grid_import(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
             Float64[
                 sum(
                     _P_agg[t] >= 0 ? 0.0 : 
-                        -_P_agg[t]*max(-_P_tot_us[u,t], 0.0)/sum(max.(-_P_tot_us[:,t], 0.0))*time_res[t]
+                        -_P_agg[t]*max(-_P_tot_us[u,t], 0.0)/sum(max.(-_P_tot_us[:,t], 0.0))*time_res[t]*energy_weight[t]
                     for t in time_set)
                 for u in user_set
             ]
@@ -554,9 +555,10 @@ function calculate_grid_export(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
 
     # time step resolution
     time_res = profile(market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # fraction of grid resiliance of the aggregate case agg
-    grid_frac_tot = sum(max.(_P_agg.*time_res, 0))
+    grid_frac_tot = sum(max.(_P_agg.*time_res.*energy_weight, 0))
 
     # fraction of grid reliance with respect to demand by user agg case
     grid_frac = JuMP.Containers.DenseAxisArray(
@@ -565,7 +567,7 @@ function calculate_grid_export(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
             Float64[
                 sum(
                     _P_agg[t] <= 0 ? 0.0 : 
-                        _P_agg[t]*max(_P_tot_us[u,t], 0.0)/sum(max.(_P_tot_us[:,t], 0.0))*time_res[t]
+                        _P_agg[t]*max(_P_tot_us[u,t], 0.0)/sum(max.(_P_tot_us[:,t], 0.0))*time_res[t]*energy_weight[t]
                     for t in time_set)
                 for u in user_set
             ]
@@ -624,10 +626,11 @@ function calculate_time_shared_production(::AbstractGroupCO, ECModel::AbstractEC
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # total shared production for every time step
     shared_prod_by_time = JuMP.Containers.DenseAxisArray(
-        Float64[(sum(max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        Float64[(sum(max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t]*energy_weight[t] for t in time_set],
         time_set
     )
     
@@ -691,10 +694,11 @@ function calculate_time_shared_consumption(::AbstractGroupCO, ECModel::AbstractE
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # total shared consumption for every time step
     shared_cons_by_time = JuMP.Containers.DenseAxisArray(
-        Float64[(sum(-min.(_P_us[:, t], 0.0)) + min(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        Float64[(sum(-min.(_P_us[:, t], 0.0)) + min(_P_agg[t], 0.0))*time_res[t]*energy_weight[t] for t in time_set],
         time_set
     )
     
@@ -758,10 +762,11 @@ function calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # total shared production for every time step
     shared_prod_by_time = JuMP.Containers.DenseAxisArray(
-        Float64[(sum(max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        Float64[(sum(max.(_P_us[:, t], 0.0)) - max(_P_agg[t], 0.0))*time_res[t]*energy_weight[t] for t in time_set],
         time_set
     )
 
@@ -801,7 +806,7 @@ function calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per
         # add self production
         self_prod = calculate_self_production(ECModel, per_unit=per_unit)
 
-        return self_prod + shared_prod_us
+        return self_prod .+ shared_prod_us
     end
 end
 
@@ -842,10 +847,11 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
 
     # time step resolution
     time_res = profile(ECModel.market_data, "time_res")
+    energy_weight = profile(ECModel.market_data, "energy_weight")
 
     # total shared consumption for every time step
     shared_cons_by_time = JuMP.Containers.DenseAxisArray(
-        Float64[(sum(-min.(_P_us[:, t], 0.0)) + min(_P_agg[t], 0.0))*time_res[t] for t in time_set],
+        Float64[(sum(-min.(_P_us[:, t], 0.0)) + min(_P_agg[t], 0.0))*time_res[t]*energy_weight[t] for t in time_set],
         time_set
     )
 
@@ -886,7 +892,7 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
         # add self consumption
         self_consump = calculate_self_consumption(ECModel, per_unit=per_unit)
 
-        return self_consump + shared_cons_us
+        return self_consump .+ shared_cons_us
     end
 end
 

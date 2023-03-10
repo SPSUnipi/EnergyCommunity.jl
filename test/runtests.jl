@@ -8,9 +8,11 @@ ENV["GKSwstype"]="nul"
 const MOI = MathOptInterface
 
 # EC groups to test
-const EC_GROUPS = [EnergyCommunity.GroupCO(), EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
+EC_GROUPS = [EnergyCommunity.GroupCO(), EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
 
-const OPTIMIZER = HiGHS.Optimizer
+OPTIMIZER = HiGHS.Optimizer
+ATOL = 1.
+RTOL = 1e-3
 
 input_file = joinpath(@__DIR__, "./data/energy_community_model.yml")  # Input file
 
