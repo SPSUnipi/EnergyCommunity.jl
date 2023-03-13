@@ -118,6 +118,7 @@ function user_names(gen_data, users_data)
     return sort!(user_set)
 end
 
+#I think parse_dataprofile is the part to be adapted because it's reading InlineStrings.String1("A") for peak categories
 
 """
 Function to parse a string value of a profile to load the corresponding dataframe
@@ -243,7 +244,11 @@ function read_input(file_name::AbstractString)
     end
 
     #New profile 2#
-    change_profile!(market_data, opt_data)
+    # change_profile!(market_data, opt_data)
+
+    for c_name in keys(market_data)
+        change_profile!(market_data[c_name], opt_data)
+    end
 
     for u_name in keys(users_data)
         comp_dict = components(users_data[u_name])
