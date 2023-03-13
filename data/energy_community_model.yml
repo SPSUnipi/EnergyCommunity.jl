@@ -52,6 +52,8 @@ market:  # market characteristics
 users:  # list of users and the corresponding assets
 
   user1:  # name of the user
+    
+    market_type: non_commercial #type of market
     # list of components
     
     PV:  # component PV
@@ -83,6 +85,8 @@ users:  # list of users and the corresponding assets
   user2:  # name of the user
     # list of components
     
+    market_type: non_commercial #type of market
+
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -128,6 +132,8 @@ users:  # list of users and the corresponding assets
   user3:  # name of the user
     # list of components
     
+    market_type: non_commercial #type of market 
+
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1600  # [€/kW] specific investment cost of the component
@@ -183,6 +189,8 @@ users:  # list of users and the corresponding assets
   user4:  # name of the user
     # list of components
     
+    market_type: non_commercial #type of market
+    
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -201,6 +209,8 @@ users:  # list of users and the corresponding assets
 
   user5:  # name of the user
     # list of components
+    
+    market_type: non_commercial #type of market
 
     load:  # component load
       type: load
@@ -255,7 +265,7 @@ users:  # list of users and the corresponding assets
 
   user7:  # name of the user
     # list of components
-
+    market_type: non_commercial #type of market
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -264,7 +274,7 @@ users:  # list of users and the corresponding assets
 
   user8:  # name of the user
     # list of components
-    
+    market_type: non_commercial #type of market
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -319,7 +329,7 @@ users:  # list of users and the corresponding assets
 
   user9:  # name of the user
     # list of components
-    
+    market_type: non_commercial #type of market
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -362,7 +372,7 @@ users:  # list of users and the corresponding assets
 
   user10:  # name of the user
     # list of components
-
+    market_type: non_commercial #type of market
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
