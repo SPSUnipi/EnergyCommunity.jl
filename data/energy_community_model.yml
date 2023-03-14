@@ -53,7 +53,7 @@ users:  # list of users and the corresponding assets
 
   user1:  # name of the user
     
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
     # list of components
@@ -87,7 +87,7 @@ users:  # list of users and the corresponding assets
   user2:  # name of the user
     # list of components
     
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
 
@@ -135,7 +135,7 @@ users:  # list of users and the corresponding assets
   user3:  # name of the user
     # list of components
     
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
 
@@ -194,7 +194,7 @@ users:  # list of users and the corresponding assets
   user4:  # name of the user
     # list of components
     
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
     
@@ -217,7 +217,7 @@ users:  # list of users and the corresponding assets
   user5:  # name of the user
     # list of components
     
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
 
@@ -230,7 +230,7 @@ users:  # list of users and the corresponding assets
 
   user6:  # name of the user
     # list of components
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
 
@@ -277,7 +277,7 @@ users:  # list of users and the corresponding assets
 
   user7:  # name of the user
     # list of components
-     market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
     
@@ -289,7 +289,7 @@ users:  # list of users and the corresponding assets
 
   user8:  # name of the user
     # list of components
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
     
@@ -347,7 +347,7 @@ users:  # list of users and the corresponding assets
 
   user9:  # name of the user
     # list of components
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
     
@@ -393,7 +393,7 @@ users:  # list of users and the corresponding assets
 
   user10:  # name of the user
     # list of components
-    market: 
+    market_set: 
       market_type: non_commercial #type of market
       type: market  #type of market
     
