@@ -86,8 +86,8 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
 
     # Total reward awarded to the community at each time step
     @expression(model, R_Reward_agg[t in time_set],
-    market_profile_by_user(ECModel,"energy_weight",u)[t] * market_profile_by_user(ECModel,"time_res",u)[t] *
-    market_profile_by_user(ECModel, "reward_price",u)[t] * P_shared_agg[t]
+    market_profile_by_user(ECModel,"energy_weight")[t] * market_profile_by_user(ECModel,"time_res")[t] *
+    market_profile_by_user(ECModel, "reward_price")[t] * P_shared_agg[t]
     )
 
     # Total reward awarded to the community by year
@@ -486,8 +486,8 @@ function calculate_grid_import(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
     _P_agg = ECModel.results[:P_agg]  # Ren production dispatch of users - users mode
 
     # time step resolution
-    time_res = profile(market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = market_profile_by_user(ECModel, "time_res")
+    energy_weight = market_profile_by_user(ECModel,"energy_weight")
 
     # fraction of grid resiliance of the aggregate case agg
     grid_frac_tot = sum(max.(-_P_agg, 0) .* time_res .* energy_weight)
@@ -554,8 +554,8 @@ function calculate_grid_export(::AbstractGroupCO, ECModel::AbstractEC; per_unit:
     _P_agg = ECModel.results[:P_agg]  # Ren production dispatch of users - users mode
 
     # time step resolution
-    time_res = profile(market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = market_profile_by_user(ECModel, "time_res")
+    energy_weight = market_profile_by_user(ECModel, "energy_weight")
 
     # fraction of grid resiliance of the aggregate case agg
     grid_frac_tot = sum(max.(_P_agg.*time_res.*energy_weight, 0))
@@ -625,8 +625,8 @@ function calculate_time_shared_production(::AbstractGroupCO, ECModel::AbstractEC
     _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
 
     # time step resolution
-    time_res = profile(ECModel.market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = market_profile_by_user(ECModel, "time_res")
+    energy_weight = market_profile_by_user(ECModel, "energy_weight")
 
     # total shared production for every time step
     shared_prod_by_time = JuMP.Containers.DenseAxisArray(
@@ -693,8 +693,8 @@ function calculate_time_shared_consumption(::AbstractGroupCO, ECModel::AbstractE
     _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
 
     # time step resolution
-    time_res = profile(ECModel.market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = market_profile_by_user(ECModel, "time_res")
+    energy_weight = market_profile_by_user(ECModel, "energy_weight")
 
     # total shared consumption for every time step
     shared_cons_by_time = JuMP.Containers.DenseAxisArray(
@@ -761,8 +761,8 @@ function calculate_shared_production(::AbstractGroupCO, ECModel::AbstractEC; per
     _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
 
     # time step resolution
-    time_res = profile(ECModel.market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = market_profile_by_user(ECModel, "time_res")
+    energy_weight = market_profile_by_user(ECModel, "energy_weight")
 
     # total shared production for every time step
     shared_prod_by_time = JuMP.Containers.DenseAxisArray(
@@ -846,8 +846,8 @@ function calculate_shared_consumption(::AbstractGroupCO, ECModel::AbstractEC; pe
     _P_agg = ECModel.results[:P_agg]  # power dispatch of the EC
 
     # time step resolution
-    time_res = profile(ECModel.market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = market_profile_by_user(ECModel, "time_res")
+    energy_weight = market_profile_by_user(ECModel, "energy_weight")
 
     # total shared consumption for every time step
     shared_cons_by_time = JuMP.Containers.DenseAxisArray(

@@ -3,7 +3,7 @@ general:  # general input parameters
   final_step: 1152  # final time step
   d_rate: 0.03  # discount rate
   project_lifetime: 20  # [y] project lifetime
-  user_set: [user1, user2, user3]  # list of users for the simulation
+  user_set: [user1, user2, user3, user4, user5]  # list of users for the simulation
 
   optional_datasets:  # optional csv files storing data
     - input_resource.csv
