@@ -42,7 +42,7 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+    peak_categories = market_profile_by_user(ECModel, "peak_categories")
 
     # Set definitions
 
@@ -86,8 +86,8 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
 
     # Total reward awarded to the community at each time step
     @expression(model, R_Reward_agg[t in time_set],
-        profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-            profile(market_data, "reward_price")[t] * P_shared_agg[t]
+    market_profile_by_user(ECModel,"energy_weight",u)[t] * market_profile_by_user(ECModel,"time_res",u)[t] *
+    market_profile_by_user(ECModel, "reward_price",u)[t] * P_shared_agg[t]
     )
 
     # Total reward awarded to the community by year
@@ -172,7 +172,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+    peak_categories = market_profile_by_user(ECModel, "peak_categories")
 
     # Set definitions
 
@@ -359,7 +359,7 @@ function add_EC_peak_summary!(
 
     # get main parameters
     market_data = ECModel.market_data
-    peak_categories = profile(market_data, "peak_categories")
+    peak_categories = market_profile_by_user(ECModel,"peak_categories")
 
     # Set definitions
     peak_set = unique(peak_categories)
