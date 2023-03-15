@@ -313,7 +313,7 @@ function calculate_demand(ECModel::AbstractEC)
 
     # time step resolution
     time_res = profile(ECModel.gen_data,"time_res")
-    energy_weight = market_profile_by_user(ECModel, u,"energy_weight")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     data_load = Float64[sum(sum(
                 profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
@@ -350,7 +350,7 @@ function calculate_production(ECModel::AbstractEC)
 
     # time step resolution
     time_res = market_profile_by_user(ECModel,u,"time_res")
-    energy_weight = market_profile_by_user(ECModel,u, "energy_weight")
+    energy_weight = profile(ECModel.gen_data, "energy_weight")
 
     _P_ren = ECModel.results[:P_ren_us]
 
@@ -407,7 +407,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
     _x_us = ECModel.results[:x_us]  # Installed capacity by user
 
     # time step resolution
-    time_res = market_profile_by_user(ECModel,u,"time_res")
+    time_res = profile(ECModel.gen_data,"time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # Available renewable production
@@ -555,8 +555,8 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
     # time step resolution
-    time_res = market_profile_by_user(ECModel,u, "time_res")
-    energy_weight = market_profile_by_user(ECModel, u,"energy_weight")
+    time_res = profile(ECModel.gen_data, "time_res")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # self consumption by user only
     shared_cons_us = JuMP.Containers.DenseAxisArray(
