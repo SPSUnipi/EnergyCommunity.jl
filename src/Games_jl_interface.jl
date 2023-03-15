@@ -581,7 +581,7 @@ try
         @info "Gurobi: branching priorities successfully added"
     end
 catch e
-    @warn "Special features by Gurobi are not enabled"
+    #@warn "Special features by Gurobi are not enabled"
 end
 
 try
@@ -658,7 +658,7 @@ try
         end
     end
 catch e
-    @warn "Special features by CPLEX are not enabled"
+    #@warn "Special features by CPLEX are not enabled"
 end
 
 """Function to create output data after the optimization for Games.jl"""
