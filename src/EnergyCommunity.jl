@@ -15,7 +15,7 @@ module EnergyCommunity
     import FileIO
     import YAML
     import InteractiveUtils
-    try
+#=     try
         import CPLEX
     catch e
         @warn "CPLEX not loaded; features may be limited"
@@ -24,7 +24,7 @@ module EnergyCommunity
         import Gurobi
     catch e
         @warn "Gurobi not loaded; features may be limited"
-    end
+    end =#
 
     const MOI = MathOptInterface
     
