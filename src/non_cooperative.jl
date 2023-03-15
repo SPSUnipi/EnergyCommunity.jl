@@ -262,7 +262,7 @@ function add_users_design_summary!(
             [[u for u in user_set]],
             [[maximum(sum(Float64[profile_component(users_data[u], l, "load")[t]
                 for l in asset_names(users_data[u]) if asset_type(users_data[u], l) == LOAD]) for t in time_set) for u in user_set]],
-            [[sum(Float64[profile_component(users_data[u], l, "load")[t] * market_profile_by_user(ECModel,u, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
+            [[sum(Float64[profile_component(users_data[u], l, "load")[t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
                 for t in time_set for l in asset_names(users_data[u], LOAD)]) for u in user_set]],
             [[if (a in device_names(users_data[u])) _x_us[u, a] else missing end for u in user_set] for a in asset_set_unique]
         ),
@@ -285,6 +285,7 @@ function add_users_economics_summary!(
     gen_data = ECModel.gen_data
     users_data = ECModel.users_data
     market_data = ECModel.market_data
+    u= "user1"
 
     n_users = length(users_data)
     init_step = field(gen_data, "init_step")
@@ -449,7 +450,7 @@ function calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
 
     # time step resolution
     time_res = profile(ECModel.gen_data,"time_res")
-    energy_weight = profile(ECModel.gen_data,"time_res")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
@@ -510,7 +511,7 @@ function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
 
     # time step resolution
     time_res = profile(ECModel.gen_data,"time_res")
-    energy_weight = profile(ECModel.gen_data,"time_res")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 

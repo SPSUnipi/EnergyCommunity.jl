@@ -165,7 +165,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # Revenues of each user in non-cooperative approach
     @expression(model_user, R_Energy_us[u in user_set, t in time_set],
-        market_profile_by_user(ECModel,u,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
+        profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
             - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
                 Float64[profile_component(users_data[u], l, "load")[t]
@@ -408,7 +408,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
     # time step resolution
     time_res = market_profile_by_user(ECModel,u,"time_res")
-    energy_weight = market_profile_by_user(ECModel,u,"energy_weight")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # Available renewable production
     _P_ren_available = JuMP.Containers.DenseAxisArray(
@@ -495,7 +495,7 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
 
     # time step resolution
     time_res = profile(ECModel.gen_data,"time_res")
-    energy_weight = market_profile_by_user(ECModel,u,"energy_weight")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # self consumption by user only
     shared_en_us = JuMP.Containers.DenseAxisArray(

@@ -6,7 +6,7 @@ general:  # general input parameters
   user_set: [user1, user2, user3, user4, user5] # list of users for the simulation
   profile: #base profiles
     time_res: time_res  # time resolution column
-
+    energy_weight: energy_weight #weight of time step over the year
   optional_datasets:  # optional csv files storing data
     - input_resource.csv
     - market_data.csv
@@ -24,7 +24,6 @@ market:  # market characteristics
         inputs: 
           - peak_categories
           - peak_tariff
-      energy_weight: energy_weight
       peak_weight:
         function: parse_peak_quantity_by_time_vectors
         inputs: 
