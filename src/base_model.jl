@@ -349,7 +349,7 @@ function calculate_production(ECModel::AbstractEC)
     users_data = ECModel.users_data
 
     # time step resolution
-    time_res = market_profile_by_user(ECModel,u,"time_res")
+    time_res = profile(ECModel.gen_data,"time_res")
     energy_weight = profile(ECModel.gen_data, "energy_weight")
 
     _P_ren = ECModel.results[:P_ren_us]
