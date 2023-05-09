@@ -21,9 +21,6 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: webfactory/ssh-agent@v0.5.4
-        with:
-            ssh-private-key: ${{ secrets.SSH_SECRET }}
       - name: Clone Games.jl
         run: git clone https://github.com/SPSUnipi/Games.jl
       - name: Install private repo
