@@ -31,7 +31,7 @@ OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0, "Thread
 OPTIMIZER_MIPGAP = optimizer_with_attributes(Gurobi.Optimizer,
     "OutputFlag"=>1,
     "LogToConsole"=>0,
-    "MIPGap"=>0.2,
+    "MIPGap"=>0.0,
     # "MIPFocus"=>1,
     "TimeLimit"=>1000,
     "LogFile"=>"C:\\Users\\Davide\\Desktop\\gurobi_varlc.log",
@@ -69,23 +69,23 @@ reset_user_set!(ECModel)
 # build_model!(ANCModel)
 # optimize!(ANCModel)
 
-# coal_EC = [EC_CODE; ECModel.user_set]
-# profit_list = [23064.94534744716, 6825.297230565472, 44921.61629393777, 5175.039574246674, 5055.268214914409, 3487.4191783565184, 4680.009759817722, 66826.60688194631, 6156.843910783279, 4661.382228575006, 56295.61820125032]
-# test_profit = Dict(
-#     u=>profit_list[i] for (i, u) in enumerate(coal_EC)  #profit_list[i]
-# )
+coal_EC = [EC_CODE; ECModel.user_set]
+profit_list = [23064.94534744716, 6825.297230565472, 44921.61629393777, 5175.039574246674, 5055.268214914409, 3487.4191783565184, 4680.009759817722, 66826.60688194631, 6156.843910783279, 4661.382228575006, 56295.61820125032]
+test_profit = Dict(
+    u=>profit_list[i] for (i, u) in enumerate(coal_EC)  #profit_list[i]
+)
 
-# # utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupNC())
-# worst_coalition_callback, ecm_copy_worst = to_least_profitable_coalition_callback(
-#     ECModel, GroupNC();
-#     optimizer=OPTIMIZER_MIPGAP,
-#     raw_outputs=true,
-#     no_aggregator_group=GroupANC(),
+# utility_callback = to_utility_callback_by_subgroup(ECModel, GroupNC(), no_aggregator_group=GroupNC())
+worst_coalition_callback, ecm_copy_worst = to_least_profitable_coalition_callback(
+    ECModel, GroupNC();
+    optimizer=OPTIMIZER_MIPGAP,
+    raw_outputs=true,
+    no_aggregator_group=GroupANC(),
     
-# )
+)
 
-# output_data = worst_coalition_callback(test_profit; decompose_ANC_lower_obj_stop=10000)
-# output_data_mod = worst_coalition_callback(test_profit; modify_solver_options=["BestObjStop"=>10000.])
+output_data = worst_coalition_callback(test_profit; decompose_ANC_lower_obj_stop=10000)
+output_data_mod = worst_coalition_callback(test_profit; decompose_ANC_lower_obj_stop=+Inf)
 
 
 # worst_coalition_callback_relax, ecm_copy_worst_relax = to_least_profitable_coalition_callback(
@@ -99,20 +99,20 @@ reset_user_set!(ECModel)
 # output_data_relax = worst_coalition_callback_relax(test_profit)
 
 
-preload_coalitions = collect(Iterators.flatten([combinations([EC_CODE; ECModel.user_set], k) for k = [1, 10]]))
+# preload_coalitions = collect(Iterators.flatten([combinations([EC_CODE; ECModel.user_set], k) for k = [1, 10]]))
 
-iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0)
+# iter_mode = IterMode(ECModel, GroupNC(); no_aggregator_group=GroupANC(), optimizer=OPTIMIZER_MIPGAP, number_of_solutions=0, decompose_ANC=true)
 
-tick()
-lc_iter, min_surplus, history, model_dist = var_least_core(
-    iter_mode, OPTIMIZER;
-    lower_bound=0.0,
-    atol=1e-4,
-    raw_outputs=true,
-    preload_coalitions=preload_coalitions,
-    best_objective_stop_option="BestObjStop",
-)
-time_elapsed_iter=tok()
+# tick()
+# lc_iter_T, min_surplus_T, history_T, model_dist_T = var_least_core(
+#     iter_mode, OPTIMIZER;
+#     lower_bound=0.0,
+#     atol=1e-4,
+#     raw_outputs=true,
+#     preload_coalitions=preload_coalitions,
+#     best_objective_stop_option="BestObjStop",    
+# )
+# time_elapsed_iter_T=tok()
 
 
 # tick()
