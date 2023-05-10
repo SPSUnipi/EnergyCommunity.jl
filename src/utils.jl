@@ -8,14 +8,15 @@ Implemented values:
 - REN: renewable assets
 - BATT: battery components
 - CONV: battery converters
+- MARK: market type
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3
+@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 MARK=4
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD])  # devices codes
+DEVICES = setdiff(ANY, [LOAD, MARK])   # devices codes
 GENS = [REN]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD)
+type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD,"market"=>MARK)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
@@ -242,13 +243,21 @@ function read_input(file_name::AbstractString)
         end
     end
 
-    change_profile!(market_data, opt_data)
+    change_profile!(gen_data,opt_data)
+
+    for c_name in keys(market_data)
+        change_profile!(market_data[c_name], opt_data)
+    end
 
     for u_name in keys(users_data)
         comp_dict = components(users_data[u_name])
         if !isnothing(comp_dict)
             for c_name in keys(comp_dict)
-                change_profile!(comp_dict[c_name], opt_data)
+                if c_name == "market"
+                    print(u_name)
+                else
+                    change_profile!(comp_dict[c_name], opt_data)
+                end 
             end
         end
     end
