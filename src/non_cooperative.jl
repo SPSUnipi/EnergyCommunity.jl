@@ -67,11 +67,12 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
     market_data = ECModel.market_data
 
     n_users = length(users_data)
+    u_standard = first(keys(users_data))
     init_step = field(gen_data, "init_step")
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+    peak_categories = market_profile_by_user(ECModel,u_standard, "peak_categories")
 
     # Set definitions
 
@@ -261,7 +262,7 @@ function add_users_design_summary!(
             [[u for u in user_set]],
             [[maximum(sum(Float64[profile_component(users_data[u], l, "load")[t]
                 for l in asset_names(users_data[u]) if asset_type(users_data[u], l) == LOAD]) for t in time_set) for u in user_set]],
-            [[sum(Float64[profile_component(users_data[u], l, "load")[t] * profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t]/1000
+            [[sum(Float64[profile_component(users_data[u], l, "load")[t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
                 for t in time_set for l in asset_names(users_data[u], LOAD)]) for u in user_set]],
             [[if (a in device_names(users_data[u])) _x_us[u, a] else missing end for u in user_set] for a in asset_set_unique]
         ),
@@ -286,11 +287,12 @@ function add_users_economics_summary!(
     market_data = ECModel.market_data
 
     n_users = length(users_data)
+    u_standard = first(keys(users_data))
     init_step = field(gen_data, "init_step")
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+    peak_categories = market_profile_by_user(ECModel, u_standard, "peak_categories")
 
     # Set definitions
 
@@ -368,7 +370,8 @@ function add_users_peak_summary!(
 
     # get main parameters
     market_data = ECModel.market_data
-    peak_categories = profile(market_data, "peak_categories")
+    u_standard = first(keys(ECModel.users_data))
+    peak_categories = market_profile_by_user(ECModel, u_standard,"peak_categories")
 
     # Set definitions
     peak_set = unique(peak_categories)
@@ -447,8 +450,8 @@ function calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
     time_set = 1:n_steps
 
     # time step resolution
-    time_res = profile(market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = profile(ECModel.gen_data,"time_res")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
@@ -508,8 +511,8 @@ function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit:
     time_set = 1:n_steps
 
     # time step resolution
-    time_res = profile(market_data, "time_res")
-    energy_weight = profile(ECModel.market_data, "energy_weight")
+    time_res = profile(ECModel.gen_data,"time_res")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
 
