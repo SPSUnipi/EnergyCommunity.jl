@@ -22,7 +22,7 @@ using FileIO
 using HiGHS, Plots
 using JuMP
 using Gurobi
-using Games
+using TheoryOfGames
 using TickTock
 using Combinatorics
 using DataFrames
@@ -35,7 +35,7 @@ using YAML
 # General optimizer
 OPTIMIZER = optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag"=>0, "Threads"=>10)
 
-# Optimizer for row-generation techniques, used in the IterMode of Games.jl
+# Optimizer for row-generation techniques, used in the IterMode of TheoryOfGames.jl
 OPTIMIZER_ROW_GENERATION = optimizer_with_attributes(Gurobi.Optimizer,
     "OutputFlag"=>1,
     "LogToConsole"=>0,

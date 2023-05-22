@@ -20,7 +20,7 @@ using FileIO
 using HiGHS, Plots
 using JuMP
 using Gurobi
-using Games
+using TheoryOfGames
 using TickTock
 using Combinatorics
 using DataFrames

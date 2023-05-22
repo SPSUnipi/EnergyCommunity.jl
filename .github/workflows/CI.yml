@@ -21,10 +21,6 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - name: Clone Games.jl
-        run: git clone https://github.com/SPSUnipi/Games.jl
-      - name: Install private repo
-        run: julia --project -e 'using Pkg; Pkg.add(; url="Games.jl")'
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
