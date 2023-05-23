@@ -661,7 +661,7 @@ catch e
     @warn "Special features by CPLEX are not enabled"
 end
 
-"""Function to create output data after the optimization for Games.jl"""
+"""Function to create output data after the optimization for TheoryOfGames.jl"""
 function create_output_data(ecm_copy::ModelEC, number_of_solutions)
     user_set_tot = axes(ecm_copy.model[:profit_distribution])[1]
 
@@ -909,9 +909,9 @@ end
 """
     IterMode(ECModel::AbstractEC, base_group_type::AbstractGroup)
 
-Function to create the IterMode item for the Games.jl package 
+Function to create the IterMode item for the TheoryOfGames.jl package 
 """
-function Games.IterMode(
+function TheoryOfGames.IterMode(
         ECModel::AbstractEC,
         base_group_type::AbstractGroup; 
         no_aggregator_type::AbstractGroup=GroupNC(),
@@ -940,7 +940,7 @@ function Games.IterMode(
         kwargs...
     )
 
-    robust_mode = Games.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
+    robust_mode = TheoryOfGames.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
     return robust_mode
 end
@@ -949,12 +949,12 @@ end
 """
     EnumMode(ECModel::AbstractEC)
 
-Function to create the EnumMode item for the Games.jl package 
+Function to create the EnumMode item for the TheoryOfGames.jl package 
 """
-function Games.EnumMode(ECModel::AbstractEC, base_group::AbstractGroup; verbose::Bool=true, kwargs...)
+function TheoryOfGames.EnumMode(ECModel::AbstractEC, base_group::AbstractGroup; verbose::Bool=true, kwargs...)
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group; kwargs...)
 
-    enum_mode = Games.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
+    enum_mode = TheoryOfGames.EnumMode([EC_CODE; ECModel.user_set], utility_callback; verbose=verbose)
 
     return enum_mode
 end

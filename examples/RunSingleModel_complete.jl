@@ -7,7 +7,7 @@ using EnergyCommunity, JuMP
 using HiGHS, Plots
 using Gurobi
 using Combinatorics
-using Games
+using TheoryOfGames
 using DataFrames
 
 
