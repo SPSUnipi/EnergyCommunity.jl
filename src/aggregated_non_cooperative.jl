@@ -178,9 +178,11 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     user_set = ECModel.user_set
     user_set_EC = vcat(EC_CODE, user_set)
 
+
     gen_data = ECModel.gen_data
     users_data = ECModel.users_data
     market_data = ECModel.market_data
+    u_standard = first(keys(users_data))
 
     # get time set
     init_step = field(gen_data, "init_step")
@@ -189,7 +191,7 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     time_set = 1:n_steps
 
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+    peak_categories = market_profile_by_user(ECModel,u_standard,"peak_categories")
 
     # Set definitions
 
