@@ -31,7 +31,7 @@ market:  # market characteristics
           - peak_weight
   commercial:
     profile:
-      buy_price: buy_price_COM # name of the column for the buying electricity price
+      buy_price: buy_price # name of the column for the buying electricity price
       sell_price: sell_price  # name of the column for the selling electricity price
       consumption_price: consumption_price  # name of the column for the consumption price
       reward_price: reward_price  # name of the column describing the reward value
@@ -40,7 +40,7 @@ market:  # market characteristics
         function: parse_peak_quantity_by_time_vectors
         inputs: 
           - peak_categories
-          - peak_tariff_COM
+          - peak_tariff
       energy_weight: energy_weight
       peak_weight:
         function: parse_peak_quantity_by_time_vectors
