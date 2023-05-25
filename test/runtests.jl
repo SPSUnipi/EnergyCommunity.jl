@@ -1,5 +1,5 @@
 using EnergyCommunity, JuMP, Plots
-using Test, FileIO, HiGHS, MathOptInterface, Games, YAML
+using Test, FileIO, HiGHS, MathOptInterface, TheoryOfGames, YAML
 using ReferenceTests
 
 # needed to avoid problems with qt when plotting
@@ -32,7 +32,7 @@ include("tests.jl")
 
 end
 
-@testset "Games.jl interaction" begin
+@testset "TheoryOfGames.jl interaction" begin
     
     @testset "Utility callback test" begin
         for base_group in [EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
@@ -50,7 +50,7 @@ end
         end
     end
         
-    @testset "Games.jl - Shapley" begin
+    @testset "TheoryOfGames.jl - Shapley" begin
         # base case of the simulation
         base_group = GroupNC()
         for no_aggregator_group in [GroupNC(), GroupANC()]  # exclude CO as base case
