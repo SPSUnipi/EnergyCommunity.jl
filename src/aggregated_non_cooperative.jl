@@ -223,8 +223,8 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     # Total reward awarded to the community at each time step
     ECModel.results[:R_Reward_agg] = JuMP.Containers.DenseAxisArray(
         [
-            profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                profile(market_data, "reward_price")[t] * ECModel.results[:P_shared_agg][t]
+            profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *
+                market_profile_by_user(ECModel,u_standard, "reward_price")[t] * ECModel.results[:P_shared_agg][t]
         for t in time_set],
         time_set
     )
@@ -320,6 +320,7 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
 
                 gen_data = ecm_copy.gen_data
                 market_data = ecm_copy.market_data
+                u_standard = first(keys(users_data))
             
                 # get time set
                 init_step = field(gen_data, "init_step")
@@ -347,8 +348,8 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
                 # Reward awarded to the subcoalition at each time step
                 R_Reward_coal = JuMP.Containers.DenseAxisArray(
                     [
-                        profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                            profile(market_data, "reward_price")[t] * P_shared_coal[t]
+                        profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *
+                        market_profile_by_user(ECModel,u_standard, "reward_price")[t] * P_shared_coal[t]
                     for t in time_set],
                     time_set
                 )
