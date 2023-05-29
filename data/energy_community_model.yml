@@ -1,9 +1,9 @@
 general:  # general input parameters
   init_step: 1  # initial time step
-  final_step: 672  # final time step
+  final_step: 1152  # final time step
   d_rate: 0.03  # discount rate
   project_lifetime: 20  # [y] project lifetime
-  user_set: [user1, user2, user3, user4, user5, user6, user7, user8, user9, user10] # list of users for the simulation
+  user_set: [user1, user2, user3] # list of users for the simulation
   profile: #base profiles
     time_res: time_res  # time resolution column
     energy_weight: energy_weight #weight of time step over the year
@@ -59,37 +59,13 @@ users:  # list of users and the corresponding assets
     
     PV:  # component PV
       type: renewable  # type of component
-      CAPEX_lin: 1300  # [€/kW] specific investment cost of the component
+      CAPEX_lin: 1700  # [€/kW] specific investment cost of the component
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
-      max_capacity: 1384  # [kW] maximum capacity for UNIGE CAMPUS
+      max_capacity: 50  # [kW] maximum capacity for UNIGE CAMPUS
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
-    
-    batt:  # component battery
-      type: battery  # type of component
-      CAPEX_lin: 400  # [€/kWh] specific investment cost of the component
-      OEM_lin: 5  # [€/kWh/y] specific O&M cost
-      lifetime_y: 15  # [y] lifetime of the component
-      eta: 0.92  # [-] roudtrip efficiency
-      max_SOC: 1.0  # [-] maximum state of charge
-      min_SOC: 0.2  # [-] maximum state of charge
-      max_capacity: 2000  # [kW] maximum capacity
-      max_C_dch: 1.0  # [-] maximum C-rate in discharge
-      max_C_ch: 1.0  # [-] maximum C-rate in charge
-      corr_asset: conv  # corresponding converter    
-    
-    conv:  # component converter
-      type: converter  # type of component
-      CAPEX_lin: 200  # [€/kW] specific investment cost of the component
-      OEM_lin: 2  # [€/kW/y] specific O&M cost
-      lifetime_y: 10  # [y] lifetime of the component
-      eta: 1.0  # [-] roudtrip efficiency
-      max_dch: 1.0  # [-] maximum discharge
-      min_ch: 0.1  # [-] maximum charge
-      max_capacity: 1000  # [kW] maximum capacity
-      corr_asset: batt  # corresponding battery    
-    
+        
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -114,39 +90,39 @@ users:  # list of users and the corresponding assets
       market_type: non_commercial #type of market
       type: market  #type of market
 
-    # PV:  # component PV
-    #   type: renewable  # type of component
-    #   CAPEX_lin: 1500  # [€/kW] specific investment cost of the component
-    #   OEM_lin: 30  # [€/kW/y] specific O&M cost
-    #   lifetime_y: 25  # [y] lifetime of the component
-    #   max_capacity: 3  # [kW] maximum capacity
-    #   profile:  # list of profiles
-    #     ren_pu: pv  # code name of the specific renewable profile of the component
+    PV:  # component PV
+      type: renewable  # type of component
+      CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
+      OEM_lin: 30  # [€/kW/y] specific O&M cost
+      lifetime_y: 25  # [y] lifetime of the component
+      max_capacity: 80  # [kW] maximum capacity
+      profile:  # list of profiles
+        ren_pu: pv  # code name of the specific renewable profile of the component
     
     
-    # batt:  # component battery
-    #   type: battery  # type of component
-    #   CAPEX_lin: 400  # [€/kWh] specific investment cost of the component
-    #   OEM_lin: 5  # [€/kWh/y] specific O&M cost
-    #   lifetime_y: 15  # [y] lifetime of the component
-    #   eta: 0.92  # [-] roudtrip efficiency
-    #   max_SOC: 1.0  # [-] maximum state of charge
-    #   min_SOC: 0.2  # [-] maximum state of charge
-    #   max_capacity: 50  # [kW] maximum capacity
-    #   max_C_dch: 1.0  # [-] maximum C-rate in discharge
-    #   max_C_ch: 1.0  # [-] maximum C-rate in charge
-    #   corr_asset: conv  # corresponding converter    
+    batt:  # component battery
+      type: battery  # type of component
+      CAPEX_lin: 400  # [€/kWh] specific investment cost of the component
+      OEM_lin: 5  # [€/kWh/y] specific O&M cost
+      lifetime_y: 15  # [y] lifetime of the component
+      eta: 0.92  # [-] roudtrip efficiency
+      max_SOC: 1.0  # [-] maximum state of charge
+      min_SOC: 0.2  # [-] maximum state of charge
+      max_capacity: 50  # [kW] maximum capacity
+      max_C_dch: 1.0  # [-] maximum C-rate in discharge
+      max_C_ch: 1.0  # [-] maximum C-rate in charge
+      corr_asset: conv  # corresponding converter    
     
-    # conv:  # component converter
-    #   type: converter  # type of component
-    #   CAPEX_lin: 200  # [€/kW] specific investment cost of the component
-    #   OEM_lin: 2  # [€/kW/y] specific O&M cost
-    #   lifetime_y: 10  # [y] lifetime of the component
-    #   eta: 1.0  # [-] roudtrip efficiency
-    #   max_dch: 1.0  # [-] maximum discharge
-    #   min_ch: 0.1  # [-] maximum charge
-    #   max_capacity: 50  # [kW] maximum capacity
-    #   corr_asset: batt  # corresponding battery
+    conv:  # component converter
+      type: converter  # type of component
+      CAPEX_lin: 200  # [€/kW] specific investment cost of the component
+      OEM_lin: 2  # [€/kW/y] specific O&M cost
+      lifetime_y: 10  # [y] lifetime of the component
+      eta: 1.0  # [-] roudtrip efficiency
+      max_dch: 1.0  # [-] maximum discharge
+      min_ch: 0.1  # [-] maximum charge
+      max_capacity: 50  # [kW] maximum capacity
+      corr_asset: batt  # corresponding battery
 
 
     load:  # component load
@@ -159,53 +135,53 @@ users:  # list of users and the corresponding assets
     # list of components
     
     market_set: 
-      market_type: commercial #type of market
+      market_type: non_commercial #type of market
       type: market  #type of market
 
-    # PV:  # component PV
-    #   type: renewable  # type of component
-    #   CAPEX_lin: 1500  # [€/kW] specific investment cost of the component
-    #   OEM_lin: 30  # [€/kW/y] specific O&M cost
-    #   lifetime_y: 25  # [y] lifetime of the component
-    #   max_capacity: 20  # [kW] maximum capacity
-    #   profile:  # list of profiles
-    #     ren_pu: pv  # code name of the specific renewable profile of the component
+    PV:  # component PV
+      type: renewable  # type of component
+      CAPEX_lin: 1600  # [€/kW] specific investment cost of the component
+      OEM_lin: 30  # [€/kW/y] specific O&M cost
+      lifetime_y: 25  # [y] lifetime of the component
+      max_capacity: 100  # [kW] maximum capacity
+      profile:  # list of profiles
+        ren_pu: pv  # code name of the specific renewable profile of the component
 
     
-    # wind:  # component wind
-    #   type: renewable  # type of component
-    #   CAPEX_lin: 3000  # [€/kW] specific investment cost of the component
-    #   OEM_lin: 30  # [€/kW/y] specific O&M cost
-    #   lifetime_y: 20  # [y] lifetime of the component
-    #   max_capacity: 20  # [kW] maximum capacity
-    #   profile:  # list of profiles
-    #     ren_pu: wind  # code name of the specific renewable profile of the component
+    wind:  # component wind
+      type: renewable  # type of component
+      CAPEX_lin: 3000  # [€/kW] specific investment cost of the component
+      OEM_lin: 30  # [€/kW/y] specific O&M cost
+      lifetime_y: 20  # [y] lifetime of the component
+      max_capacity: 20  # [kW] maximum capacity
+      profile:  # list of profiles
+        ren_pu: wind  # code name of the specific renewable profile of the component
     
     
-    # batt:  # component battery
-    #   type: battery  # type of component
-    #   CAPEX_lin: 400  # [€/kWh] specific investment cost of the component
-    #   OEM_lin: 5  # [€/kWh/y] specific O&M cost
-    #   lifetime_y: 15  # [y] lifetime of the component
-    #   eta: 0.92  # [-] roudtrip efficiency
-    #   max_SOC: 1.0  # [-] maximum state of charge
-    #   min_SOC: 0.2  # [-] maximum state of charge
-    #   max_capacity: 50  # [kW] maximum capacity
-    #   max_C_dch: 1.0  # [-] maximum C-rate in discharge
-    #   max_C_ch: 1.0  # [-] maximum C-rate in charge
-    #   corr_asset: conv  # corresponding converter    
+    batt:  # component battery
+      type: battery  # type of component
+      CAPEX_lin: 400  # [€/kWh] specific investment cost of the component
+      OEM_lin: 5  # [€/kWh/y] specific O&M cost
+      lifetime_y: 15  # [y] lifetime of the component
+      eta: 0.92  # [-] roudtrip efficiency
+      max_SOC: 1.0  # [-] maximum state of charge
+      min_SOC: 0.2  # [-] maximum state of charge
+      max_capacity: 50  # [kW] maximum capacity
+      max_C_dch: 1.0  # [-] maximum C-rate in discharge
+      max_C_ch: 1.0  # [-] maximum C-rate in charge
+      corr_asset: conv  # corresponding converter    
     
     
-    # conv:  # component converter
-    #   type: converter  # type of component
-    #   CAPEX_lin: 200  # [€/kW] specific investment cost of the component
-    #   OEM_lin: 2  # [€/kW/y] specific O&M cost
-    #   lifetime_y: 10  # [y] lifetime of the component
-    #   eta: 1.0  # [-] roudtrip efficiency
-    #   max_dch: 1.0  # [-] maximum discharge
-    #   min_ch: 0.1  # [-] maximum charge
-    #   max_capacity: 50  # [kW] maximum capacity
-    #   corr_asset: batt  # corresponding battery
+    conv:  # component converter
+      type: converter  # type of component
+      CAPEX_lin: 200  # [€/kW] specific investment cost of the component
+      OEM_lin: 2  # [€/kW/y] specific O&M cost
+      lifetime_y: 10  # [y] lifetime of the component
+      eta: 1.0  # [-] roudtrip efficiency
+      max_dch: 1.0  # [-] maximum discharge
+      min_ch: 0.1  # [-] maximum charge
+      max_capacity: 50  # [kW] maximum capacity
+      corr_asset: batt  # corresponding battery
 
 
     load:  # component load
