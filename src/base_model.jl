@@ -301,7 +301,7 @@ demand_us_EC : DenseAxisArray
 function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
     user_market_type = field(ECModel.users_data[u_name]["market_set"], "market_type")
     #This line allow to check if a market_type provided for any user is present in the market dictionary
-    market_data_type = field(ECModel.market_data, user_market_type, desc=="Missing market type definition '$user_market_type'")
+    market_data_type = field(ECModel.market_data, user_market_type,"Missing market type definition '$user_market_type'")
     return profile(ECModel.market_data[user_market_type], profile_name)
 end
 
