@@ -27,7 +27,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = market_profile_by_user(ECModel, u_standard, "peak_categories")
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
 
     # Set definitions
 
@@ -35,7 +35,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories)
+    peak_set = unique(peak_categories[u] for u in user_set)
 
 
     ## Model definition
@@ -91,8 +91,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             <= sum(Float64[field_component(users_data[u], r, "max_capacity") for r in asset_names(users_data[u], REN)]))
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
-        0 <= P_max_us[u=user_set, w in peak_set]
-            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[t] == w))
+        0 <= P_max_us[u=user_set, w in peak_set[u]]
+            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[u,t] == w))
     # Total dispatch of the user, positive when supplying to public grid
     @variable(model_user,
         0 <= P_P_us[u=user_set, t in time_set]
@@ -148,14 +148,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     # Peak tariff cost by user and peak period
-    @expression(model_user, C_Peak_us[u in user_set, w in peak_set],
+    @expression(model_user, C_Peak_us[u in user_set, w in peak_set[u]],
         market_profile_by_user(ECModel,u,"peak_weight")[w] * market_profile_by_user(ECModel,u, "peak_tariff")[w] * P_max_us[u, w]
         # Peak tariff times the maximum connection usage times the discretization of the period
     )
 
     # Total peak tariff cost by user
     @expression(model_user, C_Peak_tot_us[u in user_set],
-        sum(C_Peak_us[u, w] for w in peak_set)  # Sum of peak costs
+        sum(C_Peak_us[u, w] for w in peak_set[u])  # Sum of peak costs
     ) 
 
     # Revenues of each user in non-cooperative approach

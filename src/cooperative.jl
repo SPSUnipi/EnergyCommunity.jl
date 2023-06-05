@@ -43,14 +43,14 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = market_profile_by_user(ECModel,u_standard, "peak_categories")
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
 
     # Set definitions
 
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories)
+    peak_set = unique(peak_categories[u] for u in user_set)
 
     # Set definition when optional value is not included
     user_set = ECModel.user_set
@@ -169,18 +169,17 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
     # get main parameters
     gen_data, users_data, market_data = explode_data(ECModel.data)
     n_users = length(users_data)
-    u_standard = first(keys(users_data))
     init_step = field(gen_data, "init_step")
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = market_profile_by_user(ECModel,u_standard,"peak_categories")
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
 
     # Set definitions
 
     year_set = 1:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories)
+    peak_set = unique(peak_categories[u] for u in user_set)
 
     # Set definition when optional value is not included
     user_set = ECModel.user_set
@@ -361,24 +360,23 @@ function add_EC_peak_summary!(
 
     # get main parameters
     market_data = ECModel.market_data
-    u_standard = first(keys(ECModel.users_data))
-    peak_categories = market_profile_by_user(ECModel,u_standard,"peak_categories")
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
 
     # Set definitions
-    peak_set = unique(peak_categories)
+    peak_set = unique(peak_categories[u] for u in user_set)
 
     ## Retrive results
     _P_max_agg = JuMP.Containers.DenseAxisArray(
-        [maximum(abs.(ECModel.results[:P_agg][findall(==(w), peak_categories)].data))
-        for w in peak_set],
-            peak_set)  # Maximum dispatch of the user for every peak period
+        [maximum(abs.(ECModel.results[:P_agg][findall(==(w), peak_categories[u])].data))
+        for w in peak_set[u]],
+            peak_set[u])  # Maximum dispatch of the user for every peak period
 
     peak_aggregator = DataFrames.DataFrame(
         vcat(
             [[EC_CODE]],
-            [[[_P_max_agg[w]]] for w in peak_set]...
+            [[[_P_max_agg[w]]] for w in peak_set[u]]...
         ),
-        map(Symbol, ["Agg_id"; map(x->"Peak_id $x", peak_set)])
+        map(Symbol, ["Agg_id"; map(x->"Peak_id $x", peak_set[u])])
     )
 
     # add dataframe to the output list
