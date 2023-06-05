@@ -136,8 +136,8 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; 
     # Reward awarded to the subcoalition at each time step
     @expression(ECModel.model, R_Reward_tot_coal,
         sum(GenericAffExpr{Float64,VariableRef}[
-                profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_agg_base[t]
+                profile(gen_data, "energy_weight")[t] * profile(gen_data, "time_res")[t] *
+                    profile(gen_data, "reward_price")[t] * P_shared_agg_base[t]
             for t in time_set
         ])
     )
@@ -220,8 +220,8 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     # Reward awarded to the subcoalition at each time step
     @expression(ECModel.model, R_Reward_tot_coal_noagg,
         sum(GenericAffExpr{Float64,VariableRef}[
-                profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_noagg_agg[t]
+                profile(gen_data, "energy_weight")[t] * profile(gen_data, "time_res")[t] *
+                    profile(gen_data, "reward_price")[t] * P_shared_noagg_agg[t]
             for t in time_set
         ])
     )

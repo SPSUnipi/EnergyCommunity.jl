@@ -7,6 +7,7 @@ general:  # general input parameters
   profile: #base profiles
     time_res: time_res  # time resolution column
     energy_weight: energy_weight #weight of time step over the year
+    reward_price: reward_price  # name of the column describing the reward value
   optional_datasets:  # optional csv files storing data
     - input_resource.csv
     - market_data.csv
@@ -17,7 +18,6 @@ market:  # market characteristics
       buy_price: buy_price  # name of the column for the buying electricity price
       sell_price: sell_price  # name of the column for the selling electricity price
       consumption_price: consumption_price  # name of the column for the consumption price
-      reward_price: reward_price  # name of the column describing the reward value
       peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
       peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
         function: parse_peak_quantity_by_time_vectors
@@ -34,7 +34,6 @@ market:  # market characteristics
       buy_price: buy_price # name of the column for the buying electricity price
       sell_price: sell_price  # name of the column for the selling electricity price
       consumption_price: consumption_price  # name of the column for the consumption price
-      reward_price: reward_price  # name of the column describing the reward value
       peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
       peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
         function: parse_peak_quantity_by_time_vectors

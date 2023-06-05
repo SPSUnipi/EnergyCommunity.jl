@@ -88,7 +88,7 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
     # Total reward awarded to the community at each time step
     @expression(model, R_Reward_agg[t in time_set],
     profile(ECModel.gen_data,"energy_weight")[t] * profile(gen_data,"time_res")[t] *
-    market_profile_by_user(ECModel,u_standard, "reward_price")[t] * P_shared_agg[t]
+    profile(ECModel.gen_data, "reward_price")[t] * P_shared_agg[t]
     )
 
     # Total reward awarded to the community by year
