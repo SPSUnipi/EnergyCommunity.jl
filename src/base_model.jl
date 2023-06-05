@@ -27,7 +27,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
 
     # Set definitions
 
@@ -35,7 +34,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories[u] for u in user_set)
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
 
 
     ## Model definition
@@ -92,7 +92,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
         0 <= P_max_us[u=user_set, w in peak_set[u]]
-            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[u,t] == w))
+            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[u][t] == w))
     # Total dispatch of the user, positive when supplying to public grid
     @variable(model_user,
         0 <= P_P_us[u=user_set, t in time_set]

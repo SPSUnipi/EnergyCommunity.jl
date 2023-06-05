@@ -189,17 +189,16 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     time_set = 1:n_steps
-
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+
 
     # Set definitions
-
+    user_set=ECModel.user_set
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories[u] for u in user_set)
-
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
     # Set definition when optional value is not included
     user_set = ECModel.user_set
 

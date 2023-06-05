@@ -72,14 +72,15 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    
 
     # Set definitions
-
+    user_set = ECModel.user_set
     year_set = 1:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories[u] for u in user_set)
-
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
+    
     # parameters
     user_set = ECModel.user_set
     results = ECModel.results
@@ -291,12 +292,13 @@ function add_users_economics_summary!(
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    
 
     # Set definitions
-
+    user_set = ECModel.user_set
     year_set = 1:project_lifetime
     time_set = init_step:final_step
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
     peak_set = unique(peak_categories[u] for u in user_set)
 
     asset_set_unique = unique([name for u in user_set for name in asset_names(users_data[u])])
@@ -370,10 +372,11 @@ function add_users_peak_summary!(
     # get main parameters
     market_data = ECModel.market_data
     u_standard = first(keys(ECModel.users_data))
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
 
     # Set definitions
-    peak_set = unique(peak_categories[u] for u in user_set)
+    user_set = ECModel.user_set
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
 
     ## Retrive results
     _P_max_us = ECModel.results[:P_max_us]  # Maximum dispatch of the user for every peak period
