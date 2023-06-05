@@ -11,11 +11,6 @@ Creates the base optimization model for all the EC models
 data: structure of data
 '''
 """
-#This function allow to get the profile of each users related to their market type (e.g. commercial, non_commercial)
-function market_profile_by_user(ECModel, u_name, profile_name)
-    user_market_type = field(ECModel.users_data[u_name]["market_set"], "market_type")
-    return profile(ECModel.market_data[user_market_type], profile_name)
-end
 
 function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
@@ -302,6 +297,14 @@ demand_us_EC : DenseAxisArray
     DenseAxisArray representing the demand by the EC and each user
 
 """
+#This function allow to get the profile of each users related to their market type (e.g. commercial, non_commercial)
+function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
+    user_market_type = field(ECModel.users_data[u_name]["market_set"], "market_type")
+    #This line allow to check if a market_type provided for any user is present in the market dictionary
+    market_data_type = field(ECModel.market_data, user_market_type, desc=="Missing market type definition '$user_market_type'")
+    return profile(ECModel.market_data[user_market_type], profile_name)
+end
+
 function calculate_demand(ECModel::AbstractEC)
 
     # get user set
