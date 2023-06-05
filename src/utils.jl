@@ -8,15 +8,14 @@ Implemented values:
 - REN: renewable assets
 - BATT: battery components
 - CONV: battery converters
-- MARK: market type
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 MARK=4
+@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD, MARK])   # devices codes
+DEVICES = setdiff(ANY, [LOAD])   # devices codes
 GENS = [REN]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD,"market"=>MARK)
+type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
@@ -45,8 +44,13 @@ users(d::AbstractDict) = field(d, "users")
 market(d::AbstractDict) = field(d, "market")
 "Function to get the profile dictionary"
 profiles(d::AbstractDict) = field_d(d, "profile")
+"Auxiliary function to check if the key 'type' is available in the dictionary d, otherwise false"
+has_type(d::AbstractDict) = ("type" in keys(d))
+has_type(d) = False  # if d is not an abstract dictionary, then return false
 "Function to get the components list of a dictionary"
-components(d::AbstractDict) = d
+function components(d::AbstractDict)
+      return Dict(k=>v for (k,v) in d if has_type(v))
+end
 "Function to get the components value of a dictionary"
 component(d, c_name) = field(components(d), c_name)
 "Function to get the components value of a dictionary"

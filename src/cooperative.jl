@@ -365,7 +365,7 @@ function add_EC_peak_summary!(
     peak_categories = market_profile_by_user(ECModel,"user1","peak_categories")
 
     # Set definitions
-    peak_set = unique(peak_categories["user1"])
+    peak_set = unique(peak_categories)
 
     ## Retrive results
     _P_max_agg = JuMP.Containers.DenseAxisArray(

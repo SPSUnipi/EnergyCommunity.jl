@@ -3,10 +3,11 @@ general:  # general input parameters
   final_step: 1152  # final time step
   d_rate: 0.03  # discount rate
   project_lifetime: 20  # [y] project lifetime
-  user_set: [user1, user2, user3] # list of users for the simulation
+  user_set: [user1, user2, user3]  # list of users for the simulation
   profile: #base profiles
     time_res: time_res  # time resolution column
     energy_weight: energy_weight #weight of time step over the year
+    reward_price: reward_price  # name of the column describing the reward value
   optional_datasets:  # optional csv files storing data
     - input_resource.csv
     - market_data.csv
@@ -17,7 +18,6 @@ market:  # market characteristics
       buy_price: buy_price  # name of the column for the buying electricity price
       sell_price: sell_price  # name of the column for the selling electricity price
       consumption_price: consumption_price  # name of the column for the consumption price
-      reward_price: reward_price  # name of the column describing the reward value
       peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
       peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
         function: parse_peak_quantity_by_time_vectors
@@ -34,7 +34,6 @@ market:  # market characteristics
       buy_price: buy_price # name of the column for the buying electricity price
       sell_price: sell_price  # name of the column for the selling electricity price
       consumption_price: consumption_price  # name of the column for the consumption price
-      reward_price: reward_price  # name of the column describing the reward value
       peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep
       peak_tariff:  # peak power tariff described by a dictionary: loaded by performing a custom data parsing
         function: parse_peak_quantity_by_time_vectors
@@ -47,14 +46,11 @@ market:  # market characteristics
         inputs: 
           - peak_categories
           - peak_weight
-
 users:  # list of users and the corresponding assets
 
   user1:  # name of the user
-    
     market_set: 
       market_type: commercial #type of market
-      type: market  #type of market
     # list of components
     
     PV:  # component PV
@@ -65,7 +61,7 @@ users:  # list of users and the corresponding assets
       max_capacity: 50  # [kW] maximum capacity
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
-        
+    
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -85,11 +81,8 @@ users:  # list of users and the corresponding assets
 
   user2:  # name of the user
     # list of components
-    
     market_set: 
       market_type: non_commercial #type of market
-      type: market  #type of market
-
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -113,6 +106,7 @@ users:  # list of users and the corresponding assets
       max_C_ch: 1.0  # [-] maximum C-rate in charge
       corr_asset: conv  # corresponding converter    
     
+
     conv:  # component converter
       type: converter  # type of component
       CAPEX_lin: 200  # [€/kW] specific investment cost of the component
@@ -133,11 +127,8 @@ users:  # list of users and the corresponding assets
 
   user3:  # name of the user
     # list of components
-    
     market_set: 
       market_type: non_commercial #type of market
-      type: market  #type of market
-
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1600  # [€/kW] specific investment cost of the component
@@ -194,8 +185,6 @@ users:  # list of users and the corresponding assets
     # list of components
     market_set: 
       market_type: non_commercial #type of market
-      type: market  #type of market
-    
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -214,11 +203,8 @@ users:  # list of users and the corresponding assets
 
   user5:  # name of the user
     # list of components
-    
     market_set: 
       market_type: commercial #type of market
-      type: market  #type of market
-
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -230,8 +216,6 @@ users:  # list of users and the corresponding assets
     # list of components
     market_set: 
       market_type: commercial #type of market
-      type: market  #type of market
-
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -249,7 +233,7 @@ users:  # list of users and the corresponding assets
       eta: 0.92  # [-] roudtrip efficiency
       max_SOC: 1.0  # [-] maximum state of charge
       min_SOC: 0.2  # [-] maximum state of charge
-      max_capacity: 50  # [kWh] maximum capacity
+      max_capacity: 50  # [kW] maximum capacity
       max_C_dch: 1.0  # [-] maximum C-rate in discharge
       max_C_ch: 1.0  # [-] maximum C-rate in charge
       corr_asset: conv  # corresponding converter    
@@ -277,8 +261,6 @@ users:  # list of users and the corresponding assets
     # list of components
     market_set: 
       market_type: non_commercial #type of market
-      type: market  #type of market
-    
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -289,7 +271,6 @@ users:  # list of users and the corresponding assets
     # list of components
     market_set: 
       market_type: commercial #type of market
-      type: market  #type of market
     
     PV:  # component PV
       type: renewable  # type of component
@@ -347,7 +328,6 @@ users:  # list of users and the corresponding assets
     # list of components
     market_set: 
       market_type: commercial #type of market
-      type: market  #type of market
     
     PV:  # component PV
       type: renewable  # type of component
@@ -393,8 +373,6 @@ users:  # list of users and the corresponding assets
     # list of components
     market_set: 
       market_type: commercial #type of market
-      type: market  #type of market
-    
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
