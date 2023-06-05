@@ -50,9 +50,9 @@ market:  # market characteristics
 users:  # list of users and the corresponding assets
 
   user1:  # name of the user
-      market_set: 
-        market_type: commercial #type of market
-        type: market  #type of market
+    market_set: 
+      market_type: commercial #type of market
+      type: market  #type of market
     # list of components
     
     PV:  # component PV
@@ -83,9 +83,9 @@ users:  # list of users and the corresponding assets
 
   user2:  # name of the user
     # list of components
-      market_set: 
-        market_type: non_commercial #type of market
-        type: market  #type of market
+    market_set: 
+      market_type: non_commercial #type of market
+      type: market  #type of market
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -109,7 +109,7 @@ users:  # list of users and the corresponding assets
       max_C_ch: 1.0  # [-] maximum C-rate in charge
       corr_asset: conv  # corresponding converter    
     
-    
+
     conv:  # component converter
       type: converter  # type of component
       CAPEX_lin: 200  # [€/kW] specific investment cost of the component
@@ -130,9 +130,9 @@ users:  # list of users and the corresponding assets
 
   user3:  # name of the user
     # list of components
-      market_set: 
-        market_type: non_commercial #type of market
-        type: market  #type of market
+    market_set: 
+      market_type: non_commercial #type of market
+      type: market  #type of market
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1600  # [€/kW] specific investment cost of the component
@@ -187,9 +187,9 @@ users:  # list of users and the corresponding assets
 
   user4:  # name of the user
     # list of components
-      market_set: 
-        market_type: non_commercial #type of market
-        type: market  #type of market
+    market_set: 
+      market_type: non_commercial #type of market
+      type: market  #type of market
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
