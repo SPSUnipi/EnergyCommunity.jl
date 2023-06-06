@@ -38,7 +38,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
     market_data = ECModel.market_data
 
     n_users = length(users_data)
-    u_standard = first(keys(users_data))
     init_step = field(gen_data, "init_step")
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1

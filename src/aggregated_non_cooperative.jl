@@ -182,7 +182,6 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     gen_data = ECModel.gen_data
     users_data = ECModel.users_data
     market_data = ECModel.market_data
-    u_standard = first(keys(users_data))
 
     # get time set
     init_step = field(gen_data, "init_step")
@@ -319,7 +318,6 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
 
                 gen_data = ecm_copy.gen_data
                 market_data = ecm_copy.market_data
-                u_standard = first(keys(users_data))
             
                 # get time set
                 init_step = field(gen_data, "init_step")
