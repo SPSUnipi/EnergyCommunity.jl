@@ -362,7 +362,7 @@ function add_EC_peak_summary!(
     # get main parameters
     market_data = ECModel.market_data
     peak_categories = market_profile_by_user(ECModel,"user1","peak_categories")
-
+    
     # Set definitions
     peak_set = unique(peak_categories)
 

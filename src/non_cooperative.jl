@@ -373,8 +373,10 @@ function add_users_peak_summary!(
 
     # Set definitions
     user_set = ECModel.user_set
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    peak_set = unique(peak_categories["user1"])
+    #peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    #peak_set = unique(peak_categories["user1"])
+    peak_categories = market_profile_by_user(ECModel,"user1","peak_categories")
+    peak_set = unique(peak_categories)
 
     ## Retrive results
     _P_max_us = ECModel.results[:P_max_us]  # Maximum dispatch of the user for every peak period
@@ -382,7 +384,7 @@ function add_users_peak_summary!(
     peak_users = DataFrames.DataFrame(
         vcat(
             [[user_set]],
-            [[[_P_max_us[:, w].data] for w in peak_set]]...
+            [[[_P_max_us[:, w].data] for w in peak_set]]
         ),
             map(Symbol, ["User_id"; map(x->"Peak_id $x", peak_set)])
     )
