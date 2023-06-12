@@ -63,11 +63,11 @@ makedocs(
     authors  = "Davide Fioriti",
     pages   = [
         "Home" => "index.md",
-        "Manual" => "manual.md",
         "Examples" => [
             joinpath("examples", f) for
             f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
-        ]
+        ],
+        "API reference" => "API reference.md",
     ]
 )
 
