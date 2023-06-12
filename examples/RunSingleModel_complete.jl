@@ -2,14 +2,12 @@
 # using Pkg
 # Pkg.activate(".")  # this line requires EnergyCommunity.jl to be the current directory
 
-using Revise
 using EnergyCommunity, JuMP
 using HiGHS, Plots
 using Gurobi
 using Combinatorics
 using TheoryOfGames
 using DataFrames
-
 
 ## Parameters
 
@@ -151,3 +149,13 @@ qq = Dict("user$u"=>sum(tt["user$u", :]) for u in 1:10)
 q_table = Dict(r["user_set"]=>r["NPV"] for r in eachrow(delta))
 
 qr = Dict(u=>qq[u]/q_table[u] for u in keys(qq))
+
+ui = ["user$u" for u=1:10]
+d_tot = DataFrame(
+    index = ui,
+    cons = [sum(shared_cons[u, :]) for u in ui],
+    prod = [sum(shared_prod[u, :]) for u in ui],
+    reward = [rCO.REWARD[u] for u in ui],
+)
+
+d_mod = transform(d_tot, AsTable(:) => ByRow(x -> (x.reward/(x.cons +0.001), x.reward/(x.prod+0.001))) => [:r_cons, :r_prod])
