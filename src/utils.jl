@@ -11,7 +11,7 @@ Implemented values:
 """
 @enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD])   # devices codes
+DEVICES = setdiff(ANY, [LOAD])  # devices codes
 GENS = [REN]  # generator codes
 
 
