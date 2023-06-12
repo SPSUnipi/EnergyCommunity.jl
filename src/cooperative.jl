@@ -49,8 +49,8 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
+    peak_categories = profile(gen_data,"peak_categories")
+    peak_set = unique(peak_categories)
 
     # Set definition when optional value is not included
     user_set = ECModel.user_set
@@ -179,8 +179,8 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
     user_set = ECModel.user_set
     year_set = 1:project_lifetime
     time_set = 1:n_steps
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    peak_set = unique(peak_categories[u] for u in user_set)
+    peak_categories = profile(gen_data,"peak_categories")
+    peak_set = unique(peak_categories)
 
     # Set definition when optional value is not included
     user_set = ECModel.user_set
@@ -358,10 +358,11 @@ Function to create the output dataframe of peak power for the EC
 """
 function add_EC_peak_summary!(
     output_list::Vector, ECModel::AbstractEC)
+    gen_data = ECModel.gen_data
 
     # get main parameters
     market_data = ECModel.market_data
-    peak_categories = market_profile_by_user(ECModel,"user1","peak_categories")
+    peak_categories = profile(gen_data,"peak_categories")
     
     # Set definitions
     peak_set = unique(peak_categories)

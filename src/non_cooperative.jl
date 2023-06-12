@@ -77,8 +77,8 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
     user_set = ECModel.user_set
     year_set = 1:project_lifetime
     time_set = 1:n_steps
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
+    peak_categories = profile(gen_data,"peak_categories")
+    peak_set = unique(peak_categories)
     
     # parameters
     user_set = ECModel.user_set
@@ -297,8 +297,8 @@ function add_users_economics_summary!(
     user_set = ECModel.user_set
     year_set = 1:project_lifetime
     time_set = init_step:final_step
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    peak_set = unique(peak_categories[u] for u in user_set)
+    peak_categories = profile(gen_data,"peak_categories")
+    peak_set = unique(peak_categories)
 
     asset_set_unique = unique([name for u in user_set for name in asset_names(users_data[u])])
 
@@ -370,12 +370,11 @@ function add_users_peak_summary!(
 
     # get main parameters
     market_data = ECModel.market_data
+    gen_data = ECModel.gen_data
 
     # Set definitions
     user_set = ECModel.user_set
-    #peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    #peak_set = unique(peak_categories["user1"])
-    peak_categories = market_profile_by_user(ECModel,"user1","peak_categories")
+    peak_categories = profile(gen_data,"peak_categories")
     peak_set = unique(peak_categories)
 
     ## Retrive results
@@ -384,7 +383,7 @@ function add_users_peak_summary!(
     peak_users = DataFrames.DataFrame(
         vcat(
             [[user_set]],
-            [[[_P_max_us[:, w].data] for w in peak_set]]
+            [[_P_max_us[:, w].data] for w in peak_set]
         ),
             map(Symbol, ["User_id"; map(x->"Peak_id $x", peak_set)])
     )

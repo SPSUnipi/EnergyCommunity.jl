@@ -33,8 +33,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
-    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
+    peak_categories = profile(gen_data,"peak_categories")
+    peak_set = unique(peak_categories)
 
 
     ## Model definition
@@ -90,8 +90,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             <= sum(Float64[field_component(users_data[u], r, "max_capacity") for r in asset_names(users_data[u], REN)]))
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
-        0 <= P_max_us[u=user_set, w in peak_set[u]]
-            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[u][t] == w))
+        0 <= P_max_us[u=user_set, w in peak_set]
+            <= maximum(P_us_overestimate[u, t] for t in time_set if peak_categories[t] == w))
     # Total dispatch of the user, positive when supplying to public grid
     @variable(model_user,
         0 <= P_P_us[u=user_set, t in time_set]
@@ -147,14 +147,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     # Peak tariff cost by user and peak period
-    @expression(model_user, C_Peak_us[u in user_set, w in peak_set[u]],
+    @expression(model_user, C_Peak_us[u in user_set, w in peak_set],
         market_profile_by_user(ECModel,u,"peak_weight")[w] * market_profile_by_user(ECModel,u, "peak_tariff")[w] * P_max_us[u, w]
         # Peak tariff times the maximum connection usage times the discretization of the period
     )
 
     # Total peak tariff cost by user
     @expression(model_user, C_Peak_tot_us[u in user_set],
-        sum(C_Peak_us[u, w] for w in peak_set[u])  # Sum of peak costs
+        sum(C_Peak_us[u, w] for w in peak_set)  # Sum of peak costs
     ) 
 
     # Revenues of each user in non-cooperative approach
@@ -212,7 +212,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Set that the hourly dispatch cannot go beyond the maximum dispatch of the corresponding peak power period
     @constraint(model_user,
         con_us_max_P_user[u = user_set, t = time_set],
-        - P_max_us[u, market_profile_by_user(ECModel,u, "peak_categories")[t]] + P_P_us[u, t] + P_N_us[u, t] <= 0
+        - P_max_us[u, profile(gen_data, "peak_categories")[t]] + P_P_us[u, t] + P_N_us[u, t] <= 0
     )
 
     # Set the renewabl energy dispatch to be no greater than the actual available energy
@@ -286,9 +286,12 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     return ECModel
 end
 
+"""
 #This function allow to get the profile of each users related to their market type (e.g. commercial, non_commercial)
+"""
+
 function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
-    user_market_type = field(ECModel.users_data[u_name]["market_set"], "market_type")
+    user_market_type = field(ECModel.users_data[u_name],"market_type")
     #This line allow to check if a market_type provided for any user is present in the market dictionary
     market_data_type = field(ECModel.market_data, user_market_type,"Missing market type definition '$user_market_type'")
     return profile(ECModel.market_data[user_market_type], profile_name)

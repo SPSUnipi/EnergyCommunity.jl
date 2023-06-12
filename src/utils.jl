@@ -46,7 +46,7 @@ market(d::AbstractDict) = field(d, "market")
 profiles(d::AbstractDict) = field_d(d, "profile")
 "Auxiliary function to check if the key 'type' is available in the dictionary d, otherwise false"
 has_type(d::AbstractDict) = ("type" in keys(d))
-has_type(d) = False  # if d is not an abstract dictionary, then return false
+has_type(d) = false  # if d is not an abstract dictionary, then return false
 "Function to get the components list of a dictionary"
 function components(d::AbstractDict)
       return Dict(k=>v for (k,v) in d if has_type(v))
