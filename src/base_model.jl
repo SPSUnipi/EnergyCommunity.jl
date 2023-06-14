@@ -33,7 +33,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_categories = profile(gen_data,"peak_categories")
+    peak_categories = profile(gen_data, "peak_categories")
     peak_set = unique(peak_categories)
 
 
@@ -276,9 +276,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         con_us_bat_balance[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
         #E_batt_us[u, b, t] - E_batt_us[u, b, if (t>1) t-1 else final_step end]  # Difference between the energy level in the battery. Note that in the case of the first time step, the last id is used
         E_batt_us[u, b, t] - E_batt_us[u, b, pre(t, time_set)]  # Difference between the energy level in the battery. Note that in the case of the first time step, the last id is used
-        + profile(gen_data,"time_res")[t] * P_conv_P_us[u, field_component(users_data[u], b, "corr_asset"), t]/(
+        + profile(gen_data, "time_res")[t] * P_conv_P_us[u, field_component(users_data[u], b, "corr_asset"), t]/(
             sqrt(field_component(users_data[u], b, "eta"))*field_component(users_data[u], field_component(users_data[u], b, "corr_asset"), "eta"))  # Contribution of the converter when supplying power to AC
-        - profile(gen_data,"time_res")[t] * P_conv_N_us[u, field_component(users_data[u], b, "corr_asset"), t]*(
+        - profile(gen_data, "time_res")[t] * P_conv_N_us[u, field_component(users_data[u], b, "corr_asset"), t]*(
             sqrt(field_component(users_data[u], b, "eta"))*field_component(users_data[u], field_component(users_data[u], b, "corr_asset"), "eta"))  # Contribution of the converter when absorbing power from AC
         == 0
     )
@@ -287,14 +287,20 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 end
 
 """
-#This function allow to get the profile of each users related to their market type (e.g. commercial, non_commercial)
+    market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
+
+Function to calculate the profile of each users related to their market type (e.g. commercial, non_commercial)
+Outputs
+-------
+profile(ECModel.market_data[user_tariff_name], profile_name) : XXX
+    XXX representing the profile of each profile_name of the EC
 """
 
 function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
-    user_market_type = field(ECModel.users_data[u_name],"market_type")
-    #This line allow to check if a market_type provided for any user is present in the market dictionary
-    market_data_type = field(ECModel.market_data, user_market_type,"Missing market type definition '$user_market_type'")
-    return profile(ECModel.market_data[user_market_type], profile_name)
+    user_tariff_name = field(ECModel.users_data[u_name],"tariff_name")
+    #This line allow to check if a tariff_name provided for any user is present in the market dictionary
+    market_data_type = field(ECModel.market_data, user_tariff_name,"Missing market type definition '$user_tariff_name'")
+    return profile(ECModel.market_data[user_tariff_name], profile_name)
 end
 
 """
@@ -318,7 +324,7 @@ function calculate_demand(ECModel::AbstractEC)
     users_data = ECModel.users_data
 
     # time step resolution
-    time_res = profile(ECModel.gen_data,"time_res")
+    time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     data_load = Float64[sum(sum(
@@ -355,7 +361,7 @@ function calculate_production(ECModel::AbstractEC)
     users_data = ECModel.users_data
 
     # time step resolution
-    time_res = profile(ECModel.gen_data,"time_res")
+    time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data, "energy_weight")
 
     _P_ren = ECModel.results[:P_ren_us]
@@ -413,7 +419,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
     _x_us = ECModel.results[:x_us]  # Installed capacity by user
 
     # time step resolution
-    time_res = profile(ECModel.gen_data,"time_res")
+    time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # Available renewable production
@@ -500,7 +506,7 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
     _P_ren_us = ECModel.results[:P_ren_us]  # renewable production by user
 
     # time step resolution
-    time_res = profile(ECModel.gen_data,"time_res")
+    time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # self consumption by user only
