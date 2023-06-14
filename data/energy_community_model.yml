@@ -50,7 +50,7 @@ market:  # market characteristics
 users:  # list of users and the corresponding assets
 
   user1:  # name of the user
-    market_type: commercial #type of market
+    tariff_name: commercial #type of market
     # list of components
     
     PV:  # component PV
@@ -81,7 +81,7 @@ users:  # list of users and the corresponding assets
 
   user2:  # name of the user
     # list of components
-    market_type: non_commercial #type of market
+    tariff_name: non_commercial #type of market
 
     PV:  # component PV
       type: renewable  # type of component
@@ -127,7 +127,7 @@ users:  # list of users and the corresponding assets
 
   user3:  # name of the user
     # list of components
-    market_type: non_commercial #type of market
+    tariff_name: non_commercial #type of market
 
     PV:  # component PV
       type: renewable  # type of component
@@ -183,7 +183,7 @@ users:  # list of users and the corresponding assets
 
   user4:  # name of the user
     # list of components 
-    market_type: non_commercial #type of market
+    tariff_name: non_commercial #type of market
 
     PV:  # component PV
       type: renewable  # type of component
@@ -203,7 +203,7 @@ users:  # list of users and the corresponding assets
 
   user5:  # name of the user
     # list of components
-    market_type: commercial #type of market
+    tariff_name: commercial #type of market
 
     load:  # component load
       type: load
@@ -214,7 +214,7 @@ users:  # list of users and the corresponding assets
 
   user6:  # name of the user
     # list of components
-    market_type: commercial #type of market
+    tariff_name: commercial #type of market
 
     PV:  # component PV
       type: renewable  # type of component
@@ -259,7 +259,7 @@ users:  # list of users and the corresponding assets
 
   user7:  # name of the user
     # list of components
-    market_type: non_commercial #type of market
+    tariff_name: non_commercial #type of market
 
     load:  # component load
       type: load
@@ -269,7 +269,7 @@ users:  # list of users and the corresponding assets
 
   user8:  # name of the user
     # list of components
-    market_type: commercial #type of market
+    tariff_name: commercial #type of market
     
     PV:  # component PV
       type: renewable  # type of component
@@ -325,7 +325,7 @@ users:  # list of users and the corresponding assets
 
   user9:  # name of the user
     # list of components
-    market_type: commercial #type of market
+    tariff_name: commercial #type of market
     
     PV:  # component PV
       type: renewable  # type of component
@@ -369,7 +369,7 @@ users:  # list of users and the corresponding assets
 
   user10:  # name of the user
     # list of components
-    market_type: commercial #type of market
+    tariff_name: commercial #type of market
     
     load:  # component load
       type: load

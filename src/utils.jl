@@ -49,7 +49,7 @@ has_type(d::AbstractDict) = ("type" in keys(d))
 has_type(d) = false  # if d is not an abstract dictionary, then return false
 "Function to get the components list of a dictionary"
 function components(d::AbstractDict)
-      return Dict(k=>v for (k,v) in d if has_type(v))
+    return Dict(k=>v for (k,v) in d if has_type(v))
 end
 "Function to get the components value of a dictionary"
 component(d, c_name) = field(components(d), c_name)
@@ -257,11 +257,7 @@ function read_input(file_name::AbstractString)
         comp_dict = components(users_data[u_name])
         if !isnothing(comp_dict)
             for c_name in keys(comp_dict)
-                if c_name == "market"
-                    print(u_name)
-                else
-                    change_profile!(comp_dict[c_name], opt_data)
-                end 
+                change_profile!(comp_dict[c_name], opt_data)
             end
         end
     end
