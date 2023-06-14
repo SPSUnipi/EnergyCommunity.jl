@@ -292,8 +292,9 @@ end
 Function to calculate the profile of each users related to their market type (e.g. commercial, non_commercial)
 Outputs
 -------
-profile(ECModel.market_data[user_tariff_name], profile_name) : XXX
-    XXX representing the profile of each profile_name of the EC
+profile
+    Profile object corresponding to the target profile name and user
+
 """
 
 function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
