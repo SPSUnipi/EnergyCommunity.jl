@@ -192,7 +192,7 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
 
 
     # Set definitions
-    user_set=ECModel.user_set
+    user_set = ECModel.user_set
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
