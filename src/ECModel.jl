@@ -635,7 +635,7 @@ end
 
 
 """
-    plot_sankey(ECModel::AbstractEC, sank_data::Dict)
+    plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size=12)
 
 Function to plot the Sankey diagram representing the energy flows across the energy community.
 This function can be used to plot the sankey diagram of already processed data sank_data.
@@ -649,7 +649,7 @@ name_units : (optional) Vector
     "Market buy", [users labels], "Community", "Market sell", [users labels]
 
 """
-function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
+function plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size=12)
 
     # Version for SankeyPlots.jl
     handle_plot = SankeyPlots.sankey(sank_data["source"], sank_data["target"], sank_data["value"];
@@ -657,7 +657,7 @@ function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
         node_colors=sank_data["colors"],
         edge_color=:gradient,
         compact=true,
-        label_size=15,
+        label_size=label_size,
         force_layer=collect(pairs(sank_data["layer"])),
         force_order=collect(pairs(sank_data["order"])),
         )  # SankeyPlots style
@@ -688,7 +688,8 @@ function plot_sankey(ECModel::AbstractEC;
     norm_value=nothing,
     market_color = palette(:rainbow)[2],
     community_color = palette(:rainbow)[5],
-    users_colors = palette(:default)
+    users_colors = palette(:default),
+    label_size = 12,
     )
 
     sank_data = data_sankey(ECModel;
@@ -699,7 +700,7 @@ function plot_sankey(ECModel::AbstractEC;
         users_colors=users_colors
     )
     
-    return plot_sankey(ECModel, sank_data)
+    return plot_sankey(ECModel, sank_data; label_size=label_size)
 end
 
 """
