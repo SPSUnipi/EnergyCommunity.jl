@@ -106,7 +106,6 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; 
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
 
     # Set definitions
 
@@ -114,8 +113,9 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; 
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories)
-
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
+    
     # define expression of BaseUtility
     @variable(ECModel.model, P_shared_agg_base[t in time_set] >= 0)
 
@@ -136,8 +136,8 @@ function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; 
     # Reward awarded to the subcoalition at each time step
     @expression(ECModel.model, R_Reward_tot_coal,
         sum(GenericAffExpr{Float64,VariableRef}[
-                profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_agg_base[t]
+                profile(gen_data, "energy_weight")[t] * profile(gen_data, "time_res")[t] *
+                    profile(gen_data, "reward_price")[t] * P_shared_agg_base[t]
             for t in time_set
         ])
     )
@@ -185,7 +185,6 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
 
     # Set definitions
 
@@ -193,7 +192,8 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories)
+    peak_categories = Dict(u=>market_profile_by_user(ECModel,u,"peak_categories") for u in user_set)
+    peak_set = Dict(u=>unique(peak_categories[u]) for u in user_set)
 
     # define expression of BaseUtility
     @variable(ECModel.model, P_shared_noagg_agg[t in time_set] >= 0)
@@ -220,8 +220,8 @@ function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Abstrac
     # Reward awarded to the subcoalition at each time step
     @expression(ECModel.model, R_Reward_tot_coal_noagg,
         sum(GenericAffExpr{Float64,VariableRef}[
-                profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                    profile(market_data, "reward_price")[t] * P_shared_noagg_agg[t]
+                profile(gen_data, "energy_weight")[t] * profile(gen_data, "time_res")[t] *
+                    profile(gen_data, "reward_price")[t] * P_shared_noagg_agg[t]
             for t in time_set
         ])
     )

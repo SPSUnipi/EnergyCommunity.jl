@@ -44,8 +44,13 @@ users(d::AbstractDict) = field(d, "users")
 market(d::AbstractDict) = field(d, "market")
 "Function to get the profile dictionary"
 profiles(d::AbstractDict) = field_d(d, "profile")
+"Auxiliary function to check if the key 'type' is available in the dictionary d, otherwise false"
+has_type(d::AbstractDict) = ("type" in keys(d))
+has_type(d) = false  # if d is not an abstract dictionary, then return false
 "Function to get the components list of a dictionary"
-components(d::AbstractDict) = d
+function components(d::AbstractDict)
+    return Dict(k=>v for (k,v) in d if has_type(v))
+end
 "Function to get the components value of a dictionary"
 component(d, c_name) = field(components(d), c_name)
 "Function to get the components value of a dictionary"
@@ -242,7 +247,11 @@ function read_input(file_name::AbstractString)
         end
     end
 
-    change_profile!(market_data, opt_data)
+    change_profile!(gen_data,opt_data)
+
+    for c_name in keys(market_data)
+        change_profile!(market_data[c_name], opt_data)
+    end
 
     for u_name in keys(users_data)
         comp_dict = components(users_data[u_name])

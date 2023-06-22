@@ -178,6 +178,7 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     user_set = ECModel.user_set
     user_set_EC = vcat(EC_CODE, user_set)
 
+
     gen_data = ECModel.gen_data
     users_data = ECModel.users_data
     market_data = ECModel.market_data
@@ -187,17 +188,15 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     final_step = field(gen_data, "final_step")
     n_steps = final_step - init_step + 1
     time_set = 1:n_steps
-
     project_lifetime = field(gen_data, "project_lifetime")
-    peak_categories = profile(market_data, "peak_categories")
+
 
     # Set definitions
-
+    user_set = ECModel.user_set
     year_set = 1:project_lifetime
     year_set_0 = 0:project_lifetime
     time_set = 1:n_steps
-    peak_set = unique(peak_categories)
-
+    peak_categories = profile(gen_data,"peak_categories")
     # Set definition when optional value is not included
     user_set = ECModel.user_set
 
@@ -221,8 +220,8 @@ function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     # Total reward awarded to the community at each time step
     ECModel.results[:R_Reward_agg] = JuMP.Containers.DenseAxisArray(
         [
-            profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                profile(market_data, "reward_price")[t] * ECModel.results[:P_shared_agg][t]
+            profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *
+                profile(ECModel.gen_data, "reward_price")[t] * ECModel.results[:P_shared_agg][t]
         for t in time_set],
         time_set
     )
@@ -345,8 +344,8 @@ function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::Abstract
                 # Reward awarded to the subcoalition at each time step
                 R_Reward_coal = JuMP.Containers.DenseAxisArray(
                     [
-                        profile(market_data, "energy_weight")[t] * profile(market_data, "time_res")[t] *
-                            profile(market_data, "reward_price")[t] * P_shared_coal[t]
+                        profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *
+                        profile(ECModel.gen_data, "reward_price")[t] * P_shared_coal[t]
                     for t in time_set],
                     time_set
                 )
