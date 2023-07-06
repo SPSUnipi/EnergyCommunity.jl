@@ -491,8 +491,8 @@ function data_sankey(ECModel::AbstractEC;
 
     # specify labels if not provided
     if isnothing(name_units)
-        name_units = ["Market buy"; string.(user_set) .* " prod.";
-            "Community"; "Market sell"; string.(user_set) .* " cons."]
+        name_units = [string.(user_set) .* " prod."; "Market sell";
+            "Community"; "Market buy"; string.(user_set) .* " cons."]
     end
 
     # Calculation of energy quantities
@@ -506,27 +506,27 @@ function data_sankey(ECModel::AbstractEC;
     production_us = calculate_production(ECModel)
 
     # definition of the ids of the resources
-    market_id_from = 1
-    market_id_to = length(user_set) + 3
+    user_id_from(x) = x
+    market_id_sell = length(user_set) + 1
+    market_id_buy = length(user_set) + 3
     community_id = length(user_set) + 2
-    user_id_from(x) = x + 1
-    user_id_to(x) = x + length(user_set) + 3
+    user_id_to(x) = x + length(user_set) + 4
 
     # specify the desired location of each entity id in the layers of the Sankey diagram
     # On the first layers all users that produce energy and the market when buying
     # On the second layer "Community"
     # On the third layer all users that consume energy and the market when selling
     node_layer = Dict([
-        market_id_from => 1;
         [user_id_from(id) => 1 for id in 1:length(user_set)];
-        community_id => 2;
-        market_id_to => 3;
-        [user_id_to(id) => 3 for id in 1:length(user_set)];
+        market_id_sell => 2;
+        community_id => 3;
+        market_id_buy => 4;
+        [user_id_to(id) => 5 for id in 1:length(user_set)];
     ])
 
     # create an ordering of the labels
-    order_list = Dict(id => id +1 for id in 1:length(name_units) if market_id_to != id)
-    push!(order_list, length(name_units)=>market_id_to)  # move market to before the users
+    order_list = Dict(id => id +1 for id in 1:length(name_units) if market_id_sell != id)
+    #push!(order_list, length(name_units)=>market_id_sell)  # move market to before the users
     
     source_sank = Int[]  # sources of the Sankey
     target_sank = Int[]  # targets of the Sankey
@@ -537,7 +537,7 @@ function data_sankey(ECModel::AbstractEC;
         # demand from the market
         demand_market = grid_import[u_name]
         if demand_market > 0.001
-            append!(source_sank, market_id_from)
+            append!(source_sank, market_id_buy)
             append!(target_sank, user_id_to(u_i))
             append!(value_sank, demand_market)
         end
@@ -546,7 +546,7 @@ function data_sankey(ECModel::AbstractEC;
         prod_market = grid_export[u_name]
         if prod_market > 0.001
             append!(source_sank, user_id_from(u_i))
-            append!(target_sank, market_id_to)
+            append!(target_sank, market_id_sell)
             append!(value_sank, prod_market)
         end
 
@@ -554,16 +554,32 @@ function data_sankey(ECModel::AbstractEC;
         shared_en = shared_production[u_name]
         if shared_en > 0.001
             append!(source_sank, user_id_from(u_i))
+            append!(target_sank, market_id_sell)
+            append!(value_sank, shared_en)
+        end
+
+        # community energy from market_sell
+        all_shared_en = sum(shared_production[u_name])
+        if all_shared_en > 0.001
+            append!(source_sank, market_id_sell)
             append!(target_sank, community_id)
             append!(value_sank, shared_en)
         end
 
-        # shared consumption
+        # shared consumption to market_buy
+        all_shared_cons = sum(shared_consumption[u_name])
+        if all_shared_cons > 0.001
+            append!(source_sank, community_id)
+            append!(target_sank, market_id_sell)
+            append!(value_sank, all_shared_cons)
+        end
+
+        # shared consumption to market_buy
         shared_cons = shared_consumption[u_name]
         if shared_cons > 0.001
-            append!(source_sank, community_id)
-            append!(target_sank, user_id_to(u_i))
-            append!(value_sank, shared_cons)
+                append!(source_sank, market_id_sell)
+                 append!(target_sank, user_id_to(u_i))
+                 append!(value_sank, shared_cons)
         end
         
         # self consumption
@@ -635,7 +651,7 @@ end
 
 
 """
-    plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size=12)
+    plot_sankey(ECModel::AbstractEC, sank_data::Dict)
 
 Function to plot the Sankey diagram representing the energy flows across the energy community.
 This function can be used to plot the sankey diagram of already processed data sank_data.
@@ -649,7 +665,7 @@ name_units : (optional) Vector
     "Market buy", [users labels], "Community", "Market sell", [users labels]
 
 """
-function plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size=12)
+function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
 
     # Version for SankeyPlots.jl
     handle_plot = SankeyPlots.sankey(sank_data["source"], sank_data["target"], sank_data["value"];
@@ -657,7 +673,7 @@ function plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size=12)
         node_colors=sank_data["colors"],
         edge_color=:gradient,
         compact=true,
-        label_size=label_size,
+        label_size=10,
         force_layer=collect(pairs(sank_data["layer"])),
         force_order=collect(pairs(sank_data["order"])),
         )  # SankeyPlots style
@@ -688,8 +704,7 @@ function plot_sankey(ECModel::AbstractEC;
     norm_value=nothing,
     market_color = palette(:rainbow)[2],
     community_color = palette(:rainbow)[5],
-    users_colors = palette(:default),
-    label_size = 12,
+    users_colors = palette(:default)
     )
 
     sank_data = data_sankey(ECModel;
@@ -700,7 +715,7 @@ function plot_sankey(ECModel::AbstractEC;
         users_colors=users_colors
     )
     
-    return plot_sankey(ECModel, sank_data; label_size=label_size)
+    return plot_sankey(ECModel, sank_data)
 end
 
 """
