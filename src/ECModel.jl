@@ -559,7 +559,7 @@ function data_sankey(ECModel::AbstractEC;
         end
 
         # community energy from market_sell
-        all_shared_en = sum(shared_production[u_name])
+        all_shared_en = shared_production[u_name]
         if all_shared_en > 0.001
             append!(source_sank, market_id_sell)
             append!(target_sank, community_id)
@@ -567,7 +567,7 @@ function data_sankey(ECModel::AbstractEC;
         end
 
         # shared consumption to market_buy
-        all_shared_cons = sum(shared_consumption[u_name])
+        all_shared_cons = shared_consumption[u_name]
         if all_shared_cons > 0.001
             append!(source_sank, community_id)
             append!(target_sank, market_id_sell)
@@ -577,7 +577,7 @@ function data_sankey(ECModel::AbstractEC;
         # shared consumption to market_buy
         shared_cons = shared_consumption[u_name]
         if shared_cons > 0.001
-                append!(source_sank, market_id_sell)
+                append!(source_sank, market_id_buy)
                  append!(target_sank, user_id_to(u_i))
                  append!(value_sank, shared_cons)
         end
@@ -598,8 +598,8 @@ function data_sankey(ECModel::AbstractEC;
     # s = sankey(name_units, source_sank.-1, target_sank.-1, value_sank)  # ECharts style
     colors_ids_users = mod1.(1:length(user_set), length(users_colors))
     tot_colors = [
-        market_color;
         users_colors[colors_ids_users];
+        market_color;
         community_color;
         market_color;
         users_colors[colors_ids_users]
