@@ -565,7 +565,7 @@ function data_sankey(ECModel::AbstractEC;
     end
 
     # market_sell to shared energy
-    total_shared_prod = sum(values(shared_production))
+    total_shared_prod = sum(shared_production[u] for u in user_set)
     if total_shared_prod > 0.001
         append!(source_sank, market_id_sell)
         append!(target_sank, community_id)
@@ -573,7 +573,7 @@ function data_sankey(ECModel::AbstractEC;
     end
 
     # shared consumption to market_buy
-    total_shared_cons = sum(values(shared_consumption))
+    total_shared_cons = sum(shared_consumption[u] for u in user_set)
     if total_shared_cons > 0.001
         append!(source_sank, community_id)
         append!(target_sank, market_id_buy)
