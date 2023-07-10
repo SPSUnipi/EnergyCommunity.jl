@@ -665,7 +665,7 @@ name_units : (optional) Vector
     "Market buy", [users labels], "Community", "Market sell", [users labels]
 
 """
-function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
+function plot_sankey(ECModel::AbstractEC, sank_data::Dict, label_size = 10)
 
     # Version for SankeyPlots.jl
     handle_plot = SankeyPlots.sankey(sank_data["source"], sank_data["target"], sank_data["value"];
@@ -705,12 +705,13 @@ function plot_sankey(ECModel::AbstractEC;
     norm_value=nothing,
     market_color = palette(:rainbow)[2],
     community_color = palette(:rainbow)[5],
-    users_colors = palette(:default)
+    users_colors = palette(:default),
+    labe_size = label_size
     )
 
     sank_data = data_sankey(ECModel;
         name_units=name_units,
-        labe_size=label_size,
+        label_size=label_size,
         norm_value=norm_value,
         market_color=market_color,
         community_color=community_color,
