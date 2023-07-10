@@ -481,6 +481,7 @@ name_units : (optional) Vector
 """
 function data_sankey(ECModel::AbstractEC;
     name_units=nothing,
+    label_size=10,
     norm_value=nothing,
     market_color = palette(:rainbow)[2],
     community_color = palette(:rainbow)[5],
@@ -510,7 +511,7 @@ function data_sankey(ECModel::AbstractEC;
     market_id_sell = length(user_set) + 1
     market_id_buy = length(user_set) + 3
     community_id = length(user_set) + 2
-    user_id_to(x) = x + length(user_set) + 4
+    user_id_to(x) = x + length(user_set) + 3
 
     # specify the desired location of each entity id in the layers of the Sankey diagram
     # On the first layers all users that produce energy and the market when buying
@@ -525,8 +526,7 @@ function data_sankey(ECModel::AbstractEC;
     ])
 
     # create an ordering of the labels
-    order_list = Dict(id => id +1 for id in 1:length(name_units) if market_id_sell != id)
-    #push!(order_list, length(name_units)=>market_id_sell)  # move market to before the users
+    order_list = Dict(id => id +1 for id in 1:length(name_units))
     
     source_sank = Int[]  # sources of the Sankey
     target_sank = Int[]  # targets of the Sankey
@@ -563,23 +563,23 @@ function data_sankey(ECModel::AbstractEC;
         if all_shared_en > 0.001
             append!(source_sank, market_id_sell)
             append!(target_sank, community_id)
-            append!(value_sank, shared_en)
+            append!(value_sank, all_shared_en)
         end
 
         # shared consumption to market_buy
         all_shared_cons = shared_consumption[u_name]
         if all_shared_cons > 0.001
             append!(source_sank, community_id)
-            append!(target_sank, market_id_sell)
+            append!(target_sank, market_id_buy)
             append!(value_sank, all_shared_cons)
         end
 
         # shared consumption to market_buy
         shared_cons = shared_consumption[u_name]
         if shared_cons > 0.001
-                append!(source_sank, market_id_buy)
-                 append!(target_sank, user_id_to(u_i))
-                 append!(value_sank, shared_cons)
+            append!(source_sank, market_id_buy)
+            append!(target_sank, user_id_to(u_i))
+            append!(value_sank, shared_cons)
         end
         
         # self consumption
@@ -673,7 +673,7 @@ function plot_sankey(ECModel::AbstractEC, sank_data::Dict)
         node_colors=sank_data["colors"],
         edge_color=:gradient,
         compact=true,
-        label_size=10,
+        label_size=label_size,
         force_layer=collect(pairs(sank_data["layer"])),
         force_order=collect(pairs(sank_data["order"])),
         )  # SankeyPlots style
@@ -701,6 +701,7 @@ name_units : (optional) Vector
 """
 function plot_sankey(ECModel::AbstractEC;
     name_units=nothing,
+    label_size=10,
     norm_value=nothing,
     market_color = palette(:rainbow)[2],
     community_color = palette(:rainbow)[5],
@@ -709,6 +710,7 @@ function plot_sankey(ECModel::AbstractEC;
 
     sank_data = data_sankey(ECModel;
         name_units=name_units,
+        labe_size=label_size,
         norm_value=norm_value,
         market_color=market_color,
         community_color=community_color,
