@@ -842,6 +842,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
         NPV=NPV,
         CAPEX=CAPEX,
         OPEX=OPEX,
+        OEM = Ann_Maintenance,
         REP=Ann_Replacement,
         RV=Ann_Recovery,
         REWARD=Ann_reward,
@@ -852,14 +853,60 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     )
 end
 
-function business_plan_dataframe(ECModel::AbstractEC,users,profit_distribution::Dict)
-    business_plan = split_financial_terms(ECModel)
-    return business_plan
+function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing,user_plot=nothing)
+    if isnothing(profit_distribution)
+        user_set = get_user_set(ECModel)
+        profit_distribution = JuMP.Containers.DenseAxisArray(
+            fill(0.0, length(user_set)),
+            user_set,
+        )
+    end
+
+    # Create a vector of years from 2023 to (2023 + project_lifetime)
+    gen_data = ECModel.gen_data
+    project_lifetime = field(gen_data, "project_lifetime")
+    years = collect(2023:(2023 + project_lifetime))
+
+    business_plan = split_financial_terms(ECModel,profit_distribution)
+
+    # Create an empty DataFrame
+    df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], RV = Float64[], PEAK = Float64[])
+    for i in 1:axes(years)
+        if isnothing(user_plot)
+            if i == 1
+                year_y = years[i]
+                CAPEX = sum(business_plan.CAPEX)
+                push!(df_business, (year_y, CAPEX))
+            elseif i == axes(years)
+                year_y = years[i]
+                OEM = sum(business_plan.OEM)
+                EN_SELL = sum(business_plant.EN_SELL)
+                PEAK = sum(business_plant.PEAK)
+                RV = sum(business_plan.RV)
+                #revaward not sure if correct
+                #energy consumed not sure if correct
+                push!(df_business, (year_y, OEM, PEAK, EN_SELL, RV))
+
+            elseif i == "maintenance"
+                #add when i == year of maintenance
+            else
+                year_y = years[i]
+                OEM = sum(business_plan.OEM)
+                PEAK = sum(business_plant.PEAK)
+                EN_SELL = sum(business_plant.EN_SELL)
+                #revaward not sure if correct
+                #energy consumed not sure if correct
+                push!(df_business, (year_y, CAPEX, OEM, PEAK, EN_SELL))
+            end
+        end
+    end
+
+    return df_business
 end
 
-function business_plan_plot(ECModel:AbstractEC,general::DataFrame)
-    print 
-end
+#function business_plan_plot(ECModel:AbstractEC,general::DataFrame)
+ #   print 
+#end
 
 function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distribution::Dict)
     return split_financial_terms(
