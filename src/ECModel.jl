@@ -852,6 +852,15 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     )
 end
 
+function business_plan_dataframe(ECModel::AbstractEC,users,profit_distribution::Dict)
+    business_plan = split_financial_terms(ECModel)
+    return business_plan
+end
+
+function business_plan_plot(ECModel:AbstractEC,general::DataFrame)
+    print 
+end
+
 function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distribution::Dict)
     return split_financial_terms(
         ECModel,
