@@ -920,23 +920,23 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     zero_if_negative = x->((x>=0) ? x : 0.0)
     Ann_energy_revenues = JuMP.Containers.DenseAxisArray(
         [
-            if (u in axes(ECModel.results[:R_Energy_us])[1])
-                sum(zero_if_negative.(ECModel.results[:R_Energy_us][u, :])) * ann_factor
+           [if (u in axes(ECModel.results[:R_Energy_us])[1])
+                zero_if_negative.(ECModel.results[:R_Energy_us][u,y]) * ann_factor[y] for y in year_set
             else
                 0.0
             end
-            for u in user_set
+            ]  for u in user_set
         ],
         user_set
     )
     Ann_energy_costs = JuMP.Containers.DenseAxisArray(
         [
-            if (u in axes(ECModel.results[:R_Energy_us])[1])
-                sum(zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :]))) * ann_factor
+            [if (u in axes(ECModel.results[:R_Energy_us])[1])
+                zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :])) * ann_factor[y] for y in year_set
             else
                 0.0
             end
-            for u in user_set
+            ] for u in user_set
         ],
         user_set
     )
