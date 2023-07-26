@@ -860,8 +860,10 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     if isnothing(profit_distribution)
         user_set = get_user_set(ECModel)
         profit_distribution = JuMP.Containers.DenseAxisArray(
-            fill(0.0, length(user_set)),
-            user_set,
+            [ 0.0
+                for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+            , year_set, user_set,
         )
     end
     @assert termination_status(ECModel) != MOI.OPTIMIZE_NOT_CALLED
@@ -938,13 +940,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     NPV = profit_distribution
 
     # Total reward
-    Ann_reward = JuMP.Containers.DenseAxisArray(
-        [
-            NPV[u] + (CAPEX[u] + OPEX[u] + Ann_Replacement[u] - Ann_Recovery[u])
-            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
-            ]
-            , year_set, user_set
-    )
+    Ann_reward = NPV .+ CAPEX .+ OPEX .+ Ann_Replacement .- Ann_Recovery
     
     return (
         NPV=NPV,
