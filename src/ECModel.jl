@@ -853,7 +853,10 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     )
 end
 
-function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
+function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=nothing, profit_distribution=nothing)
+    if isnothing(user_set_financial)
+        user_set_financial = [EC_CODE; get_user_set(ECModel)]
+    end
     if isnothing(profit_distribution)
         user_set = get_user_set(ECModel)
         profit_distribution = JuMP.Containers.DenseAxisArray(
@@ -870,82 +873,60 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     get_value = ((dense_axis, element) -> (if (element in axes(dense_axis)[1]) dense_axis[element] else 0.0 end))
 
     user_set = axes(profit_distribution)[1]
-    year_set = 1:project_lifetime
+    year_set = 0:project_lifetime
 
     ann_factor = [1. ./((1 + field(gen_data, "d_rate")).^y) for y in year_set]
 
     # Investment costs
     CAPEX = JuMP.Containers.DenseAxisArray(
-        for y in year_set
-            if y == 1
-                [get_value(ECModel.results[:CAPEX_tot_us], u) for u in user_set]
-            else
-                0.0
-            end
-        end
-            , user_set
+        [(y==0) ? sum(Float64[get_value(ECModel.results[:CAPEX_tot_us], u) for u in setdiff(user_set_financial, [EC_CODE])]) : 0.0
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+           , year_set, user_set
     )
     # Maintenance costs
     Ann_Maintenance = JuMP.Containers.DenseAxisArray(
-        [
-            [get_value(ECModel.results[:C_OEM_tot_us], u) * ann_factor[y] 
-            for y in year_set]
-        
-        for u in user_set]
-        , user_set
+        [get_value(ECModel.results[:C_OEM_tot_us], u)
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+        ]
+        , year_set, user_set
     )
     # Replacement costs
     Ann_Replacement = JuMP.Containers.DenseAxisArray(
-        [
-            [get_value(ECModel.results[:C_REP_tot_us][y, :], u) / ((1 + field(gen_data, "d_rate"))^y)
-                for y in year_set
+            [get_value(ECModel.results[:C_REP_tot_us][y, :], u)
+                for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
             ]
-            for u in user_set
-        ]
-        , user_set
-    )
+            , year_set, user_set
+     )
     # Recovery value
     Ann_Recovery = JuMP.Containers.DenseAxisArray(
-        [
-            [get_value(ECModel.results[:R_RV_tot_us][y, :], u) / ((1 + field(gen_data, "d_rate"))^y)
-                for y in year_set
+        [get_value(ECModel.results[:R_RV_tot_us][y, :], u)
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
             ]
-            for u in user_set
-        ]
-        , user_set
+                , year_set, user_set
     )
 
     # Peak energy charges
     Ann_peak_charges = JuMP.Containers.DenseAxisArray(
-        [
-            [get_value(ECModel.results[:C_Peak_tot_us], u) * ann_factor[y] for y in year_set] 
-            for u in user_set]
-        , user_set
+        [get_value(ECModel.results[:C_Peak_tot_us], u)
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+                , year_set, user_set
     )
 
     # Get revenes by selling energy and costs by buying or consuming energy
     zero_if_negative = x->((x>=0) ? x : 0.0)
     Ann_energy_revenues = JuMP.Containers.DenseAxisArray(
-        [
-           if (u in axes(ECModel.results[:R_Energy_us])[1])
-                [sum(zero_if_negative.(ECModel.results[:R_Energy_us][u,:])) * ann_factor[y] for y in year_set]
-            else
-                0.0
-            end
-            for u in user_set
-        ],
-        user_set
+        [(u in axes(ECModel.results[:R_Energy_us])[1]) ? sum(zero_if_negative.(ECModel.results[:R_Energy_us][u,:])) : 0.0
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+            , year_set, user_set
     )
     Ann_energy_costs = JuMP.Containers.DenseAxisArray(
-        [
-            if (u in axes(ECModel.results[:R_Energy_us])[1])
-                [sum(zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :]))) * ann_factor[y] for y in year_set]
-            else
-                0.0
-            end
-            for u in user_set
-        ],
-        user_set
+        [(u in axes(ECModel.results[:R_Energy_us])[1]) ? sum(zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :]))) : 0.0
+        for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+            , year_set, user_set
     )
     Ann_net_energy_costs = Ann_energy_costs .- Ann_energy_revenues
     
@@ -953,15 +934,16 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     OPEX = Ann_Maintenance .+ Ann_peak_charges .+ Ann_net_energy_costs
 
     # get NPV given the reward allocation
+    #Check hot to proceed
     NPV = profit_distribution
 
     # Total reward
     Ann_reward = JuMP.Containers.DenseAxisArray(
         [
             NPV[u] + (CAPEX[u] + OPEX[u] + Ann_Replacement[u] - Ann_Recovery[u])
-            for u in user_set
-        ],
-        user_set
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+            , year_set, user_set
     )
     
     return (
