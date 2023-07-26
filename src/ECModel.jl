@@ -876,13 +876,20 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
 
     # Investment costs
     CAPEX = JuMP.Containers.DenseAxisArray(
-        [get_value(ECModel.results[:CAPEX_tot_us], u) for u in user_set]
-        , user_set
+        for y in year_set
+            if y == 1
+                [get_value(ECModel.results[:CAPEX_tot_us], u) for u in user_set]
+            else
+                0.0
+            end
+        end
+            , user_set
     )
     # Maintenance costs
     Ann_Maintenance = JuMP.Containers.DenseAxisArray(
         [
-            [get_value(ECModel.results[:C_OEM_tot_us], u) * ann_factor[y] for y in year_set]
+            [get_value(ECModel.results[:C_OEM_tot_us], u) * ann_factor[y] 
+            for y in year_set]
         
         for u in user_set]
         , user_set
@@ -920,19 +927,19 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     zero_if_negative = x->((x>=0) ? x : 0.0)
     Ann_energy_revenues = JuMP.Containers.DenseAxisArray(
         [
-           [if (u in axes(ECModel.results[:R_Energy_us])[1])
-                zero_if_negative.(ECModel.results[:R_Energy_us][u,:]) * ann_factor[y] for y in year_set
+           if (u in axes(ECModel.results[:R_Energy_us])[1])
+                [sum(zero_if_negative.(ECModel.results[:R_Energy_us][u,:])) * ann_factor[y] for y in year_set]
             else
                 0.0
             end
-            ]  for u in user_set
+            for u in user_set
         ],
         user_set
     )
     Ann_energy_costs = JuMP.Containers.DenseAxisArray(
         [
             if (u in axes(ECModel.results[:R_Energy_us])[1])
-                [zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :])) * ann_factor[y] for y in year_set]
+                [sum(zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :]))) * ann_factor[y] for y in year_set]
             else
                 0.0
             end
@@ -986,7 +993,7 @@ function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing
     project_lifetime = field(gen_data, "project_lifetime")
     years = collect(2023:(2023 + project_lifetime))
 
-    business_plan = split_financial_terms(ECModel,profit_distribution)
+    business_plan = split_yearly_financial_terms(ECModel,profit_distribution)
 
     # Create an empty DataFrame
     df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], RV = Float64[], PEAK = Float64[])
