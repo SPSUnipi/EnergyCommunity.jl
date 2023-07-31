@@ -984,7 +984,7 @@ function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing
     for i in 1:axes(years)
         if isnothing(user_plot)
             CAPEX = sum(business_plan.CAPEX[i, :])
-            year_y = 2022 + years[i]
+            Year = 2022 + years[i]
             OEM = sum(business_plan.OEM[i, :])
             EN_SELL = sum(business_plant.EN_SELL[i, :])
             PEAK = sum(business_plant.PEAK[i, :])
@@ -992,7 +992,7 @@ function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing
             RV = sum(business_plan.RV[i, :])
             REWARD = sum(business_plant.REWARD[i, :])
             EN_CONS = sum(business_plant.EN_CONS[i, :])
-            push!(df_business, (year_y, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
+            push!(df_business, (Year, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
         end
     end
 
