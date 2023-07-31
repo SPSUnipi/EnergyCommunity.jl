@@ -854,6 +854,14 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
 end
 
 function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=nothing, profit_distribution=nothing)
+    gen_data = ECModel.gen_data
+    
+    project_lifetime = field(gen_data, "project_lifetime")
+
+    get_value = ((dense_axis, element) -> (if (element in axes(dense_axis)[1]) dense_axis[element] else 0.0 end))
+
+    year_set = 1:project_lifetime
+   
     if isnothing(user_set_financial)
         user_set_financial = [EC_CODE; get_user_set(ECModel)]
     end
@@ -867,16 +875,8 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
         )
     end
     @assert termination_status(ECModel) != MOI.OPTIMIZE_NOT_CALLED
-    
-    gen_data = ECModel.gen_data
-    
-    project_lifetime = field(gen_data, "project_lifetime")
-
-    get_value = ((dense_axis, element) -> (if (element in axes(dense_axis)[1]) dense_axis[element] else 0.0 end))
 
     user_set = axes(profit_distribution)[1]
-    year_set = 0:project_lifetime
-
     ann_factor = [1. ./((1 + field(gen_data, "d_rate")).^y) for y in year_set]
 
     # Investment costs
