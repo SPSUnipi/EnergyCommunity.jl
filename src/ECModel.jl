@@ -876,12 +876,12 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     end
     @assert termination_status(ECModel) != MOI.OPTIMIZE_NOT_CALLED
 
-    user_set = axes(profit_distribution)[1]
+    user_set = axes(profit_distribution)[2]
     ann_factor = [1. ./((1 + field(gen_data, "d_rate")).^y) for y in year_set]
 
     # Investment costs
     CAPEX = JuMP.Containers.DenseAxisArray(
-        [(y==0) ? sum(Float64[get_value(ECModel.results[:CAPEX_tot_us], u) for u in setdiff(user_set_financial, [EC_CODE])]) : 0.0
+        [(y==1) ? sum(Float64[get_value(ECModel.results[:CAPEX_tot_us], u)]) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
             ]
            , year_set, user_set
