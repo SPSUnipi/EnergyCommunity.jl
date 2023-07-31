@@ -936,7 +936,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     OPEX = Ann_Maintenance .+ Ann_peak_charges .+ Ann_net_energy_costs
 
     # get NPV given the reward allocation
-    #Check hot to proceed
+    #Check how to proceed
     NPV = profit_distribution
 
     # Total reward
@@ -958,6 +958,11 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
 end
 
 function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing, user_set_financial=nothing)
+    gen_data = ECModel.gen_data
+    
+    project_lifetime = field(gen_data, "project_lifetime")
+    year_set = 1:project_lifetime
+    
     if isnothing(user_set_financial)
         user_set_financial = [EC_CODE; get_user_set(ECModel)]
     end
@@ -981,19 +986,17 @@ function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing
     # Create an empty DataFrame
     df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], EN_CONS = EN_SELL = Float64[], REP = Float64[], 
     REWARD = Float64[], RV = Float64[], PEAK = Float64[])
-    for i in 1:axes(years)
-        if isnothing(user_plot)
-            CAPEX = sum(business_plan.CAPEX[i, :])
-            Year = 2022 + years[i]
-            OEM = sum(business_plan.OEM[i, :])
-            EN_SELL = sum(business_plant.EN_SELL[i, :])
-            PEAK = sum(business_plant.PEAK[i, :])
-            REP = sum(business_plan.REP[i, :])
-            RV = sum(business_plan.RV[i, :])
-            REWARD = sum(business_plant.REWARD[i, :])
-            EN_CONS = sum(business_plant.EN_CONS[i, :])
-            push!(df_business, (Year, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
-        end
+    for i in years
+        CAPEX = sum(business_plan.CAPEX[i, :])
+        Year = 2022 + years[i]
+        OEM = sum(business_plan.OEM[i, :])
+        EN_SELL = sum(business_plan.EN_SELL[i, :])
+        PEAK = sum(business_plan.PEAK[i, :])
+        REP = sum(business_plan.REP[i, :])
+        RV = sum(business_plan.RV[i, :])
+        REWARD = sum(business_plan.REWARD[i, :])
+        EN_CONS = sum(business_plan.EN_CONS[i, :])
+        push!(df_business, (Year, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
     end
 
     return df_business
@@ -1006,26 +1009,25 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
 
     # Extract the required columns from the DataFrame
     years = df_business.Year
-    capex = df_business.CAPEX
-    oem = df_business.OEM
+    capex = -df_business.CAPEX
+    oem = -df_business.OEM
     en_sell = df_business.EN_SELL
-    en_cons = df_business.EN_CONS
-    rep = df_business.REP
+    en_cons = -df_business.EN_CONS
+    rep = -df_business.REP
     reward = df_business.REWARD
     rv = df_business.RV
-    peak = df_business.PEAK
+    peak = -df_business.PEAK
 
     # Create a bar plot
     p = bar(years, [capex, oem, en_sell, en_cons, rep, reward, rv, peak],
-            label=["CAPEX" "OEM" "EN_SELL" "EN_CONS" "REP" "REWARD" "RV" "PEAK"],
-            xlabel="Year", ylabel="Amount",
-            title="Financial Data Over 20 Years",
+            label=["CAPEX" "OEM" "Energy sell" "Energy consumption" "Replacement" "Reward" "Recovery" "Peak charges"],
+            xlabel="Year", ylabel="Amount [€]",
+            title="Business Over 20 Years",
             ylims=(0, maximum([capex; oem; en_sell; en_cons; rep; reward; rv; peak])*1.2),
             legend=:topright,
             color=:auto,
             xrotation=45,
             bar_width=0.6,
-            bar_position=:dodge,
             grid=false,
             framestyle=:box,
             )

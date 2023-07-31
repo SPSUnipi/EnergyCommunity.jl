@@ -45,6 +45,8 @@ save_summary(ECModel, output_file_combined)
 # Plot sankey plot of CO model
 plot_sankey(ECModel)
 
+business_plan_plot(ECModel)
+
 ## Model NC
 
 # create NonCooperative model
