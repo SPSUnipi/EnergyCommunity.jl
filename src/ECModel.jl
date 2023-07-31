@@ -957,60 +957,80 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     )
 end
 
-function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing,user_plot=nothing)
+function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing, user_set_financial=nothing)
+    if isnothing(user_set_financial)
+        user_set_financial = [EC_CODE; get_user_set(ECModel)]
+    end
     if isnothing(profit_distribution)
         user_set = get_user_set(ECModel)
         profit_distribution = JuMP.Containers.DenseAxisArray(
-            fill(0.0, length(user_set)),
-            user_set,
+            [ 0.0
+                for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+            ]
+            , year_set, user_set,
         )
     end
 
     # Create a vector of years from 2023 to (2023 + project_lifetime)
     gen_data = ECModel.gen_data
     project_lifetime = field(gen_data, "project_lifetime")
-    years = collect(2023:(2023 + project_lifetime))
+    years = 1:project_lifetime
 
-    business_plan = split_yearly_financial_terms(ECModel,profit_distribution)
+    business_plan = split_yearly_financial_terms(ECModel)
 
     # Create an empty DataFrame
-    df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], RV = Float64[], PEAK = Float64[])
+    df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], EN_CONS = EN_SELL = Float64[], REP = Float64[], 
+    REWARD = Float64[], RV = Float64[], PEAK = Float64[])
     for i in 1:axes(years)
         if isnothing(user_plot)
-            if i == 1
-                year_y = years[i]
-                CAPEX = sum(business_plan.CAPEX)
-                push!(df_business, (year_y, CAPEX))
-            elseif i == axes(years)
-                year_y = years[i]
-                OEM = sum(business_plan.OEM)
-                EN_SELL = sum(business_plant.EN_SELL)
-                PEAK = sum(business_plant.PEAK)
-                RV = sum(business_plan.RV)
-                #revaward not sure if correct
-                #energy consumed not sure if correct
-                push!(df_business, (year_y, OEM, PEAK, EN_SELL, RV))
-
-            elseif i == "maintenance"
-                #add when i == year of maintenance
-            else
-                year_y = years[i]
-                OEM = sum(business_plan.OEM)
-                PEAK = sum(business_plant.PEAK)
-                EN_SELL = sum(business_plant.EN_SELL)
-                #revaward not sure if correct
-                #energy consumed not sure if correct
-                push!(df_business, (year_y, CAPEX, OEM, PEAK, EN_SELL))
-            end
+            CAPEX = sum(business_plan.CAPEX[i, :])
+            year_y = 2022 + years[i]
+            OEM = sum(business_plan.OEM[i, :])
+            EN_SELL = sum(business_plant.EN_SELL[i, :])
+            PEAK = sum(business_plant.PEAK[i, :])
+            REP = sum(business_plan.REP[i, :])
+            RV = sum(business_plan.RV[i, :])
+            REWARD = sum(business_plant.REWARD[i, :])
+            EN_CONS = sum(business_plant.EN_CONS[i, :])
+            push!(df_business, (year_y, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
         end
     end
 
     return df_business
 end
 
-#function business_plan_plot(ECModel:AbstractEC,general::DataFrame)
- #   print 
-#end
+function business_plan_plot(ECModel::AbstactEC, df_business=nothing)
+    if df_business === nothing
+        df_business = business_plan_dataframe(ECModel)
+    end
+
+    # Extract the required columns from the DataFrame
+    years = df_business.Year
+    capex = df_business.CAPEX
+    oem = df_business.OEM
+    en_sell = df_business.EN_SELL
+    en_cons = df_business.EN_CONS
+    rep = df_business.REP
+    reward = df_business.REWARD
+    rv = df_business.RV
+    peak = df_business.PEAK
+
+    # Create a bar plot
+    p = bar(years, [capex, oem, en_sell, en_cons, rep, reward, rv, peak],
+            label=["CAPEX" "OEM" "EN_SELL" "EN_CONS" "REP" "REWARD" "RV" "PEAK"],
+            xlabel="Year", ylabel="Amount",
+            title="Financial Data Over 20 Years",
+            ylims=(0, maximum([capex; oem; en_sell; en_cons; rep; reward; rv; peak])*1.2),
+            legend=:topright,
+            color=:auto,
+            xrotation=45,
+            bar_width=0.6,
+            bar_position=:dodge,
+            grid=false,
+            framestyle=:box,
+            )
+    return p
+end
 
 function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distribution::Dict)
     return split_financial_terms(
