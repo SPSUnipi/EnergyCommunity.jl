@@ -999,7 +999,7 @@ function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing
     return df_business
 end
 
-function business_plan_plot(ECModel::AbstactEC, df_business=nothing)
+function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     if df_business === nothing
         df_business = business_plan_dataframe(ECModel)
     end
