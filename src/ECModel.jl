@@ -1030,7 +1030,7 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
     REWARD = Float64[], RV = Float64[], PEAK = Float64[])
     for i in years
         CAPEX = sum(business_plan.CAPEX[i, :])
-        Year = 2022 + years[i]
+        Year = 0 + years[i]
         OEM = sum(business_plan.OEM[i, :])
         EN_SELL = sum(business_plan.EN_SELL[i, :])
         PEAK = sum(business_plan.PEAK[i, :])
