@@ -853,6 +853,36 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     )
 end
 
+"""
+split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution)
+
+Function to describe the cost term distributions by all users for all years.
+
+Parameters
+----------
+- ECModel : AbstractEC
+    EnergyCommunity model
+- profit_distribution
+    Final objective function
+- user_set_financial
+    User set to be considered for the financial analysis
+
+Returns
+-------
+    The output value is a NamedTuple with the following elements
+    - NPV: the NPV of each user given the final profit_distribution adjustment
+    by game theory techniques
+    - CAPEX: the annualized CAPEX
+    - OPEX: the annualized operating costs (yearly maintenance and yearly peak and energy grid charges)
+    - REP: the annualized replacement costs
+    - RV: the annualized recovery charges
+    - REWARD: the annualized reward distribution by user
+    - PEAK: the annualized peak costs
+    - EN_SELL: the annualized revenues from energy sales
+    - EN_BUY: the annualized costs from energy consumption and buying
+    - EN_NET: the annualized net energy costs
+"""
+
 function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=nothing, profit_distribution=nothing)
     gen_data = ECModel.gen_data
     
@@ -957,6 +987,27 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     )
 end
 
+"""
+    business_plan_dataframe(ECModel::AbstractEC, profit_distribution)
+
+Function to describe the cost term distributions by all users for all years.
+
+Parameters
+----------
+- ECModel : AbstractEC
+    EnergyCommunity model
+- profit_distribution
+    Final objective function
+- user_set_financial
+    User set to be considered for the financial analysis
+
+Returns
+-------
+    The output value is a NamedTuple with the following elements
+    - df_business
+        Dataframe with the business plan information
+"""
+
 function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing, user_set_financial=nothing)
     gen_data = ECModel.gen_data
     
@@ -1001,6 +1052,23 @@ function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing
 
     return df_business
 end
+
+"""
+    business_plan_plot(ECModel::AbstractEC, profit_distribution)
+
+Function to describe the cost term distributions by all users for all years.
+
+Parameters
+----------
+- ECModel : AbstractEC
+    EnergyCommunity model
+- df_business
+    Dataframe with the business plan information
+
+Returns
+-------
+    The output value is a plot with the business plan information
+"""
 
 function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     if df_business === nothing
