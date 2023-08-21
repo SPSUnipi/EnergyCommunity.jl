@@ -981,7 +981,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
 end
 
 """
-    business_plan_dataframe(ECModel::AbstractEC, profit_distribution)
+    business_plan(ECModel::AbstractEC, profit_distribution)
 
 Function to describe the cost term distributions by all users for all years.
 
@@ -1001,7 +1001,7 @@ Returns
         Dataframe with the business plan information
 """
 
-function business_plan_dataframe(ECModel::AbstractEC,profit_distribution=nothing, user_set_financial=nothing)
+function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set_financial=nothing)
     gen_data = ECModel.gen_data
     
     project_lifetime = field(gen_data, "project_lifetime")
@@ -1063,7 +1063,7 @@ Returns
 
 function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     if df_business === nothing
-        df_business = business_plan_dataframe(ECModel)
+        df_business = business_plan(ECModel)
     end
 
     # Extract the required columns from the DataFrame
