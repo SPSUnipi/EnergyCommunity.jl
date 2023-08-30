@@ -899,14 +899,14 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
         user_set = get_user_set(ECModel)
         profit_distribution = JuMP.Containers.DenseAxisArray(
             [ 0.0
-                for y in year_set, u in setdiff(user_set_financial, [EC_CODE])
+                for u in setdiff(user_set_financial, [EC_CODE])
             ]
-            , year_set, user_set,
+            , user_set,
         )
     end
     @assert termination_status(ECModel) != MOI.OPTIMIZE_NOT_CALLED
 
-    user_set = axes(profit_distribution)[2]
+    user_set = axes(profit_distribution)[1]
     ann_factor = [1. ./((1 + field(gen_data, "d_rate")).^y) for y in year_set]
 
     # Investment costs
@@ -953,17 +953,20 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
         for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
             , year_set, user_set
     )
-    Ann_net_energy_costs = Ann_energy_costs .- Ann_energy_revenues
     
     # Total OPEX costs
-    OPEX = Ann_Maintenance .+ Ann_peak_charges .+ Ann_net_energy_costs
+    OPEX = Ann_Maintenance .+ Ann_peak_charges .+ Ann_energy_costs
 
     # get NPV given the reward allocation
     #Check how to proceed
-    NPV = profit_distribution
+    NPV = JuMP.Containers.DenseAxisArray(
+        [get_value(profit_distribution, u)*ann_factor[y]
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
+                , year_set, user_set
+    )
 
     # Total reward
-    Ann_reward = NPV .+ CAPEX .+ OPEX .+ Ann_Replacement .- Ann_Recovery
+    Ann_reward = NPV .- CAPEX .- OPEX .- Ann_Replacement .+ Ann_Recovery .+ Ann_energy_revenues .- Ann_energy_costs
     
     return (
         NPV=NPV,
@@ -975,8 +978,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
         REWARD=Ann_reward,
         PEAK=Ann_peak_charges,
         EN_SELL=Ann_energy_revenues,
-        EN_CONS=Ann_energy_costs,
-        EN_NET=Ann_net_energy_costs,
+        EN_CONS=-Ann_energy_costs,
     )
 end
 
@@ -1065,6 +1067,7 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     if df_business === nothing
         df_business = business_plan(ECModel)
     end
+    #p = @df_business df_business bar(:Year, [:CAPEX, :OEM, :EN_SELL, :EN_CONS, :REP, :REWARD, :RV, :PEAK],title="Business Over 20 Years")
 
     # Extract the required columns from the DataFrame
     years = df_business.Year
