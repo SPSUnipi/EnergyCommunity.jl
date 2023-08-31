@@ -883,18 +883,18 @@ Returns
     - EN_NET: the annualized net energy costs
 """
 
-function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=nothing, profit_distribution=nothing)
+function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     gen_data = ECModel.gen_data
     
     project_lifetime = field(gen_data, "project_lifetime")
 
-    get_value = ((dense_axis, element) -> (if (element in axes(dense_axis)[1]) dense_axis[element] else 0.0 end))
+    get_value = (dense_axis, element) -> (element in axes(dense_axis)[1] ? dense_axis[element] : 0.0)
+    zero_if_negative = x->((x>=0) ? x : 0.0)
 
-    year_set = 1:project_lifetime
+    year_set = 0:project_lifetime
    
-    if isnothing(user_set_financial)
-        user_set_financial = [EC_CODE; get_user_set(ECModel)]
-    end
+    user_set_financial = [EC_CODE; get_user_set(ECModel)]
+
     if isnothing(profit_distribution)
         user_set = get_user_set(ECModel)
         profit_distribution = JuMP.Containers.DenseAxisArray(
@@ -904,6 +904,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
             , user_set,
         )
     end
+
     @assert termination_status(ECModel) != MOI.OPTIMIZE_NOT_CALLED
 
     user_set = axes(profit_distribution)[1]
@@ -911,7 +912,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
 
     # Investment costs
     CAPEX = JuMP.Containers.DenseAxisArray(
-        [(y==1) ? sum(Float64[get_value(ECModel.results[:CAPEX_tot_us], u)]) : 0.0
+        [(y == 0) ? sum(Float64[get_value(ECModel.results[:CAPEX_tot_us], u)]) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
            , year_set, user_set
     )
@@ -929,7 +930,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
      )
     # Recovery value
     Ann_Recovery = JuMP.Containers.DenseAxisArray(
-        [get_value(ECModel.results[:R_RV_tot_us][y, :], u)
+        [(y == project_lifetime) ? (get_value(ECModel.results[:R_RV_tot_us][y, :], u)) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
                 , year_set, user_set
     )
@@ -942,7 +943,6 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
     )
 
     # Get revenes by selling energy and costs by buying or consuming energy
-    zero_if_negative = x->((x>=0) ? x : 0.0)
     Ann_energy_revenues = JuMP.Containers.DenseAxisArray(
         [(u in axes(ECModel.results[:R_Energy_us])[1]) ? sum(zero_if_negative.(ECModel.results[:R_Energy_us][u,:])) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
@@ -954,19 +954,35 @@ function split_yearly_financial_terms(ECModel::AbstractEC, user_set_financial=no
             , year_set, user_set
     )
     
+    # Revenues for shared energy within the community
+    #Need to change this part
+    Ann_shared_revenues = JuMP.Containers.DenseAxisArray(
+        [sum(ECModel.results[:P_shared_agg])/length(user_set_financial)
+            for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
+            , year_set, user_set
+    )
+
     # Total OPEX costs
     OPEX = Ann_Maintenance .+ Ann_peak_charges .+ Ann_energy_costs
 
     # get NPV given the reward allocation
-    #Check how to proceed
+    #=
+    Basically, what we may need to do is to create a proxy total discounted cost of all terms but NPV so to reproduce the old (CAPEX .+ OPEX .+ Ann_Replacement .- Ann_Recovery).
+    For example, something like:
+    (CAPEX .+ OPEX .+ Ann_Replacement .- Ann_Recovery).data * ann_factor (note that since they are matrix operation, there may be the need for some transpositions
+
+    Then, the resulting vector shall be a 1 column or 1 vector and we can create the equivalent 1D cost vector, so that we can do (total_discounted_reward = NPV .- new_vector).
+    Then, we can do total_discounted_reward ./(sum(act_factor) - 1) and this should be a 1D vector of the yearly reward allocation by user, that can be exploded into 2D by simply duplicating the entries.
+
+    =#
     NPV = JuMP.Containers.DenseAxisArray(
-        [get_value(profit_distribution, u)*ann_factor[y]
+        [get_value(profit_distribution, u) .* ann_factor[y]
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
                 , year_set, user_set
     )
 
     # Total reward
-    Ann_reward = NPV .- CAPEX .- OPEX .- Ann_Replacement .+ Ann_Recovery .+ Ann_energy_revenues .- Ann_energy_costs
+    Ann_reward = .- CAPEX .- OPEX .- Ann_Replacement .+ Ann_Recovery .+ Ann_energy_revenues .- Ann_energy_costs .+ Ann_shared_revenues
     
     return (
         NPV=NPV,
@@ -1007,7 +1023,7 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
     gen_data = ECModel.gen_data
     
     project_lifetime = field(gen_data, "project_lifetime")
-    year_set = 1:project_lifetime
+    year_set = 0:project_lifetime
     
     if isnothing(user_set_financial)
         user_set_financial = [EC_CODE; get_user_set(ECModel)]
@@ -1023,23 +1039,22 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
     # Create a vector of years from 2023 to (2023 + project_lifetime)
     gen_data = ECModel.gen_data
     project_lifetime = field(gen_data, "project_lifetime")
-    years = 1:project_lifetime
 
     business_plan = split_yearly_financial_terms(ECModel)
 
     # Create an empty DataFrame
     df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], EN_CONS = EN_SELL = Float64[], REP = Float64[], 
     REWARD = Float64[], RV = Float64[], PEAK = Float64[])
-    for i in years
-        CAPEX = sum(business_plan.CAPEX[i, :])
-        Year = 0 + years[i]
-        OEM = sum(business_plan.OEM[i, :])
-        EN_SELL = sum(business_plan.EN_SELL[i, :])
-        PEAK = sum(business_plan.PEAK[i, :])
-        REP = sum(business_plan.REP[i, :])
-        RV = sum(business_plan.RV[i, :])
-        REWARD = sum(business_plan.REWARD[i, :])
-        EN_CONS = sum(business_plan.EN_CONS[i, :])
+    for i in year_set
+        CAPEX = sum(business_plan.CAPEX[i, user_set_financial])
+        Year = 0 + year_set[i]
+        OEM = sum(business_plan.OEM[i, user_set_financial])
+        EN_SELL = sum(business_plan.EN_SELL[i, user_set_financial])
+        PEAK = sum(business_plan.PEAK[i, user_set_financial])
+        REP = sum(business_plan.REP[i, user_set_financial])
+        RV = sum(business_plan.RV[i, user_set_financial])
+        REWARD = sum(business_plan.REWARD[i, user_set_financial])
+        EN_CONS = sum(business_plan.EN_CONS[i, user_set_financial])
         push!(df_business, (Year, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
     end
 
