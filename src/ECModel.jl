@@ -1082,7 +1082,7 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     if df_business === nothing
         df_business = business_plan(ECModel)
     end
-    #p = @df_business df_business bar(:Year, [:CAPEX, :OEM, :EN_SELL, :EN_CONS, :REP, :REWARD, :RV, :PEAK],title="Business Over 20 Years")
+    p = @df_business df_business bar(:Year, [:CAPEX, :OEM] ,title="Business Over 20 Years")
 
     # Extract the required columns from the DataFrame
     years = df_business.Year
