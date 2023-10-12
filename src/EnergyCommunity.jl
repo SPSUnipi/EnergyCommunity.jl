@@ -8,6 +8,7 @@ module EnergyCommunity
     using MathOptInterface
     using Base.Iterators
     using TheoryOfGames
+    using StatsPlots
     # import ECharts
     import SankeyPlots
     import CSV

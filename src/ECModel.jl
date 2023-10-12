@@ -1091,16 +1091,20 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
             label=["CAPEX" "OEM" "Energy sell" "Energy consumption" "Replacement" "Reward" "Recovery" "Peak charges"],
             xlabel="Year", ylabel="Amount [€]",
             title="Business Over 20 Years",
-            ylims=(0, maximum([capex; oem; en_sell; en_cons; rep; reward; rv; peak])*1.2),
+            #ylims=(maximum([capex; oem; en_cons; rep; peak]), maximum([oem; en_sell; reward; rv])*1.2),
             legend=:topright,
             color=:auto,
             xrotation=45,
             bar_width=0.6,
             grid=false,
             framestyle=:box,
-            bar_position=:stack,
+            barmode=:stack,
             )
+
+    #p = @df_business df_business bar(:Year, [:CAPEX, :OEM, :EN_SELL, :EN_CONS, :REP, :REWARD, :RV, :PEAK], xlabel="Year", ylabel="Value", title="Business plan information", bar_position=:stacked, bar_width=0.5, color=[:red :blue :green :orange :purple :yellow :brown :pink], legend=:topleft)
+
     print(df_business)
+    savefig(p, "business_plan.png")
     return p
 end
 
