@@ -923,7 +923,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     # Replacement costs
     #The index is 1:20 so in the result should be proper changed. I'll open an issue
     Ann_Replacement = JuMP.Containers.DenseAxisArray(
-            [(y == 0) ? 0.0 : get_value(ECModel.results[:C_REP_tot_us][y, :], u)
+            [(y == 10) ? get_value(ECModel.results[:C_REP_tot_us][y, :], u) : 0.0 
                 for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
             , year_set, user_set
      )
@@ -1035,19 +1035,19 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
     year_set = business_plan.year_set
 
     # Create an empty DataFrame
-    df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], EN_CONS = EN_SELL = Float64[], REP = Float64[], 
-    REWARD = Float64[], RV = Float64[], PEAK = Float64[])
+    df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], EN_CONS = EN_SELL = Float64[], PEAK = Float64[], REP = Float64[], 
+    REWARD = Float64[], RV = Float64[])
     for i in year_set
-        CAPEX = sum(business_plan.CAPEX[i, user_set_financial])
         Year = 0 + year_set[i+1]
+        CAPEX = sum(business_plan.CAPEX[i, user_set_financial])
         OEM = sum(business_plan.OEM[i, user_set_financial])
         EN_SELL = sum(business_plan.EN_SELL[i, user_set_financial])
+        EN_CONS = sum(business_plan.EN_CONS[i, user_set_financial])
         PEAK = sum(business_plan.PEAK[i, user_set_financial])
         REP = sum(business_plan.REP[i, user_set_financial])
-        RV = sum(business_plan.RV[i, user_set_financial])
         REWARD = sum(business_plan.REWARD[i, user_set_financial])
-        EN_CONS = sum(business_plan.EN_CONS[i, user_set_financial])
-        push!(df_business, (Year, CAPEX, OEM, PEAK, REP, REWARD, EN_SELL, EN_CONS, RV))
+        RV = sum(business_plan.RV[i, user_set_financial])
+        push!(df_business, (Year, CAPEX, OEM,  EN_SELL, EN_CONS, PEAK, REP, REWARD, RV))
     end
 
     return df_business
@@ -1100,8 +1100,7 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
             framestyle=:box,
             bar_position=:stack,
             )
-
-    save_fig(p, "business_plan.png")
+    print(df_business)
     return p
 end
 
