@@ -72,6 +72,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/joaquimg/BilevelJuMP.jl.git",
+    repo = "github.com/davide-f/EnergyCommunity.jl.git",
     push_preview = true,
 )
