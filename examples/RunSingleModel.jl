@@ -69,3 +69,6 @@ save_summary(NC_Model, output_file_isolated)
 
 # plot Sankey plot of NC model
 plot_sankey(NC_Model)
+
+# plot business plan of NC model
+#business_plan_plot(NC_Model)

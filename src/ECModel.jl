@@ -912,43 +912,49 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     CAPEX = JuMP.Containers.DenseAxisArray(
         [(y == 0) ? sum(Float64[get_value(ECModel.results[:CAPEX_tot_us], u)]) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-           , year_set, user_set
+           , year_set, user_set_financial
     )
     # Maintenance costs
     Ann_Maintenance = JuMP.Containers.DenseAxisArray(
         [get_value(ECModel.results[:C_OEM_tot_us], u)
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-        , year_set, user_set
+        , year_set, user_set_financial
     )
     # Replacement costs
     #The index is 1:20 so in the result should be proper changed. I'll open an issue
     Ann_Replacement = JuMP.Containers.DenseAxisArray(
             [(y == 10) ? get_value(ECModel.results[:C_REP_tot_us][y, :], u) : 0.0 
                 for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-            , year_set, user_set
+            , year_set, user_set_financial
      )
     # Recovery value
     Ann_Recovery = JuMP.Containers.DenseAxisArray(
         [(y == project_lifetime) ? (get_value(ECModel.results[:R_RV_tot_us][y, :], u)) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-                , year_set, user_set
+                , year_set, user_set_financial
     )
     # Peak energy charges
     Ann_peak_charges = JuMP.Containers.DenseAxisArray(
         [get_value(ECModel.results[:C_Peak_tot_us], u)
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-                , year_set, user_set
+                , year_set, user_set_financial
     )
     # Get revenes by selling energy and costs by buying or consuming energy
     Ann_energy_revenues = JuMP.Containers.DenseAxisArray(
         [(u in axes(ECModel.results[:R_Energy_us])[1]) ? sum(zero_if_negative.(ECModel.results[:R_Energy_us][u,:])) : 0.0
             for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-            , year_set, user_set
+            , year_set, user_set_financial
     )
     Ann_energy_costs = JuMP.Containers.DenseAxisArray(
         [(u in axes(ECModel.results[:R_Energy_us])[1]) ? sum(zero_if_negative.(.-(ECModel.results[:R_Energy_us][u, :]))) : 0.0
         for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-            , year_set, user_set
+            , year_set, user_set_financial
+    )
+
+    Ann_energy_reward = JuMP.Containers.DenseAxisArray(
+        [ECModel == ECModel ? ECModel.results[:R_Reward_agg_tot] : 0.0
+        for y in year_set, u in [EC_CODE]]
+            , year_set, user_set_financial
     )
 
     # Total OPEX costs
@@ -970,17 +976,17 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     NPV = JuMP.Containers.DenseAxisArray(
         [get_value(profit_distribution, u)
             for u in setdiff(user_set_financial, [EC_CODE])]
-                , user_set
+                , user_set_financial
     )
 
     # Total reward
     # This is the total discounted cost of all terms but NPV. I think that this must be improved
     total_discounted_cost= CAPEX .+ OPEX .+ Ann_Replacement .- Ann_Recovery
 
-    Ann_reward = JuMP.Containers.DenseAxisArray(
+    #=Ann_reward = JuMP.Containers.DenseAxisArray(
         [(NPV[u] .- sum(total_discounted_cost[:,u]))/(sum(ann_factor) - 1) for y in year_set, u in setdiff(user_set_financial, [EC_CODE])]
-            , year_set, user_set
-    )
+            , year_set, user_set_financial
+    )=#
 
     return (
         NPV=NPV,
@@ -989,7 +995,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
         OEM = Ann_Maintenance,
         REP = Ann_Replacement,
         RV = Ann_Recovery,
-        REWARD = Ann_reward,
+        REWARD = Ann_energy_reward,
         PEAK = Ann_peak_charges,
         EN_SELL = Ann_energy_revenues,
         EN_CONS = Ann_energy_costs,
@@ -1039,14 +1045,14 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
     REWARD = Float64[], RV = Float64[])
     for i in year_set
         Year = 0 + year_set[i+1]
-        CAPEX = sum(business_plan.CAPEX[i, user_set_financial])
-        OEM = sum(business_plan.OEM[i, user_set_financial])
-        EN_SELL = sum(business_plan.EN_SELL[i, user_set_financial])
-        EN_CONS = sum(business_plan.EN_CONS[i, user_set_financial])
-        PEAK = sum(business_plan.PEAK[i, user_set_financial])
-        REP = sum(business_plan.REP[i, user_set_financial])
-        REWARD = sum(business_plan.REWARD[i, user_set_financial])
-        RV = sum(business_plan.RV[i, user_set_financial])
+        CAPEX = sum(business_plan.CAPEX[i, :])
+        OEM = sum(business_plan.OEM[i, :])
+        EN_SELL = sum(business_plan.EN_SELL[i, :])
+        EN_CONS = sum(business_plan.EN_CONS[i, :])
+        PEAK = sum(business_plan.PEAK[i, :])
+        REP = sum(business_plan.REP[i, :])
+        REWARD = sum(business_plan.REWARD[i, :])
+        RV = sum(business_plan.RV[i, :])
         push!(df_business, (Year, CAPEX, OEM,  EN_SELL, EN_CONS, PEAK, REP, REWARD, RV))
     end
 
@@ -1090,9 +1096,9 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     p = bar(years, [capex, oem, en_sell, en_cons, rep, reward, rv, peak],
             label=["CAPEX" "OEM" "Energy sell" "Energy consumption" "Replacement" "Reward" "Recovery" "Peak charges"],
             xlabel="Year", ylabel="Amount [€]",
-            title="Business Over 20 Years",
+            title="Business Plan Over 20 Years",
             #ylims=(maximum([capex; oem; en_cons; rep; peak]), maximum([oem; en_sell; reward; rv])*1.2),
-            legend=:topright,
+            legend=:bottomright,
             color=:auto,
             xrotation=45,
             bar_width=0.6,
@@ -1104,7 +1110,7 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
     #p = @df_business df_business bar(:Year, [:CAPEX, :OEM, :EN_SELL, :EN_CONS, :REP, :REWARD, :RV, :PEAK], xlabel="Year", ylabel="Value", title="Business plan information", bar_position=:stacked, bar_width=0.5, color=[:red :blue :green :orange :purple :yellow :brown :pink], legend=:topleft)
 
     print(df_business)
-    savefig(p, "business_plan.png")
+    savefig(p, joinpath("results","Img","business_plan","CO")) # Save the plot
     return p
 end
 
