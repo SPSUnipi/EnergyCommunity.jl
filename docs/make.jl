@@ -72,6 +72,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/davide-f/EnergyCommunity.jl.git",
+    repo = "github.com/SPSUnipi/EnergyCommunity.jl.git",
     push_preview = true,
 )

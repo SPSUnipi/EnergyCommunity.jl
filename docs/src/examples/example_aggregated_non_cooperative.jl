@@ -16,7 +16,7 @@ using HiGHS, Plots
 
 
 # Input file to load the structure of the energy community based on a yaml file.
-input_file = joinpath(@__DIR__, "../data/energy_community_model.yml");
+input_file = joinpath(@__DIR__, "../../../data/energy_community_model.yml");
 
 # Output path of the summary and of the plots
 output_file_isolated = joinpath(@__DIR__, "../results/output_file_NC.xlsx");
