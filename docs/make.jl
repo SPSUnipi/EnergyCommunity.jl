@@ -3,6 +3,9 @@ using Documenter
 using Literate
 using Test
 
+# Deactivate Plots display output on server
+ENV["GKSwstype"] = "100"
+
 const _EXAMPLE_DIR = joinpath(@__DIR__, "src", "examples")
 
 """
