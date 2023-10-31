@@ -45,6 +45,7 @@ save_summary(ECModel, output_file_combined)
 # Plot sankey plot of CO model
 plot_sankey(ECModel)
 
+# plot 20 years business plan of CO model
 business_plan_plot(ECModel)
 
 ## Model NC
@@ -71,4 +72,4 @@ save_summary(NC_Model, output_file_isolated)
 plot_sankey(NC_Model)
 
 # plot business plan of NC model
-#business_plan_plot(NC_Model)
+business_plan_plot(NC_Model)
