@@ -1076,41 +1076,53 @@ Returns
     The output value is a plot with the business plan information
 """
 
-function business_plan_plot(ECModel::AbstractEC, df_business=nothing)
+function business_plan_plot(ECModel::AbstractEC, df_business=nothing,
+    xlabel="Year",
+    ylabel="Amount [k€]",
+    title="Business Plan Over 20 Years",
+    legend=:bottomright,
+    color=:auto,
+    xrotation=45,
+    bar_width=0.6,
+    grid=false,
+    framestyle=:box,
+    barmode=:stack,
+    scaling_factor = 0.001,
+    kwargs...)
+
     if df_business === nothing
         df_business = business_plan(ECModel)
     end
 
-    # Extract the required columns from the DataFrame
+    # Define the plot structure
+    plot_struct = Dict(
+        "CAPEX" => [(-1, :CAPEX)],
+        "OEM" => [(-1, :OEM), (-1, :PEAK)],
+        "Repl. and Recovery" => [(-1, :REP), (+1, :RV)],
+        "Energy expences" => [(-1, :EN_CONS), (+1, :EN_SELL)],
+        "Reward" => [(+1, :REWARD)],
+    )
+
+    # Extract the year from the DataFrame
     years = df_business.Year
-    capex = -df_business.CAPEX
-    oem = -df_business.OEM
-    en_sell = df_business.EN_SELL
-    en_cons = -df_business.EN_CONS
-    rep = -df_business.REP
-    reward = df_business.REWARD
-    rv = df_business.RV
-    peak = -df_business.PEAK
+
+    bar_labels = collect(keys(plot_struct))
+    bar_data = [sum(tup[1] .* df_business[!, tup[2]] .* scaling_factor for tup in plot_struct[l]) for l in bar_labels]
 
     # Create a bar plot
-    p = bar(years, [capex, oem, en_sell, en_cons, rep, reward, rv, peak],
-            label=["CAPEX" "OEM" "Energy sell" "Energy consumption" "Replacement" "Reward" "Recovery" "Peak charges"],
-            xlabel="Year", ylabel="Amount [€]",
-            title="Business Plan Over 20 Years",
-            #ylims=(maximum([capex; oem; en_cons; rep; peak]), maximum([oem; en_sell; reward; rv])*1.2),
-            legend=:bottomright,
-            color=:auto,
-            xrotation=45,
-            bar_width=0.6,
-            grid=false,
-            framestyle=:box,
-            barmode=:stack,
+    p = bar(years, bar_data,
+            label=bar_labels,
+            xlabel=xlabel, ylabel=ylabel,
+            title=title,
+            legend=legend,
+            color=color,
+            xrotation=xrotation,
+            bar_width=bar_width,
+            grid=grid,
+            framestyle=framestyle,
+            barmode=barmode,
             )
 
-    #p = @df_business df_business bar(:Year, [:CAPEX, :OEM, :EN_SELL, :EN_CONS, :REP, :REWARD, :RV, :PEAK], xlabel="Year", ylabel="Value", title="Business plan information", bar_position=:stacked, bar_width=0.5, color=[:red :blue :green :orange :purple :yellow :brown :pink], legend=:topleft)
-
-    print(df_business)
-    savefig(p, joinpath("results","Img","business_plan","CO")) # Save the plot
     return p
 end
 
