@@ -853,7 +853,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     )
 end
 
-""" TO BE IMPROVED
+"""
 split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution)
 
 Function to describe the cost term distributions by all users for all years.
@@ -870,8 +870,7 @@ Parameters
 Returns
 -------
     The output value is a NamedTuple with the following elements
-    - NPV: the NPV of each user given the final profit_distribution adjustment
-    by game theory techniques
+    - NPV: the NPV of each user given the final profit_distribution adjustment by game theory techniques
     - CAPEX: the annualized CAPEX
     - OPEX: the annualized operating costs (yearly maintenance and yearly peak and energy grid charges)
     - REP: the annualized replacement costs
@@ -1070,13 +1069,17 @@ Parameters
     EnergyCommunity model
 - df_business
     Dataframe with the business plan information
+- plot_struct
+    Plot structure of the business plan
 
 Returns
 -------
     The output value is a plot with the business plan information
 """
 
-function business_plan_plot(ECModel::AbstractEC, df_business=nothing,
+function business_plan_plot(
+    ECModel::AbstractEC;
+    plot_struct=nothing,
     xlabel="Year",
     ylabel="Amount [k€]",
     title="Business Plan Over 20 Years",
@@ -1090,24 +1093,24 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing,
     scaling_factor = 0.001,
     kwargs...)
 
-    if df_business === nothing
-        df_business = business_plan(ECModel)
-    end
+    df_business = business_plan(ECModel)
 
-    # Define the plot structure
-    plot_struct = Dict(
-        "CAPEX" => [(-1, :CAPEX)],
-        "OEM" => [(-1, :OEM), (-1, :PEAK)],
-        "Repl. and Recovery" => [(-1, :REP), (+1, :RV)],
-        "Energy expences" => [(-1, :EN_CONS), (+1, :EN_SELL)],
-        "Reward" => [(+1, :REWARD)],
-    )
+    if  isnothing(plot_struct)
+        # Define the plot structure
+        plot_struct = Dict(
+            "CAPEX" => [(-1, :CAPEX)],
+            "OEM" => [(-1, :OEM), (-1, :PEAK)],
+            "Repl. and Recovery" => [(-1, :REP), (+1, :RV)],
+            "Energy expences" => [(-1, :EN_CONS), (+1, :EN_SELL)],
+            "Reward" => [(+1, :REWARD)],
+        )
+    end
 
     # Extract the year from the DataFrame
     years = df_business.Year
 
-    bar_labels = collect(keys(plot_struct))
-    bar_data = [sum(tup[1] .* df_business[!, tup[2]] .* scaling_factor for tup in plot_struct[l]) for l in bar_labels]
+    bar_labels = keys(plot_struct)
+    bar_data = [sum(tup[1] .* df_business[!, tup[2]] .* scaling_factor for tup in plot_struct[l]) for l in keys(plot_struct)]
 
     # Create a bar plot
     p = bar(years, bar_data,
@@ -1121,6 +1124,7 @@ function business_plan_plot(ECModel::AbstractEC, df_business=nothing,
             grid=grid,
             framestyle=framestyle,
             barmode=barmode,
+            kwargs...
             )
 
     return p
