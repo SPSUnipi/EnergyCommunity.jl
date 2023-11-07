@@ -1114,7 +1114,7 @@ function business_plan_plot(
 
     # Create a bar plot
     p = bar(years, bar_data,
-            label=bar_labels,
+            labelS=bar_labels,
             xlabel=xlabel, ylabel=ylabel,
             title=title,
             legend=legend,
