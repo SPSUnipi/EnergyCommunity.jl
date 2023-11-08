@@ -1099,11 +1099,10 @@ function business_plan_plot(
         # Define the plot structure
         plot_struct = Dict(
             "CAPEX" => [(-1, :CAPEX)],
-            "OEM" => [(-1, :OEM), (-1, :PEAK)],
             "Repl. and Recovery" => [(-1, :REP), (+1, :RV)],
+            "OEM" => [(-1, :OEM), (-1, :PEAK)],
             "Energy expences" => [(-1, :EN_CONS), (+1, :EN_SELL)],
-            "Reward" => [(+1, :REWARD)],
-        )
+            "Reward" => [(+1, :REWARD)])
     end
 
     # Extract the year from the DataFrame
