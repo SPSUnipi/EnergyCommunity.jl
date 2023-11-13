@@ -3,6 +3,9 @@ using Documenter
 using Literate
 using Test
 
+# Deactivate Plots display output on server
+ENV["GKSwstype"] = "100"
+
 const _EXAMPLE_DIR = joinpath(@__DIR__, "src", "examples")
 
 """
@@ -72,6 +75,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/joaquimg/BilevelJuMP.jl.git",
+    repo = "github.com/SPSUnipi/EnergyCommunity.jl.git",
     push_preview = true,
 )

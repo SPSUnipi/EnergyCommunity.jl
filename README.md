@@ -1,4 +1,6 @@
 ![CI](https://github.com/SPSUnipi/EnergyCommunity.jl/actions/workflows/CI.yml/badge.svg)
+[![Docs dev](https://img.shields.io/badge/docs-latest-blue.svg)](https://spsunipi.github.io/EnergyCommunity.jl/dev/)
+[![Docs stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://spsunipi.github.io/EnergyCommunity.jl/stable/)
 
 # EnergyCommunity.jl
 Optimization of Energy Communities becomes easy with EnergyCommunity.jl!
