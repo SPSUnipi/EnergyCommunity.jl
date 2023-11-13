@@ -984,8 +984,16 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
         year_set, user_set_financial
     )
 
+    # Cumulative Discounted Cash Flows
+    total_costs = Ann_reward .- CAPEX .- OPEX .- Ann_Replacement .+ Ann_Recovery
+    CUM_DCF = JuMP.Containers.DenseAxisArray(
+        cumsum(mapslices(x->x.*ann_factor, total_costs.data, dims=1), dims=1),
+        year_set, user_set_financial
+    )
+
     return (
         NPV=NPV,
+        CUM_DCF=CUM_DCF,
         CAPEX=CAPEX,
         OPEX=OPEX,
         OEM=Ann_Maintenance,
