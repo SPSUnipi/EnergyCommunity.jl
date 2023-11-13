@@ -38,6 +38,7 @@ function _base_test(input_file, group, optimizer)
     
     @test_reference "refs/sankeys/group_$(string(group)).png" plot_sankey(ECModel)
 
+    @test_reference "refs/business_plan_plot/group_$(string(group)).png" business_plan_plot(ECModel)
 end
 
 function _utility_callback_test(input_file, optimizer, group_type; atol=ATOL, rtol=RTOL, kwargs...)
