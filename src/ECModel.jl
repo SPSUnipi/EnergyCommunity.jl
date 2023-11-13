@@ -1028,7 +1028,7 @@ Returns
     - df_business
         Dataframe with the business plan information
 """
-function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set_financial=nothing)
+function business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_set_financial=nothing)
     gen_data = ECModel.gen_data
     
     project_lifetime = field(gen_data, "project_lifetime")
@@ -1045,10 +1045,21 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
     year_set = business_plan.year_set
 
     # Create an empty DataFrame
-    df_business = DataFrame(Year = Int[], CAPEX = Float64[], OEM = Float64[], EN_SELL = Float64[], EN_CONS = EN_SELL = Float64[], PEAK = Float64[], REP = Float64[], 
-    REWARD = Float64[], RV = Float64[])
+    df_business = DataFrame(
+        Year = Int[],
+        CUM_DCF = Float64[],
+        CAPEX = Float64[],
+        OEM = Float64[],
+        EN_SELL = Float64[],
+        EN_CONS = Float64[],
+        PEAK = Float64[],
+        REP = Float64[], 
+        REWARD = Float64[],
+        RV = Float64[],
+    )
     for i in year_set
         Year = year_set[i+1]
+        CUM_DCF = sum(business_plan.CUM_DCF[i, :])
         CAPEX = sum(business_plan.CAPEX[i, :])
         OEM = sum(business_plan.OEM[i, :])
         EN_SELL = sum(business_plan.EN_SELL[i, :])
@@ -1057,7 +1068,7 @@ function business_plan(ECModel::AbstractEC,profit_distribution=nothing, user_set
         REP = sum(business_plan.REP[i, :])
         REWARD = sum(business_plan.REWARD[i, :])
         RV = sum(business_plan.RV[i, :])
-        push!(df_business, (Year, CAPEX, OEM,  EN_SELL, EN_CONS, PEAK, REP, REWARD, RV))
+        push!(df_business, (Year, CUM_DCF, CAPEX, OEM,  EN_SELL, EN_CONS, PEAK, REP, REWARD, RV))
     end
 
     return df_business
