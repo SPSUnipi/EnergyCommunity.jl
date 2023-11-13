@@ -43,3 +43,9 @@ save_summary(ANC_Model, output_file_isolated)
 
 # Plot the sankey plot of resources
 plot_sankey(ANC_Model)
+
+# DataFrame of the business plan
+business_plan(ANC_Model)
+
+# plot business plan
+business_plan_plot(ANC_Model)
