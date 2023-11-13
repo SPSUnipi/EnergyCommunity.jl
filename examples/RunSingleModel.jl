@@ -1,6 +1,6 @@
 # Run this script from EnergyCommunity.jl root!!!
 using Pkg
-Pkg.activate(".")  # this line requires EnergyCommunity.jl to be the current directory
+Pkg.activate("examples")
 
 using EnergyCommunity, JuMP
 using HiGHS, Plots
