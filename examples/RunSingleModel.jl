@@ -1,6 +1,6 @@
-# Run this script from EnergyCommunity.jl root!!!
-using Pkg
-Pkg.activate("examples")
+# # Run this script from EnergyCommunity.jl root!!!
+# using Pkg
+# Pkg.activate("examples")
 
 using EnergyCommunity, JuMP
 using HiGHS, Plots
