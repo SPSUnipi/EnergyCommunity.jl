@@ -1,6 +1,6 @@
-# Run this script from EnergyCommunity.jl root!!!
-using Pkg
-Pkg.activate(".")  # this line requires EnergyCommunity.jl to be the current directory
+# # Run this script from EnergyCommunity.jl root!!!
+# using Pkg
+# Pkg.activate("examples")
 
 using EnergyCommunity, JuMP
 using HiGHS, Plots
@@ -45,6 +45,12 @@ save_summary(ECModel, output_file_combined)
 # Plot sankey plot of CO model
 plot_sankey(ECModel)
 
+# DataFrame of the business plan
+business_plan(ECModel)
+
+# plot 20 years business plan of CO model
+business_plan_plot(ECModel)
+
 ## Model NC
 
 # create NonCooperative model
@@ -67,3 +73,9 @@ save_summary(NC_Model, output_file_isolated)
 
 # plot Sankey plot of NC model
 plot_sankey(NC_Model)
+
+# DataFrame of the business plan of NC model
+business_plan(NC_Model)
+
+# plot business plan of NC model
+business_plan_plot(NC_Model)

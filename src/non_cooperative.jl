@@ -685,11 +685,92 @@ end
 finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
 
 Function to finalize the results of the Non Cooperative model after the execution
-Nothing to do
+Many of the variables are set to zero due to the absence of cooperation between users
 
 """
 function finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
-    # Nothing to do
+
+    # get user set
+    user_set = ECModel.user_set
+    user_set_EC = vcat(EC_CODE, user_set)
+
+
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+    project_lifetime = field(gen_data, "project_lifetime")
+
+
+    # Set definitions
+    user_set = ECModel.user_set
+    year_set = 1:project_lifetime
+    year_set_0 = 0:project_lifetime
+    time_set = 1:n_steps
+    peak_categories = profile(gen_data,"peak_categories")
+    # Set definition when optional value is not included
+    user_set = ECModel.user_set
+
+    # Power of the aggregator
+    ECModel.results[:P_agg] = JuMP.Containers.DenseAxisArray(
+        [0.0 for t in time_set],
+        time_set
+    )
+
+    # Shared power: the minimum between the supply and demand for each time step
+    ECModel.results[:P_shared_agg] = JuMP.Containers.DenseAxisArray(
+        [0.0
+        for t in time_set],
+        time_set
+    )
+
+    # Total reward awarded to the community at each time step
+    ECModel.results[:R_Reward_agg] = JuMP.Containers.DenseAxisArray(
+        [0.0
+        for t in time_set],
+        time_set
+    )
+
+    # Total reward awarded to the community in a year
+    ECModel.results[:R_Reward_agg_tot] = sum(ECModel.results[:R_Reward_agg])
+
+
+    # Total reward awarded to the aggregator in NPV terms
+    ECModel.results[:R_Reward_agg_NPV] = 0.0
+
+
+    # Total reward awarded to the aggregator in NPV terms
+    ECModel.results[:NPV_agg] = ECModel.results[:R_Reward_agg_NPV]
+
+    
+    # Cash flow
+    ECModel.results[:Cash_flow_agg] = JuMP.Containers.DenseAxisArray(
+        [(y == 0) ? 0.0 : ECModel.results[:R_Reward_agg_tot] for y in year_set_0],
+        year_set_0
+    )
+    
+    
+    # Cash flow total
+    ECModel.results[:Cash_flow_tot] = JuMP.Containers.DenseAxisArray(
+        [
+            ((y == 0) ? 0.0 : 
+                sum(ECModel.results[:Cash_flow_us][y, :]) + ECModel.results[:Cash_flow_agg][y])
+            for y in year_set_0
+        ],
+        year_set_0
+    )
+    
+    # Social welfare of the users
+    ECModel.results[:SW_us] = sum(ECModel.results[:NPV_us])
+
+    # Social welfare of the entire aggregation
+    ECModel.results[:SW] = ECModel.results[:SW_us] + ECModel.results[:NPV_agg]
+    ECModel.results[:objective_value] = ECModel.results[:SW]
 end
 
 

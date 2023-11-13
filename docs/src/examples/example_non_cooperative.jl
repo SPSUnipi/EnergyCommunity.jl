@@ -43,3 +43,9 @@ save_summary(NC_Model, output_file_isolated)
 
 # Plot the sankey plot of resources
 plot_sankey(NC_Model)
+
+# DataFrame of the business plan
+business_plan(NC_Model)
+
+# plot business plan
+business_plan_plot(NC_Model)
