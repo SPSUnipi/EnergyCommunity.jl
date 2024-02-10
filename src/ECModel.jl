@@ -80,6 +80,26 @@ function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer;
     return ECModel
 end
 
+function set_parameters_ECmodel!(ECModel::AbstractEC,
+    tol::Float64=1e-3, # default gap set to 0.1
+    time_limit::Int=60*60, # default time limit set to one hour
+    threads::Int=1)
+
+model = ECModel.model
+
+if ECModel.optimizer == CPLEX.Optimizer 
+    set_optimizer_attribute(model, "CPX_PARAM_EPGAP", tol)
+    set_optimizer_attribute(model, "CPX_PARAM_TILIM", time_limit)
+    set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
+elseif ECModel.optimizer == HiGHS.Optimizer
+    set_optimizer_attribute(model, "mip_rel_gap", tol)
+    set_optimizer_attribute(model, "time_limit", time_limit)
+    set_optimizer_attribute(model, "threads", threads)
+end
+
+return ECModel
+end
+
 
 "Solve the optimization problem for the EC"
 function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
@@ -769,6 +789,11 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
         [get_value(ECModel.results[:C_OEM_tot_us], u) * ann_factor for u in user_set]
         , user_set
     )
+    # Generator costs
+    C_gen = JuMP.Containers.DenseAxisArray(
+        [get_value(ECModel.results[:C_gen_tot_us], u) for u in user_set]
+        , user_set
+    )
     # Replacement costs
     Ann_Replacement = JuMP.Containers.DenseAxisArray(
         [
@@ -843,6 +868,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
         NPV=NPV,
         CAPEX=CAPEX,
         OPEX=OPEX,
+        C_GEN = C_gen,
         OEM=Ann_Maintenance,
         REP=Ann_Replacement,
         RV=Ann_Recovery,
@@ -923,6 +949,12 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
             for y in year_set, u in user_set_financial]
         , year_set, user_set_financial
     )
+    # Generator costs
+    C_gen = JuMP.Containers.DenseAxisArray(
+        [(y == 0) && (u != EC_CODE) ? sum(Float64[get_value(ECModel.results[:C_gen_tot_us], u)]) : 0.0
+            for y in year_set, u in user_set_financial]
+        , year_set, user_set_financial
+    )
     # Replacement costs
     #The index is 1:20 so in the result should be proper changed. I'll open an issue
     Ann_Replacement = JuMP.Containers.DenseAxisArray(
@@ -971,7 +1003,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     # Total reward
     # This is the total discounted cost of all terms but NPV. I think that this must be improved
     total_discounted_cost_by_user = JuMP.Containers.DenseAxisArray(
-        (CAPEX .+ OPEX .+ Ann_Replacement .- Ann_Recovery).data' * ann_factor,
+        (CAPEX .+ OPEX .+ .+C_gen .+ Ann_Replacement .- Ann_Recovery).data' * ann_factor,
         user_set_financial,
     )
     total_discounted_reward_by_user = NPV .+ total_discounted_cost_by_user
@@ -985,7 +1017,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     )
 
     # Cumulative Discounted Cash Flows
-    total_costs = Ann_reward .- CAPEX .- OPEX .- Ann_Replacement .+ Ann_Recovery
+    total_costs = Ann_reward .- CAPEX .- OPEX .- C_gen .- Ann_Replacement .+ Ann_Recovery
     CUM_DCF = JuMP.Containers.DenseAxisArray(
         cumsum(mapslices(x->x.*ann_factor, total_costs.data, dims=1), dims=1),
         year_set, user_set_financial
@@ -996,6 +1028,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
         CUM_DCF=CUM_DCF,
         CAPEX=CAPEX,
         OPEX=OPEX,
+        C_GEN = C_gen,
         OEM=Ann_Maintenance,
         REP=Ann_Replacement,
         RV=Ann_Recovery,
@@ -1049,6 +1082,7 @@ function business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_se
         Year = Int[],
         CUM_DCF = Float64[],
         CAPEX = Float64[],
+        C_GEN = Float64[],
         OEM = Float64[],
         EN_SELL = Float64[],
         EN_CONS = Float64[],
@@ -1062,13 +1096,14 @@ function business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_se
         CUM_DCF = sum(business_plan.CUM_DCF[i, :])
         CAPEX = sum(business_plan.CAPEX[i, :])
         OEM = sum(business_plan.OEM[i, :])
+        C_GEN = sum(business_plan.C_GEN[i, :])
         EN_SELL = sum(business_plan.EN_SELL[i, :])
         EN_CONS = sum(business_plan.EN_CONS[i, :])
         PEAK = sum(business_plan.PEAK[i, :])
         REP = sum(business_plan.REP[i, :])
         REWARD = sum(business_plan.REWARD[i, :])
         RV = sum(business_plan.RV[i, :])
-        push!(df_business, (Year, CUM_DCF, CAPEX, OEM,  EN_SELL, EN_CONS, PEAK, REP, REWARD, RV))
+        push!(df_business, (Year, CUM_DCF, CAPEX, OEM, C_GEN, EN_SELL, EN_CONS, PEAK, REP, REWARD, RV))
     end
 
     return df_business
@@ -1117,6 +1152,7 @@ function business_plan_plot(
             "CAPEX" => [(-1, :CAPEX)],
             "Repl. and Recovery" => [(-1, :REP), (+1, :RV)],
             "OEM" => [(-1, :OEM), (-1, :PEAK)],
+            "C_gen" => [(-1, :C_GEN)],
             "Energy expences" => [(-1, :EN_CONS), (+1, :EN_SELL)],
             "Reward" => [(+1, :REWARD)],
         )

@@ -214,7 +214,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
     printfmtln(printf_code_description, "USER", [u for u in user_set]...)  # heading
     for a in asset_set_unique  # print capacities of each asset by user
         printfmtln(printf_code_user, a, [
-            (a in device_names(users_data[u])) ? results_EC[:x_us][u, a] : 0
+            (a in device_names(users_data[u])) ? results_EC[:x_us][u, a] * field_component(users_data[u], a, "nom_capacity") : 0
                 for u in user_set]...)
     end
 
@@ -226,6 +226,9 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
         [sum(results_EC[:C_OEM_tot_us][u])/1000
             for u in user_set]...)  # print OPEX by user
     printfmtln(printf_code_user, "YBill [k€]", results_EC[:yearly_rev]/1000...)  # print yearly bill by user
+    printfmtln(printf_code_user, "Cthermal [k€]", 
+        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_EC[:C_gen_tot_us[u]]/1000)
+            for u in user_set]...)  # print costs of thermal generators
     if !isempty(base_case.user_set)
         printfmtln(printf_code_user, "NPVNOA[k€]", results_base[:NPV_us]/1000...)  # print NPV by user in the base case
         printfmtln(printf_code_user, "CAPEXNOA [k€]",
@@ -235,6 +238,9 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             [sum(results_base[:C_OEM_tot_us][u]/1000)
                 for u in user_set]...)  # print OPEX by user in the base case
         printfmtln(printf_code_user, "YBillNOA [k€]", results_base[:yearly_rev]/1000...)  # print yearly revenue by user in the base case
+        printfmtln(printf_code_user, "CthermalNOA [k€]", 
+        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_base[:C_gen_tot_us[u]]/1000)
+            for u in user_set]...)  # print costs of thermal generators
 
         Delta_NPV_us = 100 .* (results_EC[:NPV_us] - results_base[:NPV_us])./results_base[:NPV_us]
         Delta_yearly_rev = 100 .* (results_EC[:yearly_rev] - results_base[:yearly_rev])./results_base[:yearly_rev]
@@ -260,6 +266,10 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             ]) for u in user_set]/1000...)  # Total power loaded by converters by user
     printfmtln(printf_code_user, "Pren [MWh]",
         [sum(results_EC[:P_ren_us][u,:]) for u in user_set]/1000...)  # Total power supplied by renewables by each user
+    printfmtln(printf_code_user, "Pgen [MWh]",
+        [sum(Float64[results_EC[:P_gen_us][u, g, t] 
+                for g in asset_names(users_data[u], THER) for t in time_set
+            ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
         [sum(
             Float64[profile_component(users_data[u], l, "load")[t]
@@ -316,6 +326,10 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
             sum(Float64[results[:P_conv_us][u_name, c, t] 
                 for c in asset_names(users_data[u_name], CONV)]) for t in time_set],
             label="Converters", w=line_width)
+        plot!(pt[u_i, 1], time_set_plot, [
+                sum(Float64[results[:P_gen_us][u_name, g, t] 
+                    for g in asset_names(users_data[u_name], THER)]) for t in time_set],
+                label="Thermal", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, results[:P_ren_us][u_name, :].data, label="Renewables", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, results[:P_us][u_name, :].data, label="Commercial POD", w=line_width, linestyle = :dash)
         xaxis!("Time step [#]")

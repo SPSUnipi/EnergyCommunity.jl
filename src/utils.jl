@@ -8,14 +8,15 @@ Implemented values:
 - REN: renewable assets
 - BATT: battery components
 - CONV: battery converters
+- THER: thermal generators
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3
+@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4
 ANY = collect(instances(ASSET_TYPE))  # all assets code
 DEVICES = setdiff(ANY, [LOAD])  # devices codes
-GENS = [REN]  # generator codes
+GENS = [REN, THER]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD)
+type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
@@ -89,7 +90,7 @@ end
 "Function to get the list of the assets for a user in a list of elements except a list of given types"
 function asset_names_ex(d, ex::Vector{ASSET_TYPE})
     comps = components(d)
-    accepted_types = set_diff(ANY, ex)
+    accepted_types = setdiff(ANY, ex)
     return asset_names(d, accepted_types)
 end
 
@@ -99,10 +100,11 @@ device_names(d) = asset_names(d, DEVICES)
 "Function to get the list of generators for a user"
 generator_names(d) = asset_names(d, GENS)
 
+"Function to check whether an user has any asset"
+has_any_asset(d) = !isempty(device_names(d))
 
 "Function to check whether an user has an asset type"
 has_asset(d, atype::ASSET_TYPE) = !isempty(asset_names(d, atype))
-
 
 "Function to check whether an user has an asset given its name"
 has_asset(d, aname::AbstractString) = aname in keys(d)

@@ -1,5 +1,5 @@
 # accepted technologies
-ACCEPTED_TECHS = ["load", "renewable", "battery", "converter"]
+ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal"]
 
 """
     build_base_model!(ECModel::AbstractEC, optimizer)
@@ -50,6 +50,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 for c in asset_names(users_data[u], CONV)]) # Maximum capacity of the converters
             + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
+            + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
+                for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
             - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
         ) * TOL_BOUNDS
     )
@@ -88,6 +90,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user,
         0 <= P_ren_us[u=user_set, time_set]
             <= sum(Float64[field_component(users_data[u], r, "max_capacity") for r in asset_names(users_data[u], REN)]))
+    #Dispatch of fuel-fired generator
+    @variable(model_user, 
+        0 <= P_gen_us[u=user_set, g=asset_names(users_data[u], THER), time_set] 
+            <= field_component(users_data[u], g, "max_capacity"))
+    # Number of generators plants used by a user in each time step t
+    @variable(model_user,
+        0 <= z_gen_us[u=user_set, g=asset_names(users_data[u], THER), time_set]
+            <= field_component(users_data[u], g, "max_capacity")/field_component(users_data[u], g, "nom_capacity"), Int)
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
         0 <= P_max_us[u=user_set, w in peak_set]
@@ -103,26 +113,26 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Design of assets of the user
     @variable(model_user,
         0 <= x_us[u=user_set, a=device_names(users_data[u])]
-            <= field_component(users_data[u], a, "max_capacity"))
+            <= field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"), Int)
 
     ## Expressions
 
     # CAPEX by user and asset
     @expression(model_user, CAPEX_us[u in user_set, a in device_names(users_data[u])],
-        x_us[u,a]*field_component(users_data[u], a, "CAPEX_lin")  # Capacity of the asset times specific investment costs
+        x_us[u,a]*field_component(users_data[u], a, "CAPEX_lin")*field_component(users_data[u], a, "nom_capacity")  # Capacity of the asset times specific investment costs
     )
 
     @expression(model_user, CAPEX_tot_us[u in user_set],
         sum(CAPEX_us[u, a] for a in device_names(users_data[u])) # sum of CAPEX by asset for the same user
     )  # CAPEX by user
 
-    @expression(model_user, C_OEM_us[u in user_set, a in device_names(users_data[u])],
-        x_us[u,a]*field_component(users_data[u], a, "OEM_lin")  # Capacity of the asset times specific operating costs
-    )  # Maintenance cost by asset
+    @expression(model_user, C_OEM_us[u in user_set, a in asset_names_ex(users_data[u],[THER,LOAD])],
+        x_us[u,a]*field_component(users_data[u], a, "OEM_lin")*field_component(users_data[u], a, "nom_capacity")  # Capacity of the asset times specific operating costs
+    )  # Maintenance cost by asset exluding thermal generation
 
     # Maintenance cost by asset
     @expression(model_user, C_OEM_tot_us[u in user_set],
-        sum(C_OEM_us[u, a] for a in device_names(users_data[u]))  # sum of C_OEM by asset for the same user
+        sum(C_OEM_us[u, a] for a in asset_names_ex(users_data[u],[THER,LOAD]))  # sum of C_OEM by asset for the same user
     )
 
     # Replacement cost by year, user and asset
@@ -176,9 +186,33 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         R_Energy_tot_us[u] - C_OEM_tot_us[u]
     )
 
+    # Costs arising from the use of fuel-fired generators by users and asset
+    @expression(model_user, C_gen_us[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
+        profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *(
+            z_gen_us[u,g,t] * field_component(users_data[u], g, "nom_capacity") 
+            * (field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "inter_map") + field_component(users_data[u], g, "OEM_lin"))
+            + field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "slope_map") * P_gen_us[u,g,t])
+    )
+
+    # Energy revenues by user by asset
+    @expression(model_user, C_gen_tot_us_asset[u in user_set, g=asset_names(users_data[u], THER)],
+        sum(C_gen_us[u, g, t] for t in time_set)  # sum of revenues by user
+    )
+
+    # Total costs arising from the use of fuel-fired generators by users
+    @expression(model_user, C_gen_tot_us[u in user_set],
+        sum(C_gen_tot_us_asset[u,g] for g  in asset_names(users_data[u], THER))
+    )
+
     # Cash flow
     @expression(model_user, Cash_flow_us[y in year_set_0, u in user_set],
-        (y == 0) ? 0 - CAPEX_tot_us[u] : (R_Energy_tot_us[u] - C_Peak_tot_us[u] - C_OEM_tot_us[u] - C_REP_tot_us[y, u] + R_RV_tot_us[y, u])
+        (y == 0) ? 0 - CAPEX_tot_us[u] : 
+            (R_Energy_tot_us[u]
+            - C_gen_tot_us[u]
+            - C_Peak_tot_us[u] 
+            - C_OEM_tot_us[u] 
+            - C_REP_tot_us[y, u] 
+            + R_RV_tot_us[y, u])
     )
 
     # Annualized profits by the user; the sum of this function is the objective function
@@ -210,53 +244,65 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     ## Inequality constraints
 
     # Set that the hourly dispatch cannot go beyond the maximum dispatch of the corresponding peak power period
-    @constraint(model_user,
-        con_us_max_P_user[u = user_set, t = time_set],
+    @constraint(model_user, con_us_max_P_user[u = user_set, t = time_set],
         - P_max_us[u, profile(gen_data, "peak_categories")[t]] + P_P_us[u, t] + P_N_us[u, t] <= 0
     )
 
     # Set the renewabl energy dispatch to be no greater than the actual available energy
-    @constraint(model_user,
-        con_us_ren_dispatch[u in user_set, t in time_set],
-        - sum(profile_component(users_data[u], r, "ren_pu")[t] * x_us[u, r] 
+    @constraint(model_user, con_us_ren_dispatch[u in user_set, t in time_set],
+        - sum(profile_component(users_data[u], r, "ren_pu")[t] * x_us[u, r]  * field_component(users_data[u], r, "nom_capacity")
             for r in asset_names(users_data[u], REN))
         + P_ren_us[u, t] <= 0
     )
 
     # Set the maximum hourly dispatch of converters not to exceed their capacity
-    @constraint(model_user,
-        con_us_converter_capacity[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
-        - x_us[u, c] + P_conv_P_us[u, c, t] + P_conv_N_us[u, c, t] <= 0
+    @constraint(model_user, con_us_converter_capacity[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
+        - x_us[u, c] * field_component(users_data[u], c, "nom_capacity") 
+        + P_conv_P_us[u, c, t] + P_conv_N_us[u, c, t] <= 0
     )
 
 
     # Set the maximum hourly dispatch of converters not to exceed the C-rate of the battery in discharge
-    @constraint(model_user,
-        con_us_converter_capacity_crate_dch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
+    @constraint(model_user, con_us_converter_capacity_crate_dch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
         P_conv_P_us[u, c, t] <= 
-            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_dch")
+            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "nom_capacity") 
+            * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_dch")
     )
 
 
     # Set the maximum hourly dispatch of converters not to exceed the C-rate of the battery in charge
-    @constraint(model_user,
-        con_us_converter_capacity_crate_ch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
+    @constraint(model_user, con_us_converter_capacity_crate_ch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
         P_conv_N_us[u, c, t] <= 
-            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_ch")
+            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "nom_capacity") 
+            * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_ch")
     )
 
 
     # Set the minimum level of the energy stored in the battery to be proportional to the capacity
-    @constraint(model_user,
-        con_us_min_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
-        x_us[u, b] * field_component(users_data[u], b, "min_SOC") - E_batt_us[u, b, t] <= 0
+    @constraint(model_user, con_us_min_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
+        x_us[u, b] * field_component(users_data[u], b, "min_SOC") * field_component(users_data[u], b, "nom_capacity") 
+            - E_batt_us[u, b, t] <= 0
     )
 
     # Set the maximum level of the energy stored in the battery to be proportional to the capacity
-    @constraint(model_user,
-        con_us_max_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
-        - x_us[u, b] * field_component(users_data[u], b, "max_SOC") + E_batt_us[u, b, t] <= 0
+    @constraint(model_user, con_us_max_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
+        - x_us[u, b] * field_component(users_data[u], b, "nom_capacity") * field_component(users_data[u], b, "max_SOC") 
+            + E_batt_us[u, b, t] <= 0
     )
+
+    # Set that the number of working generator plants cannot exceed the number of generator plants installed
+    @constraint(model_user, con_us_gen_on[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
+        z_gen_us[u, g, t] <= x_us[u, g]
+    )
+
+    # Set the minimum dispatch of the thermal generator
+    @constraint(model_user, con_us_gen_min_disp[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
+        P_gen_us[u, g, t] - z_gen_us[u, g, t] * field_component(users_data[u], g, "nom_capacity") * field_component(users_data[u], g, "min_technical") >= 0
+    )
+
+    # Set the maximum dispatch of the thermal generator
+    @constraint(model_user, con_us_gen_max_disp[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
+        P_gen_us[u, g, t] - z_gen_us[u, g, t] * field_component(users_data[u], g, "nom_capacity") * field_component(users_data[u], g, "max_technical") <= 0)
 
     ## Equality constraints
 
@@ -264,6 +310,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @constraint(model_user,
         con_us_balance[u in user_set, t in time_set],
         P_P_us[u, t] - P_N_us[u, t]
+        - sum(P_gen_us[u, g, t] for g in asset_names(users_data[u], THER))
         + sum(GenericAffExpr{Float64,VariableRef}[
             P_conv_N_us[u, c, t] - P_conv_P_us[u, c, t] for c in asset_names(users_data[u], CONV)])
         - P_ren_us[u, t]
@@ -366,11 +413,19 @@ function calculate_production(ECModel::AbstractEC)
     energy_weight = profile(ECModel.gen_data, "energy_weight")
 
     _P_ren = ECModel.results[:P_ren_us]
+    _P_gen = ECModel.results[:P_gen_us]
 
-    data_production = Float64[
+    data_production_ren = Float64[
         has_asset(users_data[u], REN) ? sum(_P_ren[u, :] .* time_res .* energy_weight) : 0.0
         for u in user_set
     ]
+
+    data_production_gen = Float64[
+        has_asset(users_data[u], THER) ? sum(_P_gen[u, : , :] .* time_res .* energy_weight) : 0.0
+        for u in user_set
+    ]
+
+    data_production = data_production_ren + data_production_gen
 
     # sum of the load power by user and EC
     production_us_EC = JuMP.Containers.DenseAxisArray(
@@ -417,6 +472,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
     _P_tot_us = ECModel.results[:P_us]  # power dispatch of users - users mode
     _P_ren_us = ECModel.results[:P_ren_us]  # Ren production dispatch of users - users mode
+    _P_gen_us = ECModel.results[:P_gen_us]  # Production of thermal generators of users - users mode
     _x_us = ECModel.results[:x_us]  # Installed capacity by user
 
     # time step resolution
@@ -426,7 +482,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
     # Available renewable production
     _P_ren_available = JuMP.Containers.DenseAxisArray(
         [sum(Float64[
-            !has_asset(users_data[u], r) ? 0.0 : profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
+            !has_asset(users_data[u], r) ? 0.0 : profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r] * field_component(users_data[u], r, "nom_capacity")
                 for r in asset_names(users_data[u], REN)
         ]) for u in user_set, t in time_set],
         user_set, time_set
@@ -505,6 +561,14 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
 
     _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
     _P_ren_us = ECModel.results[:P_ren_us]  # renewable production by user
+    _P_gen_us = ECModel.results[:P_gen_us]  # renewable production by user by asset
+
+    # total thermal production by user only
+    _tot_P_gen_us = JuMP.Containers.DenseAxisArray(
+        Float64[ !has_asset(users_data[u], THER) ? 0.0 : sum( _P_gen_us[u,:,:])
+            for u in user_set],
+        user_set
+    )
 
     # time step resolution
     time_res = profile(ECModel.gen_data, "time_res")
@@ -513,7 +577,7 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
     # self consumption by user only
     shared_en_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(
-                0.0, _P_ren_us[u, :] - max.(_P_us[u, :], 0.0)
+                0.0, _P_ren_us[u, :] + _tot_P_gen_us[u] - max.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set
     )
