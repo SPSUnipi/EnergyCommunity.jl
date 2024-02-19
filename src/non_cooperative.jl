@@ -110,9 +110,8 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
             for u in user_set]...)  # print CAPEX by user
     printfmtln(printf_code_user, "YBill [k€]", results[:yearly_rev]/1000...)  # print yearly bill by user
     printfmtln(printf_code_user, "Cthermal [k€]", 
-            [sum( !has_asset(users_data[u], THER) ? 0.0 : results[:C_gen_tot_us[u]]/1000)
+            [sum( !has_asset(users_data[u], THER) ? 0.0 : results[:C_gen_tot_us][u]/1000)
                 for u in user_set]...)  # print costs of thermal generators
-
     printfmtln("\n\nEnergy flows")
     printfmtln(printf_code_description, "USER", [u for u in user_set]...)
     printfmtln(printf_code_user, "PtotPusP [MWh]",
@@ -365,7 +364,7 @@ function add_users_economics_summary!(
             [[if (a in device_names(users_data[u])) _C_OEM_us[u, a] else missing end for u in user_set]
                 for a in asset_set_unique]
         ),
-            map(Symbol, vcat("User_id", "NPV_us", "CAPEX_tot_us", "yearly_rev", "C_gen_tot_us"
+            map(Symbol, vcat("User_id", "NPV_us", "CAPEX_tot_us", "yearly_rev", "C_gen_tot_us",
                 "SDCF C_OEM_tot_us", "SDCF C_REP_tot_us", "SDCF R_RV_tot_us",
                 "SDCF C_Peak_tot_us", "SDCF R_Energy_tot_us",
                 ["CAPEX_us_$a" for a in asset_set_unique], ["C_OEM_us_$a" for a in asset_set_unique]))

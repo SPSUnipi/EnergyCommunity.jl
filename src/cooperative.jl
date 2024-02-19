@@ -227,7 +227,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             for u in user_set]...)  # print OPEX by user
     printfmtln(printf_code_user, "YBill [k€]", results_EC[:yearly_rev]/1000...)  # print yearly bill by user
     printfmtln(printf_code_user, "Cthermal [k€]", 
-        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_EC[:C_gen_tot_us[u]]/1000)
+        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_EC[:C_gen_tot_us][u]/1000)
             for u in user_set]...)  # print costs of thermal generators
     if !isempty(base_case.user_set)
         printfmtln(printf_code_user, "NPVNOA[k€]", results_base[:NPV_us]/1000...)  # print NPV by user in the base case
@@ -239,9 +239,8 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
                 for u in user_set]...)  # print OPEX by user in the base case
         printfmtln(printf_code_user, "YBillNOA [k€]", results_base[:yearly_rev]/1000...)  # print yearly revenue by user in the base case
         printfmtln(printf_code_user, "CthermalNOA [k€]", 
-        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_base[:C_gen_tot_us[u]]/1000)
+        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_base[:C_gen_tot_us][u]/1000)
             for u in user_set]...)  # print costs of thermal generators
-
         Delta_NPV_us = 100 .* (results_EC[:NPV_us] - results_base[:NPV_us])./results_base[:NPV_us]
         Delta_yearly_rev = 100 .* (results_EC[:yearly_rev] - results_base[:yearly_rev])./results_base[:yearly_rev]
         

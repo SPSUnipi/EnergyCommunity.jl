@@ -420,10 +420,10 @@ function calculate_production(ECModel::AbstractEC)
         for u in user_set
     ]
 
-    data_production_gen = Float64[
-        has_asset(users_data[u], THER) ? sum(_P_gen[u, : , :] .* time_res .* energy_weight) : 0.0
-        for u in user_set
-    ]
+    data_production_gen = Float64[ !has_asset(users_data[u], THER) ? 0.0 : sum(time_res[t] * energy_weight[t] * _P_gen_us[u, g, t] 
+                for g in asset_names(users_data[u], THER) for t in time_set
+            ) for u in user_set
+        ]
 
     data_production = data_production_ren + data_production_gen
 
@@ -558,6 +558,19 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
     # get user set
     user_set = ECModel.user_set
     user_set_EC = vcat(EC_CODE, user_set)
+    users_data = ECModel.users_data
+
+    gen_data = ECModel.gen_data
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+
+    # Set definitions
+    time_set = 1:n_steps
+
+    # time step resolution
+    time_res = profile(ECModel.gen_data, "time_res")
+    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     _P_us = ECModel.results[:P_us]  # power dispatch of users - users mode
     _P_ren_us = ECModel.results[:P_ren_us]  # renewable production by user
@@ -565,20 +578,18 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, onl
 
     # total thermal production by user only
     _tot_P_gen_us = JuMP.Containers.DenseAxisArray(
-        Float64[ !has_asset(users_data[u], THER) ? 0.0 : sum( _P_gen_us[u,:,:])
-            for u in user_set],
+        Float64[ !has_asset(users_data[u], THER) ? 0.0 : sum(time_res[t] * energy_weight[t] * _P_gen_us[u, g, t] 
+                for g in asset_names(users_data[u], THER) for t in time_set
+            ) for u in user_set],
         user_set
     )
-
-    # time step resolution
-    time_res = profile(ECModel.gen_data, "time_res")
-    energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     # self consumption by user only
     shared_en_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(
-                0.0, _P_ren_us[u, :] + _tot_P_gen_us[u] - max.(_P_us[u, :], 0.0)
-            )) for u in user_set],
+                0.0, _P_ren_us[u, :] - max.(_P_us[u, :], 0.0)
+            )) +  _tot_P_gen_us[u] 
+            for u in user_set],
         user_set
     )
 
