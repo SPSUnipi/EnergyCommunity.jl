@@ -112,24 +112,31 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             <= P_N_us_overestimate[u, t])
     # Design of assets of the user
     @variable(model_user,
-        0 <= x_us[u=user_set, a=device_names(users_data[u])]
+        0 <= n_us[u=user_set, a=device_names(users_data[u])]
             <= field_component(users_data[u], a, "max_capacity"))
 
     # Set integer capacity
     for u in user_set
         for a in device_names(users_data[u])
-            if field_component(users_data[u], a, "type_install") == "integer"
-                set_integer(x_us[u,a])
-                set_upper_bound(x_us[u,a], field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"))
+            if (has_component(users_data[u], a, "modularity") && field_component(users_data[u], a, "modularity") == true)
+                set_integer(n_us[u,a])
+                # It should be always true that if the component has a modularity, then a nominal capacity should be available
+                set_upper_bound(n_us[u,a], field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"))
             end
         end
     end
+
+    # Total design of assets of the user
+    @expression(model_user, x_us[u=user_set, a=device_names(users_data[u])],
+        (has_component(users_data[u], a, "modularity") && field_component(users_data[u], a, "modularity") == true) ?
+            n_us[u,a] * field_component(users_data[u], a, "nom_capacity")  : n_us[u,a]
+    )
 
     ## Expressions
 
     # CAPEX by user and asset
     @expression(model_user, CAPEX_us[u in user_set, a in device_names(users_data[u])],
-        x_us[u,a]*field_component(users_data[u], a, "CAPEX_lin")*field_component(users_data[u], a, "nom_capacity")  # Capacity of the asset times specific investment costs
+        x_us[u,a]*field_component(users_data[u], a, "CAPEX_lin")  # Capacity of the asset times specific investment costs
     )
 
     @expression(model_user, CAPEX_tot_us[u in user_set],
@@ -137,7 +144,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )  # CAPEX by user
 
     @expression(model_user, C_OEM_us[u in user_set, a in device_names(users_data[u])],
-        x_us[u,a]*field_component(users_data[u], a, "OEM_lin")*field_component(users_data[u], a, "nom_capacity")  # Capacity of the asset times specific operating costs
+        x_us[u,a]*field_component(users_data[u], a, "OEM_lin")  # Capacity of the asset times specific operating costs
     )  # Maintenance cost by asset exluding thermal generation
 
     # Maintenance cost by asset
@@ -260,49 +267,44 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # Set the renewabl energy dispatch to be no greater than the actual available energy
     @constraint(model_user, con_us_ren_dispatch[u in user_set, t in time_set],
-        - sum(profile_component(users_data[u], r, "ren_pu")[t] * x_us[u, r]  * field_component(users_data[u], r, "nom_capacity")
+        - sum(profile_component(users_data[u], r, "ren_pu")[t] * x_us[u, r]
             for r in asset_names(users_data[u], REN))
         + P_ren_us[u, t] <= 0
     )
 
     # Set the maximum hourly dispatch of converters not to exceed their capacity
     @constraint(model_user, con_us_converter_capacity[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
-        - x_us[u, c] * field_component(users_data[u], c, "nom_capacity") 
-        + P_conv_P_us[u, c, t] + P_conv_N_us[u, c, t] <= 0
+        - x_us[u, c] + P_conv_P_us[u, c, t] + P_conv_N_us[u, c, t] <= 0
     )
 
 
     # Set the maximum hourly dispatch of converters not to exceed the C-rate of the battery in discharge
     @constraint(model_user, con_us_converter_capacity_crate_dch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
         P_conv_P_us[u, c, t] <= 
-            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "nom_capacity") 
-            * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_dch")
+            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_dch")
     )
 
 
     # Set the maximum hourly dispatch of converters not to exceed the C-rate of the battery in charge
     @constraint(model_user, con_us_converter_capacity_crate_ch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
         P_conv_N_us[u, c, t] <= 
-            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "nom_capacity") 
-            * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_ch")
+            x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_ch")
     )
 
 
     # Set the minimum level of the energy stored in the battery to be proportional to the capacity
     @constraint(model_user, con_us_min_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
-        x_us[u, b] * field_component(users_data[u], b, "min_SOC") * field_component(users_data[u], b, "nom_capacity") 
-            - E_batt_us[u, b, t] <= 0
+        x_us[u, b] * field_component(users_data[u], b, "min_SOC") - E_batt_us[u, b, t] <= 0
     )
 
     # Set the maximum level of the energy stored in the battery to be proportional to the capacity
     @constraint(model_user, con_us_max_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
-        - x_us[u, b] * field_component(users_data[u], b, "nom_capacity") * field_component(users_data[u], b, "max_SOC") 
-            + E_batt_us[u, b, t] <= 0
+        - x_us[u, b] * field_component(users_data[u], b, "max_SOC") + E_batt_us[u, b, t] <= 0
     )
 
     # Set that the number of working generator plants cannot exceed the number of generator plants installed
     @constraint(model_user, con_us_gen_on[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
-        z_gen_us[u, g, t] <= x_us[u, g]
+        z_gen_us[u, g, t] <= n_us[u, g]
     )
 
     # Set the minimum dispatch of the thermal generator
@@ -492,7 +494,7 @@ function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
     # Available renewable production
     _P_ren_available = JuMP.Containers.DenseAxisArray(
         [sum(Float64[
-            !has_asset(users_data[u], r) ? 0.0 : profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r] * field_component(users_data[u], r, "nom_capacity")
+            !has_asset(users_data[u], r) ? 0.0 : profile_component(users_data[u], r, "ren_pu")[t] * _x_us[u,r]
                 for r in asset_names(users_data[u], REN)
         ]) for u in user_set, t in time_set],
         user_set, time_set

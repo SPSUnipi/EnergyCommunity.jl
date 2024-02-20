@@ -214,7 +214,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
     printfmtln(printf_code_description, "USER", [u for u in user_set]...)  # heading
     for a in asset_set_unique  # print capacities of each asset by user
         printfmtln(printf_code_user, a, [
-            (a in device_names(users_data[u])) ? results_EC[:x_us][u, a] * field_component(users_data[u], a, "nom_capacity") : 0
+            (a in device_names(users_data[u])) ? results_EC[:x_us][u, a] : 0
                 for u in user_set]...)
     end
 

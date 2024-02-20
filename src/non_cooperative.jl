@@ -274,7 +274,7 @@ function add_users_design_summary!(
                 for l in asset_names(users_data[u]) if asset_type(users_data[u], l) == LOAD]) for t in time_set) for u in user_set]],
             [[sum(Float64[profile_component(users_data[u], l, "load")[t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
                 for t in time_set for l in asset_names(users_data[u], LOAD)]) for u in user_set]],
-            [[if (a in device_names(users_data[u])) _x_us[u, a] * field_component(users_data[u], a, "nom_capacity") else missing end for u in user_set] for a in asset_set_unique]
+            [[if (a in device_names(users_data[u])) _x_us[u, a] else missing end for u in user_set] for a in asset_set_unique]
         ),
         map(Symbol, vcat("User", "Peak demand [kW]", "Yearly Demand [MWh]", ["x_us_$a" for a in asset_set_unique]))
     )

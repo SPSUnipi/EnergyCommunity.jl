@@ -59,8 +59,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
     
@@ -82,7 +80,7 @@ users:  # list of users and the corresponding assets
       min_technical: 0.2  # [-] minimum technical working point of the generator
       max_technical: 1.0  # [-] maximum technical working point of the generator
       max_capacity: 30  # [kW] maximum capacity to install
-      type_install: integer  # [integer/continuous] whether the installation is continuous or integer
+      modularity: true  # [integer/continuous] whether the installation is continuous or integer
       nom_capacity: 10  # [kW] nominal capacity of the generator
 
   user2:  # name of the user
@@ -95,8 +93,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 80  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
     
@@ -110,10 +106,8 @@ users:  # list of users and the corresponding assets
       max_SOC: 1.0  # [-] maximum state of charge
       min_SOC: 0.2  # [-] maximum state of charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
       max_C_dch: 1.0  # [-] maximum C-rate in discharge
       max_C_ch: 1.0  # [-] maximum C-rate in charge
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: conv  # corresponding converter    
     
 
@@ -126,8 +120,6 @@ users:  # list of users and the corresponding assets
       max_dch: 1.0  # [-] maximum discharge
       min_ch: 0.1  # [-] maximum charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: batt  # corresponding battery
 
 
@@ -147,8 +139,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 100  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
 
@@ -159,8 +149,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 20  # [y] lifetime of the component
       max_capacity: 100  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: wind  # code name of the specific renewable profile of the component
     
@@ -174,10 +162,8 @@ users:  # list of users and the corresponding assets
       max_SOC: 1.0  # [-] maximum state of charge
       min_SOC: 0.2  # [-] maximum state of charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
       max_C_dch: 1.0  # [-] maximum C-rate in discharge
       max_C_ch: 1.0  # [-] maximum C-rate in charge
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: conv  # corresponding converter    
     
     
@@ -190,8 +176,6 @@ users:  # list of users and the corresponding assets
       max_dch: 1.0  # [-] maximum discharge
       min_ch: 0.1  # [-] maximum charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: batt  # corresponding battery
 
 
@@ -211,8 +195,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 40  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
 
@@ -244,8 +226,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 60  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
     
@@ -258,10 +238,8 @@ users:  # list of users and the corresponding assets
       max_SOC: 1.0  # [-] maximum state of charge
       min_SOC: 0.2  # [-] maximum state of charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
       max_C_dch: 1.0  # [-] maximum C-rate in discharge
       max_C_ch: 1.0  # [-] maximum C-rate in charge
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: conv  # corresponding converter    
     
     
@@ -274,8 +252,6 @@ users:  # list of users and the corresponding assets
       max_dch: 1.0  # [-] maximum discharge
       min_ch: 0.1  # [-] maximum charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: batt  # corresponding battery
 
     load:  # component load
@@ -305,8 +281,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 100  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
 
@@ -317,8 +291,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 20  # [y] lifetime of the component
       max_capacity: 100  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: wind  # code name of the specific renewable profile of the component
     
@@ -332,10 +304,8 @@ users:  # list of users and the corresponding assets
       max_SOC: 1.0  # [-] maximum state of charge
       min_SOC: 0.2  # [-] maximum state of charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
       max_C_dch: 1.0  # [-] maximum C-rate in discharge
       max_C_ch: 1.0  # [-] maximum C-rate in charge
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: conv  # corresponding converter    
     
     
@@ -348,8 +318,6 @@ users:  # list of users and the corresponding assets
       max_dch: 1.0  # [-] maximum discharge
       min_ch: 0.1  # [-] maximum charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: batt  # corresponding battery
 
 
@@ -369,8 +337,6 @@ users:  # list of users and the corresponding assets
       OEM_lin: 30  # [€/kW/y] specific O&M cost
       lifetime_y: 25  # [y] lifetime of the component
       max_capacity: 100  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       profile:  # list of profiles
         ren_pu: pv  # code name of the specific renewable profile of the component
     
@@ -383,10 +349,8 @@ users:  # list of users and the corresponding assets
       max_SOC: 1.0  # [-] maximum state of charge
       min_SOC: 0.2  # [-] maximum state of charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
       max_C_dch: 1.0  # [-] maximum C-rate in discharge
       max_C_ch: 1.0  # [-] maximum C-rate in charge
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: conv  # corresponding converter    
     
     
@@ -399,8 +363,6 @@ users:  # list of users and the corresponding assets
       max_dch: 1.0  # [-] maximum discharge
       min_ch: 0.1  # [-] maximum charge
       max_capacity: 50  # [kW] maximum capacity
-      nom_capacity: 1  # [kW] nominal capacity of a base plant
-      type_install: continuous  # [integer/continuous] whether the installation is continuous or integer
       corr_asset: batt  # corresponding battery
 
     load:  # component load

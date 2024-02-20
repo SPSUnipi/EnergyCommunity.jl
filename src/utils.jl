@@ -56,6 +56,8 @@ end
 component(d, c_name) = field(components(d), c_name)
 "Function to get the components value of a dictionary"
 field_component(d, c_name, f_name) = field(component(d, c_name), f_name)
+"Function to know if a dictionary has a particular component"
+has_component(d, c_name, f_name) = haskey(component(d, c_name), f_name)
 "Function to get a specific profile"
 function profile(d, profile_name)
     profile_block = profiles(d)
