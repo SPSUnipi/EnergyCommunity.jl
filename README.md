@@ -21,12 +21,6 @@ ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), HiGHS.Optimizer)
 # build the model
 build_model!(ECModel)
 
-# set parameters
-time_lim = 60 * 10 # max time in second
-primal_gap = 1e-5 # primal gap (1e-4 = 1%)
-n_threads = 16 # number of threads to be used
-set_parameters_ECmodel!(ECModel,primal_gap,time_lim,n_threads)
-
 # optimize the model
 optimize!(ECModel)
 

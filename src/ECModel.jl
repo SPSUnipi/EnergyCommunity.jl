@@ -80,27 +80,6 @@ function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer;
     return ECModel
 end
 
-function set_parameters_ECmodel!(ECModel::AbstractEC,
-    tol::Float64=1e-3, # default gap set to 0.1
-    time_limit::Int=60*60, # default time limit set to one hour
-    threads::Int=1)
-
-model = ECModel.model
-
-if ECModel.optimizer == CPLEX.Optimizer 
-    set_optimizer_attribute(model, "CPX_PARAM_EPGAP", tol)
-    set_optimizer_attribute(model, "CPX_PARAM_TILIM", time_limit)
-    set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
-elseif ECModel.optimizer == HiGHS.Optimizer
-    set_optimizer_attribute(model, "mip_rel_gap", tol)
-    set_optimizer_attribute(model, "time_limit", time_limit)
-    set_optimizer_attribute(model, "threads", threads)
-end
-
-return ECModel
-end
-
-
 "Solve the optimization problem for the EC"
 function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
     optimize!(ECModel.model)
@@ -790,7 +769,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
         , user_set
     )
     # Generator costs
-    C_gen = JuMP.Containers.DenseAxisArray(
+    Ann_gen_costs = JuMP.Containers.DenseAxisArray(
         [get_value(ECModel.results[:C_gen_tot_us], u) for u in user_set]
         , user_set
     )
@@ -858,7 +837,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     # Total reward
     Ann_reward = JuMP.Containers.DenseAxisArray(
         [
-            NPV[u] + (CAPEX[u] + OPEX[u] + Ann_Replacement[u] - Ann_Recovery[u])
+            NPV[u] + (CAPEX[u] + OPEX[u] + Ann_gen_costs[u] + Ann_Replacement[u] - Ann_Recovery[u])
             for u in user_set
         ],
         user_set
@@ -868,7 +847,7 @@ function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
         NPV=NPV,
         CAPEX=CAPEX,
         OPEX=OPEX,
-        C_GEN = C_gen,
+        C_GEN = Ann_gen_costs,
         OEM=Ann_Maintenance,
         REP=Ann_Replacement,
         RV=Ann_Recovery,
@@ -950,7 +929,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
         , year_set, user_set_financial
     )
     # Generator costs
-    C_gen = JuMP.Containers.DenseAxisArray(
+    Ann_gen_costs = JuMP.Containers.DenseAxisArray(
         [(y == 0) && (u != EC_CODE) ? sum(Float64[get_value(ECModel.results[:C_gen_tot_us], u)]) : 0.0
             for y in year_set, u in user_set_financial]
         , year_set, user_set_financial
@@ -1003,7 +982,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     # Total reward
     # This is the total discounted cost of all terms but NPV. I think that this must be improved
     total_discounted_cost_by_user = JuMP.Containers.DenseAxisArray(
-        (CAPEX .+ OPEX .+ .+C_gen .+ Ann_Replacement .- Ann_Recovery).data' * ann_factor,
+        (CAPEX .+ OPEX .+ Ann_gen_costs .+ Ann_Replacement .- Ann_Recovery).data' * ann_factor,
         user_set_financial,
     )
     total_discounted_reward_by_user = NPV .+ total_discounted_cost_by_user
@@ -1017,7 +996,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
     )
 
     # Cumulative Discounted Cash Flows
-    total_costs = Ann_reward .- CAPEX .- OPEX .- C_gen .- Ann_Replacement .+ Ann_Recovery
+    total_costs = Ann_reward .- CAPEX .- OPEX .- Ann_gen_costs .- Ann_Replacement .+ Ann_Recovery
     CUM_DCF = JuMP.Containers.DenseAxisArray(
         cumsum(mapslices(x->x.*ann_factor, total_costs.data, dims=1), dims=1),
         year_set, user_set_financial
@@ -1028,7 +1007,7 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
         CUM_DCF=CUM_DCF,
         CAPEX=CAPEX,
         OPEX=OPEX,
-        C_GEN = C_gen,
+        C_GEN = Ann_gen_costs,
         OEM=Ann_Maintenance,
         REP=Ann_Replacement,
         RV=Ann_Recovery,

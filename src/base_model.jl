@@ -113,7 +113,17 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Design of assets of the user
     @variable(model_user,
         0 <= x_us[u=user_set, a=device_names(users_data[u])]
-            <= field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"), Int)
+            <= field_component(users_data[u], a, "max_capacity"))
+
+    # Set integer capacity
+    for u in user_set
+        for a in device_names(users_data[u])
+            if field_component(users_data[u], a, "type_install") == "integer"
+                set_integer(x_us[u,a])
+                set_upper_bound(x_us[u,a], field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"))
+            end
+        end
+    end
 
     ## Expressions
 
@@ -126,13 +136,13 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         sum(CAPEX_us[u, a] for a in device_names(users_data[u])) # sum of CAPEX by asset for the same user
     )  # CAPEX by user
 
-    @expression(model_user, C_OEM_us[u in user_set, a in asset_names_ex(users_data[u],[THER,LOAD])],
+    @expression(model_user, C_OEM_us[u in user_set, a in device_names(users_data[u])],
         x_us[u,a]*field_component(users_data[u], a, "OEM_lin")*field_component(users_data[u], a, "nom_capacity")  # Capacity of the asset times specific operating costs
     )  # Maintenance cost by asset exluding thermal generation
 
     # Maintenance cost by asset
     @expression(model_user, C_OEM_tot_us[u in user_set],
-        sum(C_OEM_us[u, a] for a in asset_names_ex(users_data[u],[THER,LOAD]))  # sum of C_OEM by asset for the same user
+        sum(C_OEM_us[u, a] for a in device_names(users_data[u]))  # sum of C_OEM by asset for the same user
     )
 
     # Replacement cost by year, user and asset
@@ -190,7 +200,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, C_gen_us[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *(
             z_gen_us[u,g,t] * field_component(users_data[u], g, "nom_capacity") 
-            * (field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "inter_map") + field_component(users_data[u], g, "OEM_lin"))
+            * (field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "inter_map") + field_component(users_data[u], g, "OEM_com"))
             + field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "slope_map") * P_gen_us[u,g,t])
     )
 
