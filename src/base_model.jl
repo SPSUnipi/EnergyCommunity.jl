@@ -417,12 +417,18 @@ function calculate_production(ECModel::AbstractEC)
     user_set = ECModel.user_set
     user_set_EC = vcat(EC_CODE, user_set)
 
-    # users set
+    gen_data = ECModel.gen_data
     users_data = ECModel.users_data
 
+    # get time set
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    n_steps = final_step - init_step + 1
+    time_set = 1:n_steps
+
     # time step resolution
-    time_res = profile(ECModel.gen_data, "time_res")
-    energy_weight = profile(ECModel.gen_data, "energy_weight")
+    time_res = profile(gen_data, "time_res")
+    energy_weight = profile(gen_data, "energy_weight")
 
     _P_ren = ECModel.results[:P_ren_us]
     _P_gen = ECModel.results[:P_gen_us]
