@@ -438,7 +438,7 @@ function calculate_production(ECModel::AbstractEC)
         for u in user_set
     ]
 
-    data_production_gen = Float64[ !has_asset(users_data[u], THER) ? 0.0 : sum(time_res[t] * energy_weight[t] * _P_gen_us[u, g, t] 
+    data_production_gen = Float64[ !has_asset(users_data[u], THER) ? 0.0 : sum(time_res[t] * energy_weight[t] * _P_gen[u, g, t] 
                 for g in asset_names(users_data[u], THER) for t in time_set
             ) for u in user_set
         ]
