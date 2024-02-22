@@ -324,8 +324,8 @@ function add_users_economics_summary!(
     _P_conv_tot_us = JuMP.Containers.DenseAxisArray([_P_conv_P_tot_us[u, t] - _P_conv_N_tot_us[u, t] for u in user_set, t in time_set], user_set, time_set)  # Total converters dispatch
     _P_conv_us = JuMP.Containers.SparseAxisArray(Dict((u, c, t) => _P_conv_P_us[u, c, t] - _P_conv_N_us[u, c, t]  for u in user_set for c in asset_names(users_data[u])  if asset_type(users_data[u], c) == CONV for t in time_set))  # converter dispatch
     _P_ren_us = ECModel.results[:P_ren_us]  # Dispath of renewable assets
-    _P_gen_P_us = ECModel.results[:P_gen_P_us] # Thermal generators dispatch 
-    _P_gen_P_tot_us = JuMP.Containers.DenseAxisArray([sum(Float64[_P_gen_P_us[u, g, t] for g in asset_names(users_data[u])  if asset_type(users_data[u], g) == THER]) for u in user_set, t in time_set], user_set, time_set)  # Total converters dispatch when supplying to the grid
+    _P_gen_us = ECModel.results[:P_gen_P_us] # Thermal generators dispatch 
+    _P_gen_tot_us = JuMP.Containers.DenseAxisArray([sum(Float64[_P_gen_P_us[u, g, t] for g in asset_names(users_data[u])  if asset_type(users_data[u], g) == THER]) for u in user_set, t in time_set], user_set, time_set)  # Total converters dispatch when supplying to the grid
     _P_max_us = ECModel.results[:P_max_us]  # Maximum dispatch of the user for every peak period
     _P_tot_P_us = ECModel.results[:P_P_us]  # Total dispatch of the user, positive when supplying to public grid
     _P_tot_N_us = ECModel.results[:P_N_us]  # Total dispatch of the user, positive when absorbing from public grid

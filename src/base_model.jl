@@ -145,7 +145,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     @expression(model_user, C_OEM_us[u in user_set, a in device_names(users_data[u])],
         x_us[u,a]*field_component(users_data[u], a, "OEM_lin")  # Capacity of the asset times specific operating costs
-    )  # Maintenance cost by asset exluding thermal generation
+    )  # Maintenance cost by user and asset
 
     # Maintenance cost by asset
     @expression(model_user, C_OEM_tot_us[u in user_set],

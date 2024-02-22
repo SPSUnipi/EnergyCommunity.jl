@@ -103,7 +103,7 @@ device_names(d) = asset_names(d, DEVICES)
 generator_names(d) = asset_names(d, GENS)
 
 "Function to check whether an user has any asset"
-has_any_asset(d) = !isempty(device_names(d))
+has_any_asset(d, a_types::Vector{ASSET_TYPE}=DEVICES) = !isempty(asset_names(d, a_types))
 
 "Function to check whether an user has an asset type"
 has_asset(d, atype::ASSET_TYPE) = !isempty(asset_names(d, atype))
