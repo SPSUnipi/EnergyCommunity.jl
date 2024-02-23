@@ -68,16 +68,20 @@ users:  # list of users and the corresponding assets
       profile:
         load: load_user1
     
-    # generator:  # component thermal
-    #   type: thermal
-    #   fuel_price: 1.6  # fuel price
-    #   inter_map: 0.2  # intercept of the fuel consumption map
-    #   slope_map: 0.3  # slope of the fuel consumption map
-    #   min_technical: 0.1  # [-] minimum technical working point of the generator
-    #   max_technical: 1.0  # [-] maximum technical working point of the generator
-    #   max_capacity: 10  # [kW] maximum capacity to install
-    #   type_install: integer  # [integer/continuous] whether the installation is continuous or integer
-    #   nom_capacity: 10  # [kW] nominal capacity of the generator
+    generator:  # component thermal
+      type: thermal
+      CAPEX_lin: 2000  # [€/kW] specific investment cost of the component
+      OEM_lin: 0.0  # [€/kW/y] specific O&M cost
+      OEM_com: 0.02 # [€/kW/y] specific O&M cost arising from commitment
+      fuel_price: 0.018  # fuel price
+      lifetime_y: 10  # [y] lifetime of the component
+      inter_map: 0.54  # intercept of the fuel consumption map
+      slope_map: 3.7  # slope of the fuel consumption map
+      min_technical: 0.2  # [-] minimum technical working point of the generator
+      max_technical: 1.0  # [-] maximum technical working point of the generator
+      max_capacity: 0  # [kW] maximum capacity to install
+      modularity: true  # [integer/continuous] whether the installation is continuous or integer
+      nom_capacity: 10  # [kW] nominal capacity of the generator
 
   user2:  # name of the user
     # list of components
