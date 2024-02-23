@@ -32,6 +32,9 @@ build_model!(CO_Model)
 # Optimize the model
 optimize!(CO_Model)
 
+# get objective value
+objective_value(CO_Model)
+
 # Create plots of the results
 plot(CO_Model, output_plot_isolated)
 

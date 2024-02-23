@@ -32,6 +32,9 @@ build_model!(NC_Model)
 # Optimize the model
 optimize!(NC_Model)
 
+# get objective value
+objective_value(NC_Model)
+
 # Create plots of the results
 plot(NC_Model, output_plot_isolated)
 

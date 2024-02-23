@@ -32,6 +32,9 @@ build_model!(ANC_Model)
 # Optimize the model
 optimize!(ANC_Model)
 
+# get objective value
+objective_value(ANC_Model)
+
 # Create plots of the results
 plot(ANC_Model, output_plot_isolated)
 
