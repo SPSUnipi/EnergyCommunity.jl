@@ -97,7 +97,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Number of generators plants used by a user in each time step t
     @variable(model_user,
         0 <= z_gen_us[u=user_set, g=asset_names(users_data[u], THER), time_set]
-            <= field_component(users_data[u], g, "max_capacity")/field_component(users_data[u], g, "nom_capacity"), Int)
+            <= field_component(users_data[u], g, "max_capacity")/field_component(users_data[u], g, "nom_capacity"))
     # Maximum dispatch of the user for every peak period
     @variable(model_user,
         0 <= P_max_us[u=user_set, w in peak_set]
@@ -122,6 +122,11 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 set_integer(n_us[u,a])
                 # It should be always true that if the component has a modularity, then a nominal capacity should be available
                 set_upper_bound(n_us[u,a], field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"))
+
+                # For thermal units, set z_gen_us as integer
+                if asset_type(users_data[u], a) == THER
+                    set_integer.(z_gen_us[u,a,:])
+                end
             end
         end
     end
@@ -145,6 +150,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     @expression(model_user, C_OEM_us[u in user_set, a in device_names(users_data[u])],
         x_us[u,a]*field_component(users_data[u], a, "OEM_lin")  # Capacity of the asset times specific operating costs
+        + (  # Add OEM of thermal generators
+            asset_type(users_data[u], a) == THER
+            ? sum(
+                profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * z_gen_us[u,a,t]
+                for t in time_set
+            ) * field_component(users_data[u], a, "nom_capacity") * field_component(users_data[u], a, "OEM_com")
+            : 0.0
+        )
     )  # Maintenance cost by user and asset
 
     # Maintenance cost by asset
@@ -205,10 +218,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # Costs arising from the use of fuel-fired generators by users and asset
     @expression(model_user, C_gen_us[u in user_set, g=asset_names(users_data[u], THER), t in time_set],
-        profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *(
-            z_gen_us[u,g,t] * field_component(users_data[u], g, "nom_capacity") 
-            * (field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "inter_map") + field_component(users_data[u], g, "OEM_com"))
-            + field_component(users_data[u], g, "fuel_price") * field_component(users_data[u], g, "slope_map") * P_gen_us[u,g,t])
+        profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] *
+        (
+            z_gen_us[u,g,t] * field_component(users_data[u], g, "nom_capacity") *
+                field_component(users_data[u], g, "fuel_price") *
+                field_component(users_data[u], g, "inter_map")
+            + P_gen_us[u,g,t] * field_component(users_data[u], g, "fuel_price") * 
+                field_component(users_data[u], g, "slope_map")
+            )
     )
 
     # Energy revenues by user by asset
@@ -237,15 +254,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         sum(
             Cash_flow_us[y, u] / ((1 + field(gen_data, "d_rate"))^y)
         for y in year_set_0)
-        # sum(
-        #     (R_Energy_tot_us[u] # Costs related to the energy trading with the market
-        #     - C_Peak_tot_us[u]  # Peak cost
-        #     - C_OEM_tot_us[u]  # Maintenance cost
-        #     - C_REP_tot_us[y, u]  # Replacement costs
-        #     + R_RV_tot_us[y, u]  # Residual value
-        #     ) / ((1 + field(gen_data, "d_rate"))^y)
-        #     for y in year_set)
-        # - CAPEX_tot_us[u]  # Investment costs
     )
 
     # Power flow by user POD
@@ -321,13 +329,13 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Set the electrical balance at the user system
     @constraint(model_user,
         con_us_balance[u in user_set, t in time_set],
-        P_P_us[u, t] - P_N_us[u, t]
-        - sum(P_gen_us[u, g, t] for g in asset_names(users_data[u], THER))
+        P_N_us[u, t] - P_P_us[u, t]
+        + sum(P_gen_us[u, g, t] for g in asset_names(users_data[u], THER))
         + sum(GenericAffExpr{Float64,VariableRef}[
-            P_conv_N_us[u, c, t] - P_conv_P_us[u, c, t] for c in asset_names(users_data[u], CONV)])
-        - P_ren_us[u, t]
+            P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t] for c in asset_names(users_data[u], CONV)])
+        + P_ren_us[u, t]
         ==
-        - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+        sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
     )
 
     # Set the balance at each battery system
