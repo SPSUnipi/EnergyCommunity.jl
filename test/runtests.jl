@@ -8,9 +8,11 @@ ENV["GKSwstype"]="nul"
 const MOI = MathOptInterface
 
 # EC groups to test
-EC_GROUPS = [EnergyCommunity.GroupCO(), EnergyCommunity.GroupNC(), EnergyCommunity.GroupANC()]
+EC_GROUPS = [GroupCO(), GroupNC(), GroupANC()]
 
-OPTIMIZER = HiGHS.Optimizer
+OPTIMIZER = optimizer_with_attributes(
+    HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6, "mip_rel_gap"=>1e-3
+)
 ATOL = 1.
 RTOL = 1e-3
 
@@ -28,7 +30,6 @@ include("tests.jl")
     for (name, input_file) in input_tests
 
         @testset "Input file: $name" begin
-
             # Loop over group types
             for group in EC_GROUPS
 
@@ -37,13 +38,9 @@ include("tests.jl")
                 @testset "Group $(string(group))" begin
                     _base_test(full_test_name, input_file, group, OPTIMIZER)
                 end
-
             end
-
         end
-
     end
-
 end
 
 @testset "TheoryOfGames.jl interaction" begin
