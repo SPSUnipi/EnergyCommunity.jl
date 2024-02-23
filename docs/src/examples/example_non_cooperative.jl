@@ -22,9 +22,11 @@ input_file = joinpath(@__DIR__, "../../../data/energy_community_model.yml");
 output_file_isolated = joinpath(@__DIR__, "../results/output_file_NC.xlsx");
 output_plot_isolated = joinpath(@__DIR__, "../results/Img/plot_user_{:s}_NC.png");
 
+# define optimizer and options
+optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6)
 
 # Define the Non Cooperative model
-NC_Model = ModelEC(input_file, EnergyCommunity.GroupNC(), HiGHS.Optimizer)
+NC_Model = ModelEC(input_file, EnergyCommunity.GroupNC(), optimizer)
 
 # Build the mathematical model
 build_model!(NC_Model)
