@@ -79,7 +79,7 @@ users:  # list of users and the corresponding assets
       slope_map: 3.7  # slope of the fuel consumption map
       min_technical: 0.2  # [-] minimum technical working point of the generator
       max_technical: 1.0  # [-] maximum technical working point of the generator
-      max_capacity: 0  # [kW] maximum capacity to install
+      max_capacity: 30  # [kW] maximum capacity to install
       modularity: true  # [integer/continuous] whether the installation is continuous or integer
       nom_capacity: 10  # [kW] nominal capacity of the generator
 
