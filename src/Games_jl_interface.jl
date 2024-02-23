@@ -292,7 +292,7 @@ function build_least_profitable!(
     )
     
     # list of variables to modify
-    list_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :P_P_us, :P_N_us, :x_us]
+    list_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :P_P_us, :P_N_us, :n_us, :z_gen_us]
     # list of constraints to modify
     list_cons = [:con_us_balance]
     # list of expressions to modify
@@ -372,12 +372,18 @@ function build_least_profitable!(
 
     # set constraint to set variables to zero when user not selected
     for var in list_vars
-        build_nullify_var_by_binary!(ECModel.model, ECModel.model[var], coalition_status)
+        if !isempty(ECModel.model[var])
+            # ignore empty variables
+            build_nullify_var_by_binary!(ECModel.model, ECModel.model[var], coalition_status)
+        end
     end
 
     # change constraint for non-zero equality constraints
     for con in list_cons
-        build_nullify_con_by_binary!(ECModel.model[con], coalition_status)
+        if !isempty(ECModel.model[con])
+            # ignore empty constraints
+            build_nullify_con_by_binary!(ECModel.model[con], coalition_status)
+        end
     end
 
     # change expressions constantss
@@ -535,7 +541,7 @@ function get_annotations(ECModel::AbstractEC)
     ]
 
     # variables by users: one subproblem for every user
-    list_user_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :x_us]
+    list_user_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :n_us, :z_gen_us]
     for (u_id, u_name) in enumerate(get_user_set(ECModel))
         variable_annotations[u_id] = vcat([
             get_subproblem_vars_by_user(ECModel.model[var], u_name) for var in list_user_vars
@@ -547,7 +553,7 @@ function get_annotations(ECModel::AbstractEC)
 
     # # Lower problem: all the rest
     # list_sub_vars = [
-    #     :P_P_us, :P_N_us, :P_agg, :P_shared_agg, :E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :x_us
+    #     :P_P_us, :P_N_us, :P_agg, :P_shared_agg, :E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :n_us, :z_gen_us
     # ]
     # variable_annotations[1] = [
     #     ECModel.model[:NPV_agg];  # obj value of the coalition
