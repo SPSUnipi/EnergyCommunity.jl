@@ -1131,7 +1131,7 @@ function business_plan_plot(
             "CAPEX" => [(-1, :CAPEX)],
             "Repl. and Recovery" => [(-1, :REP), (+1, :RV)],
             "OEM" => [(-1, :OEM), (-1, :PEAK)],
-            "C_gen" => [(-1, :C_GEN)],
+            "Fuel" => [(-1, :C_GEN)],
             "Energy expences" => [(-1, :EN_CONS), (+1, :EN_SELL)],
             "Reward" => [(+1, :REWARD)],
         )
