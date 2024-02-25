@@ -1,4 +1,4 @@
-function _base_test(input_file, group, optimizer)
+function _base_test(full_test_name, input_file, group, optimizer)
 
     ## Parameters
 
@@ -36,12 +36,15 @@ function _base_test(input_file, group, optimizer)
     grid_shares_EC = calculate_grid_import(ECModel)
     energy_shares_EC = calculate_production_shares(ECModel)
     
-    @test_reference "refs/sankeys/group_$(string(group)).png" plot_sankey(ECModel)
+    @test_reference "refs/sankeys/$(string(group))/$(full_test_name).png" plot_sankey(ECModel)
 
-    @test_reference "refs/business_plan_plot/group_$(string(group)).png" business_plan_plot(ECModel)
+    @test_reference "refs/business_plan_plot/$(string(group))/$(full_test_name).png" business_plan_plot(ECModel)
 end
 
-function _utility_callback_test(input_file, optimizer, group_type; atol=ATOL, rtol=RTOL, kwargs...)
+function _utility_callback_test(
+    full_test_name, input_file, optimizer, group_type;
+    atol=ATOL, rtol=RTOL, kwargs...
+    )
 
     ## Initialization
     ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
@@ -61,7 +64,8 @@ function _utility_callback_test(input_file, optimizer, group_type; atol=ATOL, rt
     path_solution = (
         string(@__DIR__) * 
         "/refs/utility_callback/" * 
-        string(group_type) * "__" * join([string(p.first) * "-" * string(p.second) for p in kwargs], "_") * ".yml"
+        string(group_type) * "/" * 
+        full_test_name * ".yml"
     )
     
     if isfile(path_solution)
@@ -82,7 +86,10 @@ function _utility_callback_test(input_file, optimizer, group_type; atol=ATOL, rt
 
 end
 
-function _least_profitable_callback_test(input_file, optimizer, base_group; atol=ATOL, rtol=RTOL, no_aggregator_group=GroupNC())
+function _least_profitable_callback_test(
+    full_test_name, input_file, optimizer, base_group;
+    atol=ATOL, rtol=RTOL, no_aggregator_group=GroupNC()
+    )
 
     ## Initialization
     ## Model CO
@@ -114,8 +121,8 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; atol
     path_solution = (
         string(@__DIR__) * 
         "/refs/least_profitable_coalition/" * 
-        string(base_group) * "/" 
-        * string(no_aggregator_group) * ".yml"
+        string(base_group) * "/" *
+        full_test_name * ".yml"
     )
     
     if isfile(path_solution)
@@ -142,7 +149,9 @@ function _least_profitable_callback_test(input_file, optimizer, base_group; atol
 
 end
 
-function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, distribution_function, optimizer; atol=ATOL, rtol=RTOL, kwargs...)
+function _profit_distribution_Games_jl_test(
+    full_test_name, input_file, games_mode, group_type, distribution_function, optimizer;
+    atol=ATOL, rtol=RTOL, kwargs...)
 
     ## Initialization
     ## Model CO
@@ -155,9 +164,10 @@ function _profit_distribution_Games_jl_test(input_file, games_mode, group_type, 
     path_solution = (
         string(@__DIR__) * 
         "/refs/games/" * 
-        string(distribution_function) * "/" 
-        * string(games_mode) * "/"
-        * string(group_type) * "__" * join([string(p.first) * "-" * string(p.second) for p in kwargs], "_") * ".yml"
+        string(games_mode) * "/" *
+        string(distribution_function) * "/" *
+        string(group_type) * "/" *
+        full_test_name * ".yml"
     )
     
     if isfile(path_solution)

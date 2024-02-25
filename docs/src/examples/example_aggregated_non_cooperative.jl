@@ -19,18 +19,23 @@ using HiGHS, Plots
 input_file = joinpath(@__DIR__, "../../../data/energy_community_model.yml");
 
 # Output path of the summary and of the plots
-output_file_isolated = joinpath(@__DIR__, "../results/output_file_NC.xlsx");
-output_plot_isolated = joinpath(@__DIR__, "../results/Img/plot_user_{:s}_NC.png");
+output_file_isolated = joinpath(@__DIR__, "../results/output_file_ANC.xlsx");
+output_plot_isolated = joinpath(@__DIR__, "../results/Img/plot_user_{:s}_ANC.png");
 
+# define optimizer and options
+optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6)
 
 # Define the Non Cooperative model
-ANC_Model = ModelEC(input_file, EnergyCommunity.GroupANC(), HiGHS.Optimizer)
+ANC_Model = ModelEC(input_file, EnergyCommunity.GroupANC(), optimizer)
 
 # Build the mathematical model
 build_model!(ANC_Model)
 
 # Optimize the model
 optimize!(ANC_Model)
+
+# get objective value
+objective_value(ANC_Model)
 
 # Create plots of the results
 plot(ANC_Model, output_plot_isolated)

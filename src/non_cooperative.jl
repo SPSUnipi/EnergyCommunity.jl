@@ -108,8 +108,10 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
     printfmtln(printf_code_user, "OPEX [k€]",
         [sum(results[:C_OEM_tot_us][u]/1000)
             for u in user_set]...)  # print CAPEX by user
-            printfmtln(printf_code_user, "YBill [k€]", results[:yearly_rev]/1000...)  # print yearly bill by user
-
+    printfmtln(printf_code_user, "YBill [k€]", results[:yearly_rev]/1000...)  # print yearly bill by user
+    printfmtln(printf_code_user, "Cthermal [k€]", 
+            [sum( !has_asset(users_data[u], THER) ? 0.0 : results[:C_gen_tot_us][u]/1000)
+                for u in user_set]...)  # print costs of thermal generators
     printfmtln("\n\nEnergy flows")
     printfmtln(printf_code_description, "USER", [u for u in user_set]...)
     printfmtln(printf_code_user, "PtotPusP [MWh]",
@@ -126,6 +128,10 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
             ]) for u in user_set]/1000...)  # Total power loaded by converters by user
     printfmtln(printf_code_user, "Pren [MWh]",
         [sum(results[:P_ren_us][u,:]) for u in user_set]/1000...)  # Total power supplied by renewables by each user
+    printfmtln(printf_code_user, "Pgen [MWh]",
+        [sum(Float64[results[:P_gen_us][u, g, t] 
+                for g in asset_names(users_data[u], THER) for t in time_set
+            ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
         [sum(
             Float64[profile_component(users_data[u], l, "load")[t]
@@ -186,6 +192,10 @@ function Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::Ab
                 for c in asset_names(users_data[u_name], CONV)]) for t in time_set],
             label="Converters", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, results[:P_ren_us][u_name, :].data, label="Renewables", w=line_width)
+        plot!(pt[u_i, 1], time_set_plot, [
+            sum(Float64[results[:P_gen_us][u_name, g, t] 
+                for g in asset_names(users_data[u_name], THER)]) for t in time_set],
+            label="Thermal", w=line_width)
         xaxis!("Time step [#]")
         yaxis!("Power [kW]")
         # ylims!(lims_y_axis_dispatch[u])
@@ -314,6 +324,8 @@ function add_users_economics_summary!(
     _P_conv_tot_us = JuMP.Containers.DenseAxisArray([_P_conv_P_tot_us[u, t] - _P_conv_N_tot_us[u, t] for u in user_set, t in time_set], user_set, time_set)  # Total converters dispatch
     _P_conv_us = JuMP.Containers.SparseAxisArray(Dict((u, c, t) => _P_conv_P_us[u, c, t] - _P_conv_N_us[u, c, t]  for u in user_set for c in asset_names(users_data[u])  if asset_type(users_data[u], c) == CONV for t in time_set))  # converter dispatch
     _P_ren_us = ECModel.results[:P_ren_us]  # Dispath of renewable assets
+    _P_gen_us = ECModel.results[:P_gen_us] # Thermal generators dispatch 
+    _P_gen_tot_us = JuMP.Containers.DenseAxisArray([sum(Float64[_P_gen_us[u, g, t] for g in asset_names(users_data[u])  if asset_type(users_data[u], g) == THER]) for u in user_set, t in time_set], user_set, time_set)  # Total converters dispatch when supplying to the grid
     _P_max_us = ECModel.results[:P_max_us]  # Maximum dispatch of the user for every peak period
     _P_tot_P_us = ECModel.results[:P_P_us]  # Total dispatch of the user, positive when supplying to public grid
     _P_tot_N_us = ECModel.results[:P_N_us]  # Total dispatch of the user, positive when absorbing from public grid
@@ -333,6 +345,7 @@ function add_users_economics_summary!(
     _C_Peak_tot_us = ECModel.results[:C_Peak_tot_us]  # Peak tariff cost by user
     _R_Energy_us = ECModel.results[:R_Energy_us]  # Energy revenues by user and time
     _R_Energy_tot_us = ECModel.results[:R_Energy_tot_us]  # Energy revenues by user
+    _C_gen_tot_us = ECModel.results[:C_gen_tot_us]  # Generators cost
 
     economics_users = DataFrames.DataFrame(
         vcat(
@@ -340,6 +353,7 @@ function add_users_economics_summary!(
             [[_NPV_us[u] for u in user_set]],
             [_CAPEX_tot_us[:].data],
             [_yearly_rev[:].data],
+            [_C_gen_tot_us[:].data],
             [[sum(1 / (1 + field(gen_data, "d_rate"))^y for y in year_set) * _C_OEM_tot_us[u] for u in user_set]],
             [[sum(_C_REP_tot_us[y, u] / (1 + field(gen_data, "d_rate"))^y for y in year_set) for u in user_set]],
             [[_R_RV_tot_us[project_lifetime, u] / (1 + field(gen_data, "d_rate"))^project_lifetime for u in user_set]],
@@ -350,7 +364,7 @@ function add_users_economics_summary!(
             [[if (a in device_names(users_data[u])) _C_OEM_us[u, a] else missing end for u in user_set]
                 for a in asset_set_unique]
         ),
-            map(Symbol, vcat("User_id", "NPV_us", "CAPEX_tot_us", "yearly_rev",
+            map(Symbol, vcat("User_id", "NPV_us", "CAPEX_tot_us", "yearly_rev", "C_gen_tot_us",
                 "SDCF C_OEM_tot_us", "SDCF C_REP_tot_us", "SDCF R_RV_tot_us",
                 "SDCF C_Peak_tot_us", "SDCF R_Energy_tot_us",
                 ["CAPEX_us_$a" for a in asset_set_unique], ["C_OEM_us_$a" for a in asset_set_unique]))
