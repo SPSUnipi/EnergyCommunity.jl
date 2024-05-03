@@ -12,6 +12,9 @@ A simple optimization of the model can be performed with
 using EnergyCommunity, JuMP
 using HiGHS, Plots
 
+# create a sample Energy Community model input files in folder "data"
+create_example_data("data")
+
 # define input configuration (available in the package)
 input_file = "./data/energy_community_model.yml"
 
