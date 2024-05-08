@@ -14,13 +14,16 @@
 using EnergyCommunity, JuMP
 using HiGHS, Plots
 
+# Create a base Energy Community example in the data folder; use the default configuration.
+folder = joinpath(@__DIR__, "data")
+create_example_data(folder, config_name="default")
 
 # Input file to load the structure of the energy community based on a yaml file.
-input_file = joinpath(@__DIR__, "../../../data/energy_community_model.yml");
+input_file = joinpath(@__DIR__, "data/energy_community_model.yml");
 
 # Output path of the summary and of the plots
-output_file_isolated = joinpath(@__DIR__, "../results/output_file_NC.xlsx");
-output_plot_isolated = joinpath(@__DIR__, "../results/Img/plot_user_{:s}_NC.png");
+output_file_isolated = joinpath(@__DIR__, "./results/output_file_NC.xlsx");
+output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_NC.png");
 
 # define optimizer and options
 optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6)

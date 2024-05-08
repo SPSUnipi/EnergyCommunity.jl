@@ -5,19 +5,23 @@
 using EnergyCommunity, JuMP
 using HiGHS, Plots
 
+## Create basic example for the Energy Community in the data folder
+
+folder = "data"
+create_example_data(folder, config_name="default")
 
 ## Parameters
 
-input_file = joinpath(@__DIR__, "../data/energy_community_model.yml")  # Input file
+input_file = "$folder/energy_community_model.yml"  # Input file
 
-output_file_isolated = joinpath(@__DIR__, "../results/output_file_NC.xlsx")  # Output file - model users alone
-output_plot_isolated = joinpath(@__DIR__, "../results/Img/plot_user_{:s}_NC.png")  # Output png file of plot - model users alone
+output_file_isolated = "outputs/output_file_NC.xlsx"  # Output file - model users alone
+output_plot_isolated = "outputs/Img/plot_user_{:s}_NC.png"  # Output png file of plot - model users alone
 
-output_file_combined = joinpath(@__DIR__, "../results/output_file_EC.xlsx")  # Output file - model Energy community
-output_plot_combined = joinpath(@__DIR__, "../results/Img/plot_user_{:s}_EC.pdf")  # Output png file of plot - model energy community
+output_file_combined = "outputs/output_file_EC.xlsx"  # Output file - model Energy community
+output_plot_combined = "outputs/Img/plot_user_{:s}_EC.pdf"  # Output png file of plot - model energy community
 
-output_plot_sankey_agg = joinpath(@__DIR__, "../results/Img/sankey_EC.png")  # Output plot of the sankey plot related to the aggregator case
-output_plot_sankey_noagg = joinpath(@__DIR__, "../results/Img/sankey_NC.png")  # Output plot of the sankey plot related to the no aggregator case
+output_plot_sankey_agg = "outputs/Img/sankey_EC.png"  # Output plot of the sankey plot related to the aggregator case
+output_plot_sankey_noagg = "outputs/Img/sankey_NC.png"  # Output plot of the sankey plot related to the no aggregator case
 
 
 ## Model CO
