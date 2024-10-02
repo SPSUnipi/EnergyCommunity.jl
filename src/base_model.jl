@@ -74,6 +74,11 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     ## Variable definition
     
+    # Definition of variables for the Energy Community load
+    @variable(model_user, P_shf[j in user_set, t in time_set] >= 0)
+    @variable(model_user, P_adj[j in user_set, t in time_set] >= 0)
+    @variable(model_user, P_fix[j in user_set, t in time_set] >= 0)
+                
     # Energy stored in the battery
     @variable(model_user, 
         0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], BATT), t=time_set] 
@@ -138,6 +143,11 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     ## Expressions
+
+    # New equations for overall load of the system
+    @expression(model_user, P_L[j in user_set, t in time_set],
+    P_shf[j,t] + P_adj[j,t] + P_fix[j,t]
+    )
 
     # CAPEX by user and asset
     @expression(model_user, CAPEX_us[u in user_set, a in device_names(users_data[u])],
