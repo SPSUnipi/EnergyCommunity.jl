@@ -134,6 +134,7 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
             ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
         [sum(
+            #TO BE MODIFIED
             Float64[profile_component(users_data[u], l, "load")[t]
                 for t in time_set for l in asset_names(users_data[u], LOAD)]
         ) for u in user_set]/1000...)  # Total load by user
