@@ -79,7 +79,33 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user, P_shf[u in user_set, t in time_set] >= 0)
     @variable(model_user, P_adj[u in user_set, t in time_set] >= 0)
     @variable(model_user, P_fix[u in user_set, t in time_set] >= 0)
-                
+
+    # Define variables for P_adj+ (withdrawl and P_adj- (injection) for each user
+    #TO BE COMPLETED: D adj is the set of appliances that can be adjusted
+    @variable(model_user, P_adj_plus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    @variable(model_user, P_adj_minus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    # Maximum power levels for adjustable loads
+    @variable(model_user, P_max_adj_plus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    @variable(model_user, P_max_adj_minus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    # Define variables for energy stored in adjustable appliances
+    #TO BE COMPLETED: D adj is the set of appliances that can be adjusted
+    @variable(model_user, field_component(users_data[u], e, "max_capacity") => E_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    
+    #TO BE COMPLETED: Define efficiency η for each adjustable appliance
+    @variable(model_user, η[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    #TO BE COMPLETED: Define energy variation ED for each adjustable appliance
+    @variable(model_user, ED[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    #TO BE COMPLETED: Define variables for energy stored in adjustable appliances
+    @variable(model_user, E_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    # Definire le variabili per l'energia massima e minima immagazzinata negli apparecchi regolabili
+    @variable(model_user, E_max_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    @variable(model_user, E_min_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
     # Energy stored in the battery
     @variable(model_user, 
         0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], BATT), t=time_set] 
@@ -149,10 +175,23 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)]
     )
 
-    # New equations for overall load of the system
+    # Equations for overall load of the system
     @expression(model_user, P_L[u in user_set, t in time_set],
     P_shf[u,t] + P_adj[u,t] + P_fix[u,t]
     )
+
+    # Expression for total adjustable energy
+    @expression(model_user, P_adj[u in user_set, t in time_set],
+    sum(P_adj_plus[u,e,t] - P_adj_minus[u,e,t] for e in Dadj[u])
+    )
+
+    # Expression for energy stored in adjustable appliances
+    @expression(model_user, E_adj[u in user_set, e in Dadj[u], t in 2:T],
+    E_adj[u, e, t-1] - P_adj_minus[u, e, t]/ sqrt(η[u, e, t]) + P_adj_plus[u, e, t] / sqrt(η[u, e, t]) + ED[u, e, t]
+    )
+
+    # Aggiungere le equazioni per i limiti massimi e minimi dell'energia immagazzinata
+    @expression(model_user, [u in user_set, e in Dadj[u], t in time_set], E_min_adj[u, e, t] <= E_adj[u, e, t] <= E_max_adj[u, e, t])
 
     # CAPEX by user and asset
     @expression(model_user, CAPEX_us[u in user_set, a in device_names(users_data[u])],
