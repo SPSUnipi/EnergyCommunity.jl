@@ -52,14 +52,15 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
             + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
                 for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
+            - sum(P_L[u,t])  # Minimum demand
         ) * TOL_BOUNDS
     )
 
     # Overestimation of the power exchanged by each POD when buying from the external market bu each user
     @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
         max(0,
-            sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+            # Old version "Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)]"
+            sum(P_L[u,t])
                 # Maximum demand
             + sum(Float64[field_component(users_data[u], c, "max_capacity") 
                 for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
@@ -74,6 +75,37 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     ## Variable definition
     
+    # Definition of variables for the Energy Community load
+    @variable(model_user, P_shf[u in user_set, t in time_set] >= 0)
+    @variable(model_user, P_adj[u in user_set, t in time_set] >= 0)
+    @variable(model_user, P_fix[u in user_set, t in time_set] >= 0)
+
+    # Define variables for P_adj+ (withdrawl and P_adj- (injection) for each user
+    #TO BE COMPLETED: D adj is the set of appliances that can be adjusted
+    @variable(model_user, P_adj_plus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    @variable(model_user, P_adj_minus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    # Maximum power levels for adjustable loads
+    @variable(model_user, P_max_adj_plus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    @variable(model_user, P_max_adj_minus[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    # Define variables for energy stored in adjustable appliances
+    #TO BE COMPLETED: D adj is the set of appliances that can be adjusted
+    @variable(model_user, field_component(users_data[u], e, "max_capacity") => E_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    
+    #TO BE COMPLETED: Define efficiency η for each adjustable appliance
+    @variable(model_user, η[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    #TO BE COMPLETED: Define energy variation ED for each adjustable appliance
+    @variable(model_user, ED[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    #TO BE COMPLETED: Define variables for energy stored in adjustable appliances
+    @variable(model_user, E_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
+    # Definire le variabili per l'energia massima e minima immagazzinata negli apparecchi regolabili
+    @variable(model_user, E_max_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+    @variable(model_user, E_min_adj[u in user_set, e in Dadj[u], t in time_set] >= 0)
+
     # Energy stored in the battery
     @variable(model_user, 
         0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], BATT), t=time_set] 
@@ -138,6 +170,28 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     ## Expressions
+    # Definition P_fix using profile_component "load"
+        @expression(model_user, P_fix[u in user_set, t in time_set],
+        Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)]
+    )
+
+    # Equations for overall load of the system
+    @expression(model_user, P_L[u in user_set, t in time_set],
+    P_shf[u,t] + P_adj[u,t] + P_fix[u,t]
+    )
+
+    # Expression for total adjustable energy
+    @expression(model_user, P_adj[u in user_set, t in time_set],
+    sum(P_adj_plus[u,e,t] - P_adj_minus[u,e,t] for e in Dadj[u])
+    )
+
+    # Expression for energy stored in adjustable appliances
+    @expression(model_user, E_adj[u in user_set, e in Dadj[u], t in 2:T],
+    E_adj[u, e, t-1] - P_adj_minus[u, e, t]/ sqrt(η[u, e, t]) + P_adj_plus[u, e, t] / sqrt(η[u, e, t]) + ED[u, e, t]
+    )
+
+    # Aggiungere le equazioni per i limiti massimi e minimi dell'energia immagazzinata
+    @expression(model_user, [u in user_set, e in Dadj[u], t in time_set], E_min_adj[u, e, t] <= E_adj[u, e, t] <= E_max_adj[u, e, t])
 
     # CAPEX by user and asset
     @expression(model_user, CAPEX_us[u in user_set, a in device_names(users_data[u])],
@@ -202,8 +256,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
             - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
-                Float64[profile_component(users_data[u], l, "load")[t]
-                for l in asset_names(users_data[u], LOAD)]))  # economic flow with the market
+                P_L[u,t]))  # economic flow with the market
     )
 
     # Energy revenues by user
@@ -335,7 +388,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t] for c in asset_names(users_data[u], CONV)])
         + P_ren_us[u, t]
         ==
-        sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+        sum(P_L[u, t])
     )
 
     # Set the balance at each battery system
@@ -396,6 +449,7 @@ function calculate_demand(ECModel::AbstractEC)
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     data_load = Float64[sum(sum(
+                #TO BE MODIFIED
                 profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
                 for l in asset_names(users_data[u], LOAD)
             ) for u in user_set]
@@ -674,7 +728,7 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     # self consumption by user only
     shared_cons_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(0.0, 
-                sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
+                sum(P_L[u,t]) 
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set
