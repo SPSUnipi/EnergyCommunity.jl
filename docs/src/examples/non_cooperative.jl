@@ -57,3 +57,12 @@ business_plan(NC_Model)
 
 # plot business plan
 business_plan_plot(NC_Model)
+
+# save the model to a jld2 file
+save("nc_model.jld2", NC_Model)
+
+# read the loaded model from the jld2 file
+NC_Model_loaded = load!("nc_model.jld2", ModelEC())
+
+# get the objective value of the loaded model
+objective_value(NC_Model_loaded)

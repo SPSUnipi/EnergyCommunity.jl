@@ -1,4 +1,4 @@
-# # Cooperative Energy Community
+# # Aggregated Non-Cooperative Energy Community
 # This example is taken from the article _Optimal sizing of energy communities with fair 
 # revenue sharing and exit clauses: Value, role and business model of aggregators and users_
 # by Davide Fioriti et al, [url](https://doi.org/10.1016/j.apenergy.2021.117328) but
@@ -22,38 +22,47 @@ create_example_data(folder, config_name="default")
 input_file = joinpath(@__DIR__, "data/energy_community_model.yml");
 
 # Output path of the summary and of the plots
-output_file_isolated = joinpath(@__DIR__, "./results/output_file_CO.xlsx");
-output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_CO.png");
+output_file_isolated = joinpath(@__DIR__, "./results/output_file_ANC.xlsx");
+output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_ANC.png");
 
 # define optimizer and options
 optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6)
 
 # Define the Non Cooperative model
-CO_Model = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+ANC_Model = ModelEC(input_file, EnergyCommunity.GroupANC(), optimizer)
 
 # Build the mathematical model
-build_model!(CO_Model)
+build_model!(ANC_Model)
 
 # Optimize the model
-optimize!(CO_Model)
+optimize!(ANC_Model)
 
 # get objective value
-objective_value(CO_Model)
+objective_value(ANC_Model)
 
 # Create plots of the results
-plot(CO_Model, output_plot_isolated)
+plot(ANC_Model, output_plot_isolated)
 
 # Print summaries of the results
-print_summary(CO_Model)
+print_summary(ANC_Model)
 
 # Save summaries
-save_summary(CO_Model, output_file_isolated)
+save_summary(ANC_Model, output_file_isolated)
 
 # Plot the sankey plot of resources
-plot_sankey(CO_Model)
+plot_sankey(ANC_Model)
 
 # DataFrame of the business plan
-business_plan(CO_Model)
+business_plan(ANC_Model)
 
 # plot business plan
-business_plan_plot(CO_Model)
+business_plan_plot(ANC_Model)
+
+# save the model to a jld2 file
+save("anc_model.jld2", ANC_Model)
+
+# read the loaded model from the jld2 file
+ANC_Model_loaded = load!("anc_model.jld2", ModelEC())
+
+# get the objective value of the loaded model
+objective_value(ANC_Model)
