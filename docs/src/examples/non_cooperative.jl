@@ -12,7 +12,7 @@
 
 # Import the needed packages
 using EnergyCommunity, JuMP
-using HiGHS, Plots
+using HiGHS, Plots, FileIO
 
 # Create a base Energy Community example in the data folder; use the default configuration.
 folder = joinpath(@__DIR__, "data")

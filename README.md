@@ -21,6 +21,8 @@ julia> import Pkg
 
 julia> Pkg.add("EnergyCommunity")  # EnergyCommunity package
 
+julia> Pkg.add("JuMP")  # The optimization package
+
 julia> Pkg.add("HiGHS")  # Open-source solver to solve the optimization problem
 
 julia> Pkg.add("Plots")  # Plotting package
@@ -32,7 +34,7 @@ After the installation, you can run a simple example as follows:
 
 ```julia
 using EnergyCommunity
-using HiGHS, Plots
+using HiGHS, Plots, JuMP
 
 # create a sample Energy Community model input files in folder "data"
 create_example_data("data")
