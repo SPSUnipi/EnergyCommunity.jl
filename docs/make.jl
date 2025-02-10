@@ -73,10 +73,10 @@ makedocs(
     pages   = [
         "Introduction" => [
             "index.md",
-            "Installation.md"
+            "Installation.md",
             "Examples" => [
-                joinpath("examples", f + ".md") for
-                f in examples
+                joinpath("examples", f + ".md")
+                for f in examples
             ],
         ],
         "API reference" => "API reference.md",
