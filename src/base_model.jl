@@ -73,7 +73,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
 
     ## Variable definition
-    
+
     # Energy stored in the battery
     @variable(model_user, 
         0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], BATT), t=time_set] 
@@ -113,8 +113,23 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Design of assets of the user
     @variable(model_user,
         0 <= n_us[u=user_set, a=device_names(users_data[u])]
-            <= field_component(users_data[u], a, "max_capacity"))
+            <= field_component(users_data[u], a, "max_capacity")[t])
+    # Adjusted positive power for single adjustable appliance by user when supplying to public grid
+    @variable(model_user,
+        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t in time_set]
+            <= profile_component(users_data[u], e, "max_supply")[t])
+    # Adjusted positive power for single adjustable appliance by user when absorbing from public grid
+    @variable(model_user,
+        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t in time_set]
+            <= profile_component(users_data[u], e, "max_withdrawal")[t])
+    # Adjusted energy for single adjustable appliance by user
+    @variable(model_user,
+        profile_component(users_data[u], e, "min_energy")[t] <= 
+            E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t in time_set]
+            <= profile_component(users_data[u], e, "max_energy")[t])
 
+    # TODO, appliance_set is not defined
+    
     # Set integer capacity
     for u in user_set
         for a in device_names(users_data[u])
