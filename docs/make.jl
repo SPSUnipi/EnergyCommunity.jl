@@ -54,6 +54,12 @@ end
 
 literate_directory(_EXAMPLE_DIR)
 
+examples = [
+    "non_cooperative",
+    "aggregated_non_cooperative",
+    "cooperative",
+]
+
 makedocs(
     modules = [EnergyCommunity],
     doctest  = false,
@@ -65,10 +71,13 @@ makedocs(
     sitename = "EnergyCommunity.jl",
     authors  = "Davide Fioriti",
     pages   = [
-        "Home" => "index.md",
-        "Examples" => [
-            joinpath("examples", f) for
-            f in readdir(_EXAMPLE_DIR) if endswith(f, ".md")
+        "Introduction" => [
+            "index.md",
+            "installation.md",
+            "Examples" => [
+                joinpath("examples", f * ".md")
+                for f in examples
+            ],
         ],
         "API reference" => "API reference.md",
     ]

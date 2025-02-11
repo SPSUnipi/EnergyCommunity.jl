@@ -5,12 +5,36 @@
 # EnergyCommunity.jl
 Optimization of Energy Communities becomes easy with EnergyCommunity.jl!
 
-A simple optimization of the model can be performed with
+The package allows to describe any Energy Community using a readable configuration file using yaml format and a simple execution.
+EnergyCommunity.jl then creates a mathematical optimization model using [JuMP.jl](https://jump.dev/JuMP.jl/stable/) and solves it using any optimization solver compatible with JuMP.jl. The JuMP mathematical model is also editable and customized.
 
+See the following example to understand how to use the package.
+
+## Example
+
+The following example describes how to install and execute a simple Energy Community model.
+
+### Installation
 
 ```julia
-using EnergyCommunity, JuMP
-using HiGHS, Plots
+julia> import Pkg
+
+julia> Pkg.add("EnergyCommunity")  # EnergyCommunity package
+
+julia> Pkg.add("JuMP")  # The optimization package
+
+julia> Pkg.add("HiGHS")  # Open-source solver to solve the optimization problem
+
+julia> Pkg.add("Plots")  # Plotting package
+```
+
+### Execution
+
+After the installation, you can run a simple example as follows:
+
+```julia
+using EnergyCommunity
+using HiGHS, Plots, JuMP
 
 # create a sample Energy Community model input files in folder "data"
 create_example_data("data")

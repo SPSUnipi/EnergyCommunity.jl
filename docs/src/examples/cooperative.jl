@@ -1,4 +1,4 @@
-# # Aggregated Non-Cooperative Energy Community
+# # Cooperative Energy Community
 # This example is taken from the article _Optimal sizing of energy communities with fair 
 # revenue sharing and exit clauses: Value, role and business model of aggregators and users_
 # by Davide Fioriti et al, [url](https://doi.org/10.1016/j.apenergy.2021.117328) but
@@ -12,7 +12,7 @@
 
 # Import the needed packages
 using EnergyCommunity, JuMP
-using HiGHS, Plots
+using HiGHS, Plots, FileIO
 
 # Create a base Energy Community example in the data folder; use the default configuration.
 folder = joinpath(@__DIR__, "data")
@@ -22,38 +22,47 @@ create_example_data(folder, config_name="default")
 input_file = joinpath(@__DIR__, "data/energy_community_model.yml");
 
 # Output path of the summary and of the plots
-output_file_isolated = joinpath(@__DIR__, "./results/output_file_ANC.xlsx");
-output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_ANC.png");
+output_file_isolated = joinpath(@__DIR__, "./results/output_file_CO.xlsx");
+output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_CO.png");
 
 # define optimizer and options
 optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6)
 
 # Define the Non Cooperative model
-ANC_Model = ModelEC(input_file, EnergyCommunity.GroupANC(), optimizer)
+CO_Model = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
 
 # Build the mathematical model
-build_model!(ANC_Model)
+build_model!(CO_Model)
 
 # Optimize the model
-optimize!(ANC_Model)
+optimize!(CO_Model)
 
 # get objective value
-objective_value(ANC_Model)
+objective_value(CO_Model)
 
 # Create plots of the results
-plot(ANC_Model, output_plot_isolated)
+plot(CO_Model, output_plot_isolated)
 
 # Print summaries of the results
-print_summary(ANC_Model)
+print_summary(CO_Model)
 
 # Save summaries
-save_summary(ANC_Model, output_file_isolated)
+save_summary(CO_Model, output_file_isolated)
 
 # Plot the sankey plot of resources
-plot_sankey(ANC_Model)
+plot_sankey(CO_Model)
 
 # DataFrame of the business plan
-business_plan(ANC_Model)
+business_plan(CO_Model)
 
 # plot business plan
-business_plan_plot(ANC_Model)
+business_plan_plot(CO_Model)
+
+# save the model to a jld2 file
+save("co_model.jld2", CO_Model)
+
+# read the loaded model from the jld2 file
+CO_Model_loaded = load!("co_model.jld2", ModelEC())
+
+# get the objective value of the loaded model
+objective_value(CO_Model_loaded)

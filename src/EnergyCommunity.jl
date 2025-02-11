@@ -1,7 +1,7 @@
 module EnergyCommunity
 
     using ExportAll
-    using Formatting
+    using Format
     using JuMP
     using Plots
     using DataFrames

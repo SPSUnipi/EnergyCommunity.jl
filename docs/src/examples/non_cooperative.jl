@@ -1,4 +1,4 @@
-# # Cooperative Energy Community
+# # Non Cooperative Energy Community
 # This example is taken from the article _Optimal sizing of energy communities with fair 
 # revenue sharing and exit clauses: Value, role and business model of aggregators and users_
 # by Davide Fioriti et al, [url](https://doi.org/10.1016/j.apenergy.2021.117328) but
@@ -12,7 +12,7 @@
 
 # Import the needed packages
 using EnergyCommunity, JuMP
-using HiGHS, Plots
+using HiGHS, Plots, FileIO
 
 # Create a base Energy Community example in the data folder; use the default configuration.
 folder = joinpath(@__DIR__, "data")
@@ -22,38 +22,47 @@ create_example_data(folder, config_name="default")
 input_file = joinpath(@__DIR__, "data/energy_community_model.yml");
 
 # Output path of the summary and of the plots
-output_file_isolated = joinpath(@__DIR__, "./results/output_file_CO.xlsx");
-output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_CO.png");
+output_file_isolated = joinpath(@__DIR__, "./results/output_file_NC.xlsx");
+output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_NC.png");
 
 # define optimizer and options
 optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance"=>1e-6)
 
 # Define the Non Cooperative model
-CO_Model = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
+NC_Model = ModelEC(input_file, EnergyCommunity.GroupNC(), optimizer)
 
 # Build the mathematical model
-build_model!(CO_Model)
+build_model!(NC_Model)
 
 # Optimize the model
-optimize!(CO_Model)
+optimize!(NC_Model)
 
 # get objective value
-objective_value(CO_Model)
+objective_value(NC_Model)
 
 # Create plots of the results
-plot(CO_Model, output_plot_isolated)
+plot(NC_Model, output_plot_isolated)
 
 # Print summaries of the results
-print_summary(CO_Model)
+print_summary(NC_Model)
 
 # Save summaries
-save_summary(CO_Model, output_file_isolated)
+save_summary(NC_Model, output_file_isolated)
 
 # Plot the sankey plot of resources
-plot_sankey(CO_Model)
+plot_sankey(NC_Model)
 
 # DataFrame of the business plan
-business_plan(CO_Model)
+business_plan(NC_Model)
 
 # plot business plan
-business_plan_plot(CO_Model)
+business_plan_plot(NC_Model)
+
+# save the model to a jld2 file
+save("nc_model.jld2", NC_Model)
+
+# read the loaded model from the jld2 file
+NC_Model_loaded = load!("nc_model.jld2", ModelEC())
+
+# get the objective value of the loaded model
+objective_value(NC_Model_loaded)
