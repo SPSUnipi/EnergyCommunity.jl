@@ -281,6 +281,16 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
     )
 
+    # Total adjustable load dispatch
+    # TODO check on the expression N and P
+    @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
+        P_adj_N_us[u, e, t] - P_adj_P_us[u, e, t]
+    )
+
+    # Total energy load by user and time step
+    @expression(model_user, P_tot_us[u=user_set, t=time_set],
+        P_adj_us[u,t] + P_us[u,t])
+
     ## Inequality constraints
 
     # Set that the hourly dispatch cannot go beyond the maximum dispatch of the corresponding peak power period
