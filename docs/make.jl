@@ -75,7 +75,7 @@ makedocs(
             "index.md",
             "Installation.md",
             "Examples" => [
-                joinpath("examples", f + ".md")
+                joinpath("examples", f * ".md")
                 for f in examples
             ],
         ],
