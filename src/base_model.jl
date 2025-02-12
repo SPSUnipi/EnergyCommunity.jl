@@ -127,7 +127,10 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile_component(users_data[u], e, "min_energy")[t] <= 
             E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_energy")[t])
-
+    # Fixed power for single fixed appliance by user
+    @variable(model_user,
+        0 <= P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set]
+            <= profile_component(users_data[u], f, "load"))
     # TODO, appliance_set is not defined
     
     # Set integer capacity
@@ -284,12 +287,21 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Total adjustable load dispatch
     # TODO check on the expression N and P
     @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        P_adj_N_us[u, e, t] - P_adj_P_us[u, e, t]
+        P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
     )
 
     # Total energy load by user and time step
-    @expression(model_user, P_tot_us[u=user_set, t=time_set],
-        P_adj_us[u,t] + P_us[u,t])
+    # TODO check P_load_tot new expression as sum of fix and adjustable
+    @expression(model_user, P_us[u=user_set, t=time_set],
+        sum(P_adj_us[u,e,t] + P_fix_us[u,e,t] for e in asset_names(users_data[u], LOADS))
+    )
+
+    # Total energy balance for adjustable load
+    # TODO add eta to the data structure and check how to import
+    @expression(model_user, E_adj_us[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
+        E_adj_us[j, e, t-1] - P_adj_N_us[j, e, t] / sqrt(eta[j, e, t]) 
+        + P_adj_P_us[j, e, t] * sqrt(eta[j, e, t]) + ED_adj[j, e, t]
+    )
 
     ## Inequality constraints
 
