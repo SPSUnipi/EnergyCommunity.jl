@@ -68,6 +68,16 @@ users:  # list of users and the corresponding assets
       profile:
         load: load_user1
     
+    load_adj:  # component adjustable load
+      type: load_adj
+      eta: 0.9
+      profile:
+        load: load_user1_adj
+        max_supply: max_supply_user1
+        max_withdrawal: max_withdrawal_user1
+        min_energy: min_energy_user1
+        max_energy: max_energy_user1
+
     # generator:  # component thermal
     #   type: thermal
     #   CAPEX_lin: 3000  # [€/kW] specific investment cost of the component
