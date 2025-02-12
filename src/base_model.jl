@@ -291,15 +291,17 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     # Total energy load by user and time step
-    # TODO check P_load_tot new expression as sum of fix and adjustable
-    @expression(model_user, P_us[u=user_set, t=time_set],
+    # TODO P_L_us is not defined and could be the sum new expression as sum of fix and adjustable
+    # TODO double sum to add
+    @expression(model_user, P_L_us[u=user_set, t=time_set],
         sum(P_adj_us[u,e,t] + P_fix_us[u,e,t] for e in asset_names(users_data[u], LOADS))
     )
 
     # Total energy balance for adjustable load
-    # TODO add eta to the data structure and check how to import
+    # TODO add eta to the data structure and check how to import, it's a constrain to be added below
+    # TODO eta with field component
     @expression(model_user, E_adj_us[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        E_adj_us[j, e, t-1] - P_adj_N_us[j, e, t] / sqrt(eta[j, e, t]) 
+        E_adj_us[j, e, pre(t, time_set)] - P_adj_N_us[j, e, t] / sqrt(eta[j, e, t]) 
         + P_adj_P_us[j, e, t] * sqrt(eta[j, e, t]) + ED_adj[j, e, t]
     )
 
