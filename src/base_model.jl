@@ -116,16 +116,16 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             <= field_component(users_data[u], a, "max_capacity"))
     # Adjusted positive power for single adjustable appliance by user when supplying to public grid
     @variable(model_user,
-        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), time_set]
             <= profile_component(users_data[u], e, "max_supply")[t])
     # Adjusted positive power for single adjustable appliance by user when absorbing from public grid
     @variable(model_user,
-        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), time_set]
             <= profile_component(users_data[u], e, "max_withdrawal")[t])
     # Adjusted energy for single adjustable appliance by user
     @variable(model_user,
         profile_component(users_data[u], e, "min_energy")[t] <= 
-            E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), time_set]
             <= profile_component(users_data[u], e, "max_energy")[t])
     # Energy demand excahge outside the POD by user and appliance
     @variable(model_user,
