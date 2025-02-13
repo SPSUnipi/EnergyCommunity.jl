@@ -14,7 +14,7 @@ Implemented values:
 ANY = collect(instances(ASSET_TYPE))  # all assets code
 GENS = [REN, THER]  # generator codes
 LOADS = [LOAD, LOAD_ADJ]  # load codes
-DEVICES = setdiff(ANY, [LOADS])  # devices codes
+DEVICES = setdiff(ANY, [LOAD])  # devices codes
 # TODO analyze implication of LOAD_ADJ in the code
 
 type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER, "load_adj"=>LOAD_ADJ)
