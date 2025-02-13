@@ -135,7 +135,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user,
         0 <= P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set]
             <= profile_component(users_data[u], f, "load")[t])
-    # TODO, check if appliance_set is created or defined
     # Efficiency of the adjustable load
     @variable(model_user,
         0 <= eta[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
@@ -309,7 +308,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     # Total energy load by user and time step
-    # TODO double sum to add
     @expression(model_user, P_L_tot_us[u=user_set, t=time_set],
         P_adj_tot_us[u,t] + P_fix_tot_us[u,t]
     )
