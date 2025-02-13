@@ -1149,6 +1149,10 @@ function business_plan_plot(
         for l in keys(plot_struct)
     ]
 
+    # Calculate y-axis limits with a margin of 5 units
+    y_min = minimum(vcat(bar_data...)) - 5
+    y_max = maximum(vcat(bar_data...)) + 5
+
     # Create a bar plot
     p = bar(
         years,
@@ -1163,7 +1167,24 @@ function business_plan_plot(
         grid=grid,
         framestyle=framestyle,
         barmode=barmode,
+        ylim=(y_min, y_max),
         kwargs...
+    )
+
+    # Calculate cumulative values for the line plot
+    cumulative_values = cumsum(df_business.CUM_DCF .* scaling_factor)
+
+    # Add the cumulative line plot
+    plot!(
+        p,
+        years,
+        cumulative_values,
+        label="Cumulative",
+        color=:red,
+        linewidth=2,
+        marker=:circle,
+        markersize=4,
+        markercolor=:red,
     )
 
     return p
@@ -1178,6 +1199,73 @@ function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distr
         )
     )
 end
+
+function plot_daily_energy_balance(
+    ECModel::AbstractEC;
+    plot_struct=nothing,
+    xlabel="Time [h]",
+    ylabel="Energy [kWh]",
+    title="Daily Energy Flows",
+    legend=:bottomright,
+    color=:auto,
+    xrotation=45,
+    bar_width=0.6,
+    grid=false,
+    framestyle=:box,
+    barmode=:stack,
+    scaling_factor = 0.001,
+    kwargs...
+)
+    # Extract the time set from the DataFrame
+    time_set = collect(1:24)
+
+    if  isnothing(plot_struct)
+        # Define the plot structure
+        plot_struct = Dict(
+            "Shared Production" => [(-1, :shared_production)],
+            "Shared Consumption" => [(-1, :shared_consumption)],
+            "Self Consumption" => [(-1, :self_consumption)],
+            "Self Production" => [(-1, :self_production)],
+            "Grid Import" => [(-1, :grid_import)],
+            "Grid Export" => [(-1, :grid_export)],
+        )
+    end
+
+    # Extract the year from the DataFrame
+    bar_labels = hcat(keys(plot_struct)...)
+    bar_data = [
+        sum(
+            tup[1] .* ECModel.results[tup[2]] .* scaling_factor
+            for tup in plot_struct[l]
+        )
+        for l in keys(plot_struct)
+    ]
+
+    # Calculate y-axis limits with a margin of 5 units
+    y_min = minimum(vcat(bar_data...)) - 5
+    y_max = maximum(vcat(bar_data...)) + 5
+
+    # Create a bar plot
+    p = bar(
+        time_set,
+        bar_data,
+        labels=bar_labels,
+        xlabel=xlabel, ylabel=ylabel,
+        title=title,
+        legend=legend,
+        color=color,
+        xrotation=xrotation,
+        bar_width=bar_width,
+        grid=grid,
+        framestyle=framestyle,
+        barmode=barmode,
+        ylim=(y_min, y_max),
+        kwargs...
+    )
+
+    return p
+end
+
 
 """
     create_example_data(parent_folder, config_name::String = "default")

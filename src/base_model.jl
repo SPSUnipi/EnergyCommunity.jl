@@ -401,10 +401,10 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Total energy balance for adjustable load
     @constraint(model_user,
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        E_adj_us[j, e, t] - E_adj_us[j, e, pre(t, time_set)] 
-        + P_adj_P_us[j, e, t] * sqrt(eta[j, e, t])
-        - P_adj_N_us[j, e, t] / sqrt(eta[j, e, t]) 
-        + ED_adj[j, e, t] 
+        E_adj_us[u, e, t] - E_adj_us[u, e, pre(t, time_set)] 
+        + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta"))
+        - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta")) 
+        + ED_adj[u, e, t] 
         == 0
     )
     
