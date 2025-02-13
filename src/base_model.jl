@@ -1,5 +1,5 @@
 # accepted technologies
-ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal"]
+ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal", "load_adj"]
 
 """
     build_base_model!(ECModel::AbstractEC, optimizer)
@@ -56,7 +56,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         ) * TOL_BOUNDS
     )
 
-    # Overestimation of the power exchanged by each POD when buying from the external market bu each user
+    # Overestimation of the power exchanged by each POD when buying from the external market by each user
     @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
         max(0,
             sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
@@ -127,11 +127,19 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile_component(users_data[u], e, "min_energy")[t] <= 
             E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_energy")[t])
+    # Energy demand excahge outside the POD by user and appliance
+    @variable(model_user,
+        0 <= ED_adj[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "energy_exchange")[t])
     # Fixed power for single fixed appliance by user
     @variable(model_user,
         0 <= P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set]
             <= profile_component(users_data[u], f, "load"))
-    # TODO, appliance_set is not defined
+    # TODO, check if appliance_set is created or defined
+    # Efficiency of the adjustable load
+    @variable(model_user,
+        0 <= eta[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= field_component(users_data[u], e, "eta"))
     
     # Set integer capacity
     for u in user_set
@@ -284,25 +292,26 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
     )
 
-    # Total adjustable load dispatch
-    # TODO check on the expression N and P
+    # Total adjustable load dispatch for each appliance
+    # TODO check on the expression P and N is coherent with the definition of the variables
     @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
         P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
     )
 
-    # Total energy load by user and time step
-    # TODO P_L_us is not defined and could be the sum new expression as sum of fix and adjustable
-    # TODO double sum to add
-    @expression(model_user, P_L_us[u=user_set, t=time_set],
-        sum(P_adj_us[u,e,t] + P_fix_us[u,e,t] for e in asset_names(users_data[u], LOADS))
+    # Total energy load by user and time step for adjustable load
+    @expression(model_user, P_adj_tot_us[u=user_set, t=time_set],
+        sum(P_adj_us[u,e,t] for e in asset_names(users_data[u], LOAD_ADJ))
     )
 
-    # Total energy balance for adjustable load
-    # TODO add eta to the data structure and check how to import, it's a constrain to be added below
-    # TODO eta with field component
-    @expression(model_user, E_adj_us[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        E_adj_us[j, e, pre(t, time_set)] - P_adj_N_us[j, e, t] / sqrt(eta[j, e, t]) 
-        + P_adj_P_us[j, e, t] * sqrt(eta[j, e, t]) + ED_adj[j, e, t]
+    # Total energy load by user and time step for fixed load
+    @expression(model_user, P_fix_tot_us[u=user_set, t=time_set],
+        sum(P_fix_us[u,e,t] for e in asset_names(users_data[u], LOAD))
+    )
+
+    # Total energy load by user and time step
+    # TODO double sum to add
+    @expression(model_user, P_L_tot_us[u=user_set, t=time_set],
+        P_adj_tot_us[u,t] + P_fix_tot_us[u,t]
     )
 
     ## Inequality constraints
@@ -386,6 +395,16 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             sqrt(field_component(users_data[u], b, "eta"))*field_component(users_data[u], field_component(users_data[u], b, "corr_asset"), "eta"))  # Contribution of the converter when supplying power to AC
         - profile(gen_data, "time_res")[t] * P_conv_N_us[u, field_component(users_data[u], b, "corr_asset"), t]*(
             sqrt(field_component(users_data[u], b, "eta"))*field_component(users_data[u], field_component(users_data[u], b, "corr_asset"), "eta"))  # Contribution of the converter when absorbing power from AC
+        == 0
+    )
+
+    # Total energy balance for adjustable load
+    @constraint(model_user,
+        E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
+        E_adj_us[j, e, t] - E_adj_us[j, e, pre(t, time_set)] 
+        + P_adj_P_us[j, e, t] * sqrt(eta[j, e, t])
+        - P_adj_N_us[j, e, t] / sqrt(eta[j, e, t]) 
+        + ED_adj[j, e, t] 
         == 0
     )
     
