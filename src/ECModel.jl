@@ -1200,70 +1200,81 @@ function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distr
     )
 end
 
-function plot_daily_energy_balance(
-    ECModel::AbstractEC;
-    plot_struct=nothing,
-    xlabel="Time [h]",
+function plot_daily_energy_balance(ECModel::AbstractEC, output_plot_file::AbstractString;
+    user_set::AbstractVector=Vector(), xlabel="Time [h]",
     ylabel="Energy [kWh]",
     title="Daily Energy Flows",
     legend=:bottomright,
     color=:auto,
     xrotation=45,
-    bar_width=0.6,
+    line_width=2.0,
     grid=false,
     framestyle=:box,
     barmode=:stack,
     scaling_factor = 0.001,
-    kwargs...
-)
-    # Extract the time set from the DataFrame
-    time_set = collect(1:24)
+    kwargs...)
 
-    if  isnothing(plot_struct)
-        # Define the plot structure
-        plot_struct = Dict(
-            "Shared Production" => [(-1, :shared_production)],
-            "Shared Consumption" => [(-1, :shared_consumption)],
-            "Self Consumption" => [(-1, :self_consumption)],
-            "Self Production" => [(-1, :self_production)],
-            "Grid Import" => [(-1, :grid_import)],
-            "Grid Export" => [(-1, :grid_export)],
-        )
+    # get main parameters
+    gen_data = ECModel.gen_data
+    users_data = ECModel.users_data
+    market_data = ECModel.market_data
+    results = ECModel.results
+
+    n_users = length(users_data)
+
+    n_steps = 24
+
+    # Set definitions
+    time_set_plot = 1:24
+    time_set = 1:n_steps
+
+    # reset the user_set if not specified
+    if isempty(user_set)
+        user_set = ECModel.user_set
     end
 
-    # Extract the year from the DataFrame
-    bar_labels = hcat(keys(plot_struct)...)
-    bar_data = [
-        sum(
-            tup[1] .* ECModel.results[tup[2]] .* scaling_factor
-            for tup in plot_struct[l]
-        )
-        for l in keys(plot_struct)
-    ]
+    ## Retrieve results
 
-    # Calculate y-axis limits with a margin of 5 units
-    y_min = minimum(vcat(bar_data...)) - 5
-    y_max = maximum(vcat(bar_data...)) + 5
+    ## Plots
+    Plots.PlotlyBackend()
+    pt = Array{Plots.Plot, 2}(undef, n_users, 3)
+    lims_y_axis_dispatch = [(-30, 60), (-30, 60)]
+    lims_y_axis_batteries = [(0, 120), (0, 120)]
+    for (u_i, u_name) in enumerate(ECModel.user_set)
 
-    # Create a bar plot
-    p = bar(
-        time_set,
-        bar_data,
-        labels=bar_labels,
-        xlabel=xlabel, ylabel=ylabel,
-        title=title,
-        legend=legend,
-        color=color,
-        xrotation=xrotation,
-        bar_width=bar_width,
-        grid=grid,
-        framestyle=framestyle,
-        barmode=barmode,
-        ylim=(y_min, y_max),
-        kwargs...
-    )
+        # Power dispatch plot
+        pt[u_i, 1] = plot(time_set_plot, [sum(Float64[profile_component(ECModel.users_data[u_name], l, "load")[t] 
+                                        for l in asset_names(ECModel.users_data[u_name], LOAD)]) for t in time_set],
+                        label="Load", w=line_width, legend=:outerright)
+        plot!(pt[u_i, 1], time_set_plot, results[:P_us][u_name, :].data, label="Grid", w=line_width)
+        plot!(pt[u_i, 1], time_set_plot, [
+            sum(Float64[results[:P_conv_us][u_name, c, t] 
+                for c in asset_names(users_data[u_name], CONV)]) for t in time_set],
+            label="Converters", w=line_width)
+        plot!(pt[u_i, 1], time_set_plot, results[:P_ren_us][u_name, :].data, label="Renewables", w=line_width)
+        plot!(pt[u_i, 1], time_set_plot, [
+            sum(Float64[results[:P_gen_us][u_name, g, t] 
+                for g in asset_names(users_data[u_name], THER)]) for t in time_set],
+            label="Thermal", w=line_width)
+        xaxis!("Time step [#]")
+        yaxis!("Power [kW]")
+        # ylims!(lims_y_axis_dispatch[u])
 
-    return p
+        pt[u_i, 3] = plot(pt[u_i, 1], pt[u_i, 2], layout=(2, 1))
+        display(pt[u_i, 3])
+
+        # if the output file is specified save the plots to file
+        if !isempty(output_plot_file)
+            # get file path where to save the image
+            file_path = format(output_plot_file, u_i)
+
+            # create folder if it doesn't exist
+            mkpath(dirname(file_path))
+
+            # save as 
+            png(pt[u_i, 3], file_path)
+        end
+    end
 end
 
 

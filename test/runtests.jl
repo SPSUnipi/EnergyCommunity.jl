@@ -7,6 +7,8 @@ ENV["GKSwstype"]="nul"
 
 const MOI = MathOptInterface
 
+# TODO add a test for the case of flexibility
+
 # EC groups to test
 EC_GROUPS = [GroupCO(), GroupNC(), GroupANC()]
 
