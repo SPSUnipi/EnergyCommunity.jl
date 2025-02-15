@@ -34,9 +34,6 @@ module EnergyCommunity
 
     # EC model definition
     include("ECModel_definitions.jl")
-    
-    # functions to calculate the shared energy among users
-    include("energy_shares.jl")  
 
     # add the base modelling for all Energy Communities
     include("base_model.jl")
