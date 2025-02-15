@@ -902,7 +902,7 @@ end
 
 
 """
-Function to return the objective function by user in the NonCooperative case
+Function to return the objective function by user in the Cooperative case
 """
 function objective_by_user(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true)
     if isempty(ECModel.results)
@@ -923,7 +923,7 @@ function objective_by_user(::AbstractGroupCO, ECModel::AbstractEC; add_EC=true)
 end
 
 """
-finalize_results!(::AbstractGroupCO, ECModel::AbstractEC)
+    finalize_results!(::AbstractGroupCO, ECModel::AbstractEC)
 
 Function to finalize the results of the Cooperative model after the execution
 Nothing to do
@@ -943,8 +943,9 @@ returns the objective of the aggregation for Aggregated Cooperative models
 
 ## Arguments
 
+* `group_type`: The type of group model
 * `ECModel` : Cooperative EC Model of the EC to study. When the model is not cooperative an error is thrown.
-* `no_aggregator_group` (otional, default NonCooperative): EC group type when no aggregator is considered
+* `no_aggregator_group` (optional, default NonCooperative): EC group type when no aggregator is considered
 
 ## Returns
 

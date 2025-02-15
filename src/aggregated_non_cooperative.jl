@@ -269,6 +269,7 @@ returns the objective of the aggregation for Aggregated Non Cooperative models
 
 ## Arguments
 
+* `group_type`: The type of group model
 * `ECModel`: EC Model of the EC to study. When the model is not cooperative an error is thrown.
 * `base_model`: EC Model (optional). When provided, it represents the base model used to perform the calculations
 
