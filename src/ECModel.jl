@@ -1163,7 +1163,6 @@ function business_plan_plot(
         grid=grid,
         framestyle=framestyle,
         barmode=barmode,
-        ylim=(y_min, y_max),
         kwargs...
     )
 
