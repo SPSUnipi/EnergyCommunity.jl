@@ -1,5 +1,5 @@
 # accepted technologies
-ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal", "load_adj"]
+ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal", "load_adj", "load_shift"]
 
 """
     build_base_model!(ECModel::AbstractEC, optimizer)
@@ -139,6 +139,13 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user,
         0 <= eta[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= field_component(users_data[u], e, "eta"))
+    # Binary variable to indicate the activation availability for each time window
+    @variable(model_user, 
+        z_shift[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), t=time_windows], Bin)
+    # Shiftable load for each time window
+    @variable(model_user, 
+        0 <= P_shift_window[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), w=time_windows, t=time_set]
+            <= profile_component(users_data[u], s, "original_profile")[t])
     
     # Set integer capacity
     for u in user_set
