@@ -734,7 +734,7 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     shared_cons_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(0.0, 
                 sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
-                + sum(ECModel.results[:P_adj_us][u, e, :] for e in asset_names(users_data[u], LOAD_ADJ))
+                + sum(ECModel.results[:P_adj_tot_us][u, :])
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set
