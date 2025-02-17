@@ -140,6 +140,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         0 <= eta[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= field_component(users_data[u], e, "eta"))
     # Binary variable to indicate the activation availability for each time window
+    # TODO add a function to create the matrix from input in YAML
     @variable(model_user, 
         z_shift[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), t=time_windows], Bin)
     # Shiftable load for each time window
@@ -314,9 +315,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         sum(P_fix_us[u,e,t] for e in asset_names(users_data[u], LOAD))
     )
 
+    # Total energy load by user and time step for shiftable load
+    @expression(model_user, P_shift_tot_us[u=user_set, t=time_set],
+        sum(P_shift_window[u,s,w,t] for s in asset_names(users_data[u], LOAD_SHIFT), w in time_windows)
+    )
+
     # Total energy load by user and time step
     @expression(model_user, P_L_tot_us[u=user_set, t=time_set],
-        P_adj_tot_us[u,t] + P_fix_tot_us[u,t]
+        P_adj_tot_us[u,t] + P_fix_tot_us[u,t] + P_shift_tot_us[u,t]
     )
 
     ## Inequality constraints
@@ -412,6 +418,18 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         + ED_adj[u, e, t] 
         == 0
     )
+
+    # Constraint to ensure the shiftable load maintains the same pattern within the specified time windows
+    # TODO check coherent    
+    @constraint(model_user, 
+    con_shift_pattern[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), t=time_set],
+    sum(P_shift_window[u, s, w, t] for w in time_windows) == P_shift_us[u, s, t])
+    
+    # Constraint to ensure the shiftable load is active only if the binary variable is active
+    # TODO check coherent
+    @constraint(model_user, 
+    con_shift_activation[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), w=time_windows, t=time_set],
+    P_shift_window[u, s, w, t] <= z_shift[u, s, w] * profile_component(users_data[u], s, "original_profile")[t])
     
     return ECModel
 end
