@@ -21,10 +21,19 @@ RTOL = 1e-3
 input_tests = Dict(
     "base_case"=>joinpath(@__DIR__, "./data/energy_community_model.yml"),
     "thermal_case"=>joinpath(@__DIR__, "./data/energy_community_model_thermal.yml"),
+    "flexibility_case"=>joinpath(@__DIR__, "./data/energy_community_model_flexibility.yml"),
 )
 
 
 include("tests.jl")
+
+@testset "Create example data" begin
+    folder = joinpath(@__DIR__, "./data")
+    create_example_data(folder, config_name="default")
+    for input_file in values(input_tests)
+        @test isfile(input_file)
+    end
+end
 
 @testset "Optimization tests" begin
 
