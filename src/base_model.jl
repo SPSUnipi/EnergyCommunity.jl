@@ -452,12 +452,11 @@ function calculate_demand(ECModel::AbstractEC)
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
     data_load = Float64[sum(
-                sum(profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
+                profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
                 for l in asset_names(users_data[u], LOAD)
-            ) + sum(
-                ECModel.results[:P_adj_us][u, e, :] .* time_res .* energy_weight
-                for e in asset_names(users_data[u], LOAD_ADJ)
-            ) for u in user_set]
+                .+ sum(ECModel.results[:P_adj_tot_us][u, :] .* time_res .* energy_weight)
+                for u in user_set
+                ]
 
     # sum of the load power by user and EC
     demand_us_EC = JuMP.Containers.DenseAxisArray(
@@ -734,7 +733,7 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     shared_cons_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(0.0, 
                 sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
-                + sum(ECModel.results[:P_adj_tot_us][u, :])
+                .+ sum(ECModel.results[:P_adj_tot_us][u, :])
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set
