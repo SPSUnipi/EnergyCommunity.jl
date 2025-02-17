@@ -10,13 +10,14 @@ Implemented values:
 - CONV: battery converters
 - THER: thermal generators
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4
+@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4 LOAD_ADJ=5 LOAD_SHIFT=6
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
+LOADS = [LOAD, LOAD_ADJ, LOAD_SHIFT]  # load codes
+DEVICES = setdiff(ANY, [LOAD])  # devices codes
+# TODO analyze implication of LOAD_ADJ in the code
 
-
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER)
+type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER, "load_adj"=>LOAD_ADJ, "load_shift"=>LOAD_SHIFT)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
@@ -317,4 +318,16 @@ function _jump_to_dict(model::Model)
     end
 
     return results
+end
+
+function create_time_window_matrix(start_list, end_list, repeat_interval, n_steps)
+    time_window_matrix = zeros(Bool, length(start_list), n_steps)
+    for (i, (start, finish)) in enumerate(zip(start_list, end_list))
+        for t in start:repeat_interval:n_steps
+            for k in t:min(t + (finish - start), n_steps)
+                time_window_matrix[i, k] = true
+            end
+        end
+    end
+    return time_window_matrix
 end
