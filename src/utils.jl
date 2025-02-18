@@ -18,10 +18,6 @@ GENS = [REN, THER]  # generator codes
 
 type_codes = Base.Dict("renewable"=>REN,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER, "storage"=>STOR)
 
-"""
-    @enum ASSET_TYPE
-"""
-    @enum ASSET_TYPE
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
