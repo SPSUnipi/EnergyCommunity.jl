@@ -127,18 +127,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile_component(users_data[u], e, "min_energy")[t] <= 
             E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_energy")[t])
-    # Energy demand excahge outside the POD by user and appliance
-    @variable(model_user,
-        0 <= ED_adj[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
-            <= profile_component(users_data[u], e, "energy_exchange")[t])
-    # Fixed power for single fixed appliance by user
-    @variable(model_user,
-        0 <= P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set]
-            <= profile_component(users_data[u], f, "load")[t])
-    # Efficiency of the adjustable load
-    @variable(model_user,
-        0 <= eta[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
-            <= field_component(users_data[u], e, "eta"))
     
     # Set integer capacity
     for u in user_set
@@ -301,6 +289,10 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, P_adj_tot_us[u=user_set, t=time_set],
         sum(P_adj_us[u,e,t] for e in asset_names(users_data[u], LOAD_ADJ))
     )
+    
+    # Fixed power for single fixed appliance by user
+    @variable(model_user, P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set],
+        profile_component(users_data[u], f, "load")[t])
 
     # Total energy load by user and time step for fixed load
     @expression(model_user, P_fix_tot_us[u=user_set, t=time_set],
@@ -400,9 +392,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @constraint(model_user,
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
         E_adj_us[u, e, t] - E_adj_us[u, e, pre(t, time_set)] 
-        + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta"))
-        - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta")) 
-        + ED_adj[u, e, t] 
+        + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
+        - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
+        + profile_component(users_data[u], e, "energy_exchange")[t] 
         == 0
     )
     
