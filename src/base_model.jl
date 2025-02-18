@@ -291,7 +291,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
     
     # Fixed power for single fixed appliance by user
-    @variable(model_user, P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set],
+    @expression(model_user, P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set],
         profile_component(users_data[u], f, "load")[t])
 
     # Total energy load by user and time step for fixed load
