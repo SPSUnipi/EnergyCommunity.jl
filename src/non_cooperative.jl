@@ -16,8 +16,19 @@
 
 
 """
+    build_specific_model!(::AbstractGroupNC, ECModel::AbstractEC)
 
-Set the NC/ANC-specific model for the EC
+Set the NC-specific model for the EC.
+It adds the P_agg expression only being equal to the sum of the power supplied by the users to the grid.
+
+## Arguments
+
+* `group_type::AbstractGroupNC`: The type of group model
+* `ECModel::AbstractEC`: The EC model to be built
+
+## Returns
+
+* `ECModel::AbstractEC`: The EC model with the specific model built
 """
 function build_specific_model!(::AbstractGroupNC, ECModel::AbstractEC)
 
@@ -42,7 +53,18 @@ end
 
 
 """
-    Function to set the objective function of the model of the Non-Cooperative model
+    set_objective!(::AbstractGroupNC, ECModel::AbstractEC)
+
+Function to set the objective function of the model of the Non-Cooperative model, which is to maximize the annual profits of all users.
+
+## Arguments
+
+* `group_type::AbstractGroupNC`: The type of group model
+* `ECModel::AbstractEC`: The EC model to be built
+
+## Returns
+
+* `ECModel::AbstractEC`: The EC model with the objective set
 """
 function set_objective!(::AbstractGroupNC, ECModel::AbstractEC)
     ## Setting the objective
@@ -57,7 +79,13 @@ end
 
 """ 
     print_summary(::AbstractGroupNC, ECModel::AbstractEC)
+
 Function to print the main results of the model
+
+## Arguments
+
+* `group_type::AbstractGroupNC`: The type of group model
+* `ECModel::AbstractEC`: The EC model to be built
 """
 function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
 
@@ -142,10 +170,18 @@ end
 
 
 """
-    plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::AbstractString;
+    Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::AbstractString;
         user_set::Vector=Vector(), line_width=2.0)
 
 Function to plot the results of the user model
+
+## Arguments
+
+* `group_type::AbstractGroupNC`: The type of group model
+* `ECModel::AbstractEC`: The EC model to be built
+* `output_plot_file::AbstractString`: The file path where to save the plots
+* `user_set::Vector`: The user set to plot
+* `line_width::Float64`: The width of the lines in the plot
 """
 function Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::AbstractString;
     user_set::AbstractVector=Vector(), line_width=2.0)
@@ -228,11 +264,17 @@ end
 
 
 """
+    add_info_solution_summary!(output_list::Vector, ECModel::AbstractEC)
 
-Function to create the dataframe to report the status of the optimization
+Utility function to create the dataframe to report the status of the optimization.
+It adds a dataframe named `info_solution` to `output_list` with the solve time and the termination status of the optimization.
+
+## Arguments
+
+* `output_list::Vector`: The list of dataframes to be saved
+* `ECModel::AbstractEC`: The EC model to be built
 """
-function add_info_solution_summary!(
-    output_list::Vector, ECModel::AbstractEC)
+function add_info_solution_summary!(output_list::Vector, ECModel::AbstractEC)
 
     _solve_time = ECModel.results[:solve_time]  # solve_time(ECModel.model)
     _termination_status = ECModel.results[:termination_status]  # Int(termination_status(ECModel.model))  # termination status
@@ -244,11 +286,18 @@ function add_info_solution_summary!(
 end
 
 """
+    add_users_design_summary!(output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
 
-Function to create the output dataframe of design capacity
+Utility function to create the output dataframe of design capacity.
+It adds a dataframe with the peak demand, yearly demand, and optimal size of the system for each user.
+
+## Arguments
+
+* `output_list::Vector`: The list of dataframes to be saved
+* `ECModel::AbstractEC`: The EC model to be built
+* `user_set::AbstractVector`: The user set to be considered
 """
-function add_users_design_summary!(
-    output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
+function add_users_design_summary!(output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
 
     # get main parameters
     gen_data = ECModel.gen_data
@@ -285,11 +334,18 @@ end
 
 
 """
+    add_users_economics_summary!(output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
 
-Function to create the output dataframe of the users' economics
+Function to create the output dataframe of the users' economics.
+It adds a dataframe with the NPV, CAPEX, OPEX, yearly revenues, and other economic indicators for each user.
+
+## Arguments
+
+* `output_list::Vector`: The list of dataframes to be saved
+* `ECModel::AbstractEC`: The EC model to be built
+* `user_set::AbstractVector`: The user set to be considered
 """
-function add_users_economics_summary!(
-    output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
+function add_users_economics_summary!(output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
 
     # get main parameters
     gen_data = ECModel.gen_data
@@ -376,11 +432,18 @@ end
 
 
 """
+    add_users_peak_summary!(output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
 
-Function to create the output dataframe of peak power
+Function to create the output dataframe of peak power.
+It adds a dataframe with the peak power of each user for each peak period.
+
+## Arguments
+
+* `output_list::Vector`: The list of dataframes to be saved
+* `ECModel::AbstractEC`: The EC model to be built
+* `user_set::AbstractVector`: The user set to be considered
 """
-function add_users_peak_summary!(
-    output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
+function add_users_peak_summary!(output_list::Vector, ECModel::AbstractEC, user_set::AbstractVector)
 
     # get main parameters
     market_data = ECModel.market_data
@@ -412,12 +475,18 @@ end
     prepare_summary(::AbstractGroupNC, ECModel::AbstractEC, file_summary_path::AbstractString;
         user_set::Vector=Vector())
 
-Prepare the dataframe lists to be saved in an excel file
+Prepare the dataframe lists to be saved in an excel file.
 
-Outputs
--------
-output_list: Vector{Pair{String, DataFrame}}
-    Vector of pairs representing the sheets of the Excel file and the corresponding data to save
+## Arguments
+
+* `group_type::AbstractGroupNC`: The type of group model
+* `ECModel::AbstractEC`: The EC model to be built
+* `file_summary_path::AbstractString`: The file path where to save the excel file
+* `user_set::AbstractVector`: The user set to be considered
+
+## Returns
+
+* `output_list::Vector`: The list of dataframes to be saved in the excel file
 """
 function prepare_summary(::AbstractGroupNC, ECModel::AbstractEC; user_set::AbstractVector)
 
@@ -439,15 +508,12 @@ end
 """
     calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
-Calculate grid usage for the Non-Cooperative case
-Output is normalized with respect to the demand when per_unit is true
+Calculate grid usage for the Non Cooperative case.
+Output is normalized with respect to the demand when `per_unit` is true
 
-'''
-Outputs
--------
-grid_frac : DenseAxisArray
-    Reliance on the grid demand for each user and the aggregation
-'''
+## Returns
+
+Returns a DenseAxisArray that describes the reliance on the grid withdrawal for each user and the aggregation
 """
 function calculate_grid_import(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
@@ -501,14 +567,11 @@ end
     calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate grid export for the Non-Cooperative case
-Output is normalized with respect to the demand when per_unit is true
+Output is normalized with respect to the demand when `per_unit` is true
 
-'''
-Outputs
--------
-grid_frac : DenseAxisArray
-    Reliance on the grid demand for each user and the aggregation
-'''
+## Returns
+
+Returns a DenseAxisArray that contains the reliance on the grid supply for each user and the aggregation
 """
 function calculate_grid_export(::AbstractGroupNC, ECModel::AbstractEC; per_unit::Bool=true)
 
@@ -567,12 +630,9 @@ In the Cooperative case, there can be shared energy between users, not only self
 For every time step and user, this time series highlight the quantity of production that meets
 needs by other users.
 
-'''
-Outputs
--------
-shared_prod_us : DenseAxisArray
-    Shared production for each user and the aggregation and time step
-'''
+## Returns
+
+Returns a DenseAxisArray that contains the shared production for each user and the aggregation and time step
 """
 function calculate_time_shared_production(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true, kwargs...)
     # get user set
@@ -598,12 +658,9 @@ In the Cooperative case, there can be shared energy between users, not only self
 For every time step and user, this time series highlight the quantity of load that is met
 by using shared energy.
 
-'''
-Outputs
--------
-shared_cons_us : DenseAxisArray
-    Shared consumption for each user and the aggregation and time step
-'''
+## Returns
+
+It returns a DenseAxisArray that quantifies the shared consumption for each user and the aggregation and time step
 """
 function calculate_time_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true, kwargs...)
     # get user set
@@ -628,12 +685,9 @@ In the Non-Cooperative case, there is no shared energy, only self consumption.
 Shared energy means energy that is shared between 
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-shared_cons_frac : DenseAxisArray
-    Shared consumption for each user and the aggregation
-'''
+## Returns
+
+It returns the shared consumption for each user and the aggregation
 """
 function calculate_shared_consumption(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
     # get user set
@@ -654,12 +708,9 @@ Calculate the shared produced energy for the Non-Cooperative case.
 In the Non-Cooperative case, there is no shared energy between users, only self production.
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-shared_en_frac : DenseAxisArray
-    Shared energy for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray that contains the shared energy for each user and the aggregation
 """
 function calculate_shared_production(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
 
@@ -696,11 +747,10 @@ function objective_by_user(::AbstractGroupNC, ECModel::AbstractEC; add_EC=true)
 end
 
 """
-finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
+    finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
 
 Function to finalize the results of the Non Cooperative model after the execution
 Many of the variables are set to zero due to the absence of cooperation between users
-
 """
 function finalize_results!(::AbstractGroupNC, ECModel::AbstractEC)
 
@@ -796,17 +846,14 @@ Function that returns a callback function that quantifies the objective of a giv
 The returned function objective_func accepts as arguments an AbstractVector of users and
 returns the objective of the aggregation for Non Cooperative models
 
-Parameters
-----------
-ECModel : AbstractEC
-    Cooperative EC Model of the EC to study.
-    When the model is not cooperative an error is thrown.
+## Arguments
 
-Return
-------
-objective_callback_by_subgroup : Function
-    Function that accepts as input an AbstractVector (or Set) of users and returns
-    as output the benefit of the specified community
+* `group_type`: The type of group model
+* `ECModel` : Cooperative EC Model of the EC to study. When the model is not cooperative an error is thrown.
+
+## Returns
+
+It returns a function that accepts as input an AbstractVector (or Set) of users and returns as output the benefit of the specified community
 """
 function to_objective_callback_by_subgroup(::AbstractGroupNC, ECModel::AbstractEC; kwargs...)
 

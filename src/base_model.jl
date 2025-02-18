@@ -5,12 +5,16 @@ ACCEPTED_TECHS = ["load", "renewable", "converter", "thermal", "storage"]
 
 Creates the base optimization model for all the EC models
 
-# Arguments
-'''
-data: structure of data
-'''
-"""
+## Arguments
 
+* `ECModel`: EC model object
+* `optimizer`: optimizer object; any optimizer from JuMP
+* `use_notations`: boolean; if true, the model will be created using the direct mode to create the JuMP model
+
+## Returns
+
+It returns the ECModel object with the base model created
+"""
 function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     TOL_BOUNDS = 1.05
@@ -501,14 +505,19 @@ end
 """
     market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
 
-Function to calculate the profile of each users related to their market type (e.g. commercial, non_commercial)
-Outputs
--------
-profile
-    Profile object corresponding to the target profile name and user
+Function to retrieve the market profile of each user,
+according to their market type (e.g. commercial, domestic, etc.)
 
+## Arguments
+
+* `ECModel`: EC model object
+* `u_name`: user name
+* `profile_name`: profile name
+
+## Returns
+
+It returns the vector of data corresponding to the profile of the user according to the market type
 """
-
 function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
     user_tariff_name = field(ECModel.users_data[u_name],"tariff_name")
     #This line allow to check if a tariff_name provided for any user is present in the market dictionary
@@ -520,13 +529,15 @@ end
     calculate_demand(ECModel::AbstractEC)
 
 Function to calculate the demand by user
-Outputs
--------
-demand_us_EC : DenseAxisArray
-    DenseAxisArray representing the demand by the EC and each user
 
+## Arguments
+
+* `ECModel`: EC model object
+
+## Returns
+
+It returns the demand by user and the whole EC as a DenseAxisArray
 """
-
 function calculate_demand(ECModel::AbstractEC)
 
     # get user set
@@ -558,11 +569,14 @@ end
     calculate_production(ECModel::AbstractEC)
 
 Function to calculate the energy production by user
-Outputs
--------
-production_us_EC : DenseAxisArray
-    DenseAxisArray representing the production by the EC and each user
 
+## Arguments
+
+* `ECModel`: EC model object
+
+## Returns
+
+It returns the production by user and the whole EC as a DenseAxisArray
 """
 function calculate_production(ECModel::AbstractEC)
 
@@ -618,15 +632,18 @@ end
     calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate energy ratio by energy production resource for a generic group
-Output is normalized with respect to the demand when per_unit is true
-'''
-# Outputs
-frac : DenseAxisArray
-    DenseAxisArray describing the share of energy production by
-    energy resource by user and the entire system,
-    normalized with respect to the demand of the corresponding group
+Output is normalized with respect to the demand when `per_unit` is true
 
-'''
+## Arguments
+
+* `ECModel`: EC model object
+* `per_unit`: boolean; if true, the output is normalized with respect to the demand
+
+## Returns
+
+It returns a DenseAxisArray describing the share of energy production by 
+energy resource by user and the entire system,
+optionally normalized with respect to the demand of the corresponding group, when `per_unit` is true
 """
 function calculate_production_shares(ECModel::AbstractEC; per_unit::Bool=true)
 
@@ -720,19 +737,21 @@ end
 
 
 """
-    calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+    calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate the self production for each user.
-Output is normalized with respect to the demand when per_unit is true
+Output is normalized with respect to the demand when `per_unit` is true
 
-'''
-Outputs
--------
-shared_en_frac : DenseAxisArray
-    Shared energy for each user and the aggregation
-'''
+## Arguments
+
+* `ECModel`: EC model object
+* `per_unit`: boolean; if true, the output is normalized with respect to the demand
+
+## Returns
+
+It returns a DenseAxisArray describing the self production for each user and the aggregation, optionally normalized with respect to the demand of the corresponding group, when `per_unit` is true
 """
-function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
+function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true)
 
     # get user set
     user_set = ECModel.user_set
@@ -811,14 +830,16 @@ end
     calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 
 Calculate the demand that each user meets using its own sources, or self consumption.
-Output is normalized with respect to the demand when per_unit is true
+Output is normalized with respect to the demand when `per_unit` is true
 
-'''
-Outputs
--------
-shared_cons_frac : DenseAxisArray
-    Shared consumption for each user and the aggregation
-'''
+## Arguments
+
+* `ECModel`: EC model object
+* `per_unit`: boolean; if true, the output is normalized with respect to the demand
+
+## Returns
+
+It returns a DenseAxisArray describing the self consumption for each user and the aggregation, optionally normalized with respect to the demand of the corresponding group, when `per_unit` is true
 """
 function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 

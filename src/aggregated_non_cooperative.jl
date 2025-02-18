@@ -1,4 +1,5 @@
 """
+    build_specific_model!(::AbstractGroupANC, ECModel::AbstractEC)
 
 Set the ANC-specific model for the EC
 """
@@ -25,6 +26,7 @@ end
 
 """ 
     print_summary(::AbstractGroupANC, ECModel::AbstractEC)
+
 Function to print the main results of the model
 """
 function print_summary(::AbstractGroupANC, ECModel::AbstractEC; base_case::AbstractEC=ModelEC())
@@ -33,6 +35,8 @@ end
 
 
 """
+    Plots.plot(::AbstractGroupANC, ECModel::AbstractEC, output_plot_file::AbstractString;
+    user_set::AbstractVector = Vector(), line_width = 2.0)
 
 Function to plot the results of the Aggregated non cooperative configuration
 """
@@ -58,12 +62,11 @@ end
 
 Calculate grid usage for the Aggregated Non Cooperative case.
 Output is normalized with respect to the demand when per_unit is true
-'''
-Outputs
--------
-grid_frac : DenseAxisArray
-    Reliance on the grid demand for each user and the aggregation
-'''
+
+## Returns
+
+It returns a DenseAxisArray containing the power withdrawn from the grid
+for each user and the whole aggregate
 """
 function calculate_grid_import(::AbstractGroupANC, ECModel::AbstractEC; per_unit::Bool=true)
     return calculate_grid_import(GroupCO(), ECModel; per_unit=per_unit)
@@ -75,12 +78,11 @@ end
 
 Calculate grid export for the Aggregated Non Cooperative case.
 Output is normalized with respect to the demand when per_unit is true
-'''
-Outputs
--------
-grid_frac : DenseAxisArray
-    Reliance on the grid demand for each user and the aggregation
-'''
+
+## Returns
+
+It returns a DenseAxisArray containing the power fed to the grid
+for each user and the whole aggregate
 """
 function calculate_grid_export(::AbstractGroupANC, ECModel::AbstractEC; per_unit::Bool=true)
     return calculate_grid_export(GroupCO(), ECModel; per_unit=per_unit)
@@ -89,18 +91,16 @@ end
 """
     calculate_time_shared_production(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
 
-Calculate the time series of the shared produced energy for the Cooperative case.
-In the Cooperative case, there can be shared energy between users, not only self production.
+Calculate the time series of the shared produced energy for the Aggregated Non Cooperative case.
+In the Aggregated Non Cooperative case, there can be shared energy between users, not only self production.
 
 For every time step and user, this time series highlight the quantity of production that meets
 needs by other users.
 
-'''
-Outputs
--------
-shared_prod_us : DenseAxisArray
-    Shared production for each user and the aggregation and time step
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power fed to the grid
+but consumed by another user for each user and the whole aggregate
 """
 function calculate_time_shared_production(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
     return calculate_time_shared_production(GroupCO(), ECModel; add_EC=add_EC, kwargs...)
@@ -109,18 +109,16 @@ end
 """
     calculate_time_shared_consumption(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
 
-Calculate the time series of the shared consumed energy for the Cooperative case.
-In the Cooperative case, there can be shared energy between users, not only self production.
+Calculate the time series of the shared consumed energy for the Aggregated Non Cooperative case.
+In the Aggregated Non Cooperative case, there can be shared energy between users, not only self production.
 
 For every time step and user, this time series highlight the quantity of load that is met
 by using shared energy.
 
-'''
-Outputs
--------
-shared_cons_us : DenseAxisArray
-    Shared consumption for each user and the aggregation and time step
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power withdrawn from the grid
+but produced by another user for each user and the whole aggregate
 """
 function calculate_time_shared_consumption(::AbstractGroupANC, ECModel::AbstractEC; add_EC=true, kwargs...)
     return calculate_time_shared_consumption(GroupCO(), ECModel; add_EC=add_EC, kwargs...)
@@ -135,12 +133,10 @@ When only_shared is false, also self production is considered, otherwise only sh
 Shared energy means energy that is shared between 
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-shared_en_frac : DenseAxisArray
-    Shared energy for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power fed to the grid
+but consumed by another user for each user and the whole aggregate
 """
 function calculate_shared_production(::AbstractGroupANC, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
     return calculate_shared_production(GroupCO(), ECModel; per_unit=per_unit, only_shared=only_shared)
@@ -155,22 +151,19 @@ When only_shared is false, also self consumption is considered, otherwise only s
 Shared energy means energy that is shared between 
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-shared_cons_frac : DenseAxisArray
-    Shared consumption for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power withdrawn from the grid
+but produced by another user for each user and the whole aggregate
 """
 function calculate_shared_consumption(::AbstractGroupANC, ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
     return calculate_shared_consumption(GroupCO(), ECModel; per_unit=per_unit, only_shared=only_shared)    
 end
 
 """
-finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
+    finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
 
 Function to finalize the results of the Aggregated Non Cooperative model after the execution
-
 """
 function finalize_results!(::AbstractGroupANC, ECModel::AbstractEC)
     
@@ -268,25 +261,22 @@ end
 
 
 """
-    to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC)
+    to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC; base_model=nothing, kwargs...)
 
 Function that returns a callback function that quantifies the objective of a given subgroup of users
 The returned function objective_func accepts as arguments an AbstractVector of users and
 returns the objective of the aggregation for Aggregated Non Cooperative models
 
-Parameters
-----------
-ECModel : AbstractEC
-    Cooperative EC Model of the EC to study.
-    When the model is not cooperative an error is thrown.
-base_model : AbstractEC optional
-    When provided, it represents the base model used to perform the calculations
+## Arguments
 
-Return
-------
-objective_callback_by_subgroup : Function
-    Function that accepts as input an AbstractVector (or Set) of users and returns
-    as output the benefit of the specified community
+* `group_type`: The type of group model
+* `ECModel`: EC Model of the EC to study. When the model is not cooperative an error is thrown.
+* `base_model`: EC Model (optional). When provided, it represents the base model used to perform the calculations
+
+## Returns
+
+It returns a function that accepts as input an AbstractVector (or Set) of users and returns
+as output the benefit of the specified community
 """
 function to_objective_callback_by_subgroup(::AbstractGroupANC, ECModel::AbstractEC; base_model=nothing, kwargs...)
 

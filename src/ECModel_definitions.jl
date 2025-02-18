@@ -2,6 +2,11 @@
 const EC_CODE = "EC"
 
 # Type of grouping: Non Cooperative, Cooperative, Aggregated Non Cooperative
+"""
+    AbstractGroup
+
+Abstract type for the group model; it is the parent of the three types of group models: Cooperative, Non-Cooperative, and Aggregated Non-Cooperative.
+"""
 abstract type AbstractGroup end
 
 # Abstract COoperative group
@@ -12,8 +17,25 @@ abstract type AbstractGroupNC <: AbstractGroup end
 abstract type AbstractGroupANC <: AbstractGroup end
 
 # Concrete structs
+"""
+    GroupCO <: AbstractGroupCO
+
+Concrete type for the Cooperative group model.
+"""
 struct GroupCO <: AbstractGroupCO end
+
+"""
+    GroupNC <: AbstractGroupNC
+
+Concrete type for the Non-Cooperative group model.
+"""
 struct GroupNC <: AbstractGroupNC end
+    
+"""
+    GroupANC <: AbstractGroupANC
+
+Concrete type for the Aggregated Non-Cooperative group model.
+"""
 struct GroupANC <: AbstractGroupANC end
 
 GroupAny = [GroupCO(), GroupANC(), GroupNC()]
@@ -35,7 +57,11 @@ function Base.string(GType::AbstractGroup)
 end
 
 
+"""
+    AbstractEC
 
+Abstract type for an EnergyCommunity model.
+"""
 abstract type AbstractEC end
 
 # constant empty dictionary for an empty EnergyCommunity model
@@ -44,8 +70,10 @@ const ZERO_DD = Dict("general"=>Dict(), "users"=>Dict(), "market"=>Dict())
 
 
 """
+    check_valid_data_dict(raw_dict_data::Dict)
 
-Check whether the dictionary data has the needed components
+Check whether the dictionary data has the needed components.
+The dictionary must have the keys "general", "users", and "market".
 """
 function check_valid_data_dict(raw_dict_data::Dict)
     # check if file contains the data of the ECModel
@@ -59,7 +87,23 @@ function check_valid_data_dict(raw_dict_data::Dict)
 end
 
 
-"Structure encapsuling the data"
+"""
+    ModelEC <: AbstractEC
+
+Concrete type for an EnergyCommunity model.
+
+## Attributes
+
+* `data::Dict`: All data
+* `gen_data::Dict`: general data
+* `market_data::Dict`: market data
+* `users_data::Dict`: users data
+* `group_type`: aggregation type of model
+* `user_set::Vector`: desired user set
+* `model::Model`: JuMP model
+* `optimizer`: optimizer of the JuMP model
+* `results::Dict`: results of the model in Dictionary format
+"""
 mutable struct ModelEC <: AbstractEC
 
     data::Dict  # All data
@@ -78,18 +122,16 @@ end
 
 
 """
-Constructor of a ModelEC
+    ModelEC(data::Dict=ZERO_DD, group_type=GroupNC(), optimizer=nothing, user_set::Vector=Vector())
 
-Inputs
-------
-data : Dict 
-    Data of the EC
-group_type : AbstractGroup
-    Type of EC
-optimizer
-    Optimizer of the model
-user_set : Vector
-    Vector of the users
+Constructor of a ModelEC.
+
+## Arguments
+
+* `data::Dict=ZERO_DD`: All data; a dictionary with the keys "general", "users", and "market"
+* `group_type`: aggregation type of model
+* `optimizer`: optimizer of the JuMP model
+* `user_set::Vector`: desired user set
 """
 function ModelEC(
     data::Dict=ZERO_DD,
@@ -113,21 +155,16 @@ function ModelEC(
     ModelEC(data, gen_data, market_data, users_data, group_type, user_set, model, optimizer, results)
 end
 
-# function ModelEC(;
-#     data::Dict,
-#     group_type,
-#     optimizer=nothing,
-#     user_set::Vector=Vector()
-# )
-
-#     ModelEC(data, group_type, optimizer, user_set)
-# end
-
 """
-Load Model from disk
+    ModelEC(file_name::AbstractString, group_type, optimizer=nothing)
 
-file_name : str
-    Filename
+Load EnergyCommunity model from disk
+
+## Arguments
+
+* `file_name::AbstractString`: name of the file to load the data
+* `group_type`: aggregation type of model
+* `optimizer`: optimizer of the JuMP model
 """
 function ModelEC(file_name::AbstractString,
         group_type,
@@ -139,7 +176,18 @@ function ModelEC(file_name::AbstractString,
     ModelEC(data, group_type, optimizer, user_set)
 end
 
-"Copy constructor"
+"""
+    ModelEC(model_copy::ModelEC, group_type=nothing, optimizer=nothing, user_set=nothing)
+
+Copy constructor; it copies the data from `model_copy` and changes the group type, optimizer, and user set if specified.
+
+## Arguments
+
+* `model_copy::ModelEC`: model to copy
+* `group_type=nothing`: aggregation type of model; default is the same as `model_copy`
+* `optimizer=nothing`: optimizer of the JuMP model; default is the same as `model_copy`
+* `user_set=nothing`: desired user set; default is the same as `model_copy`
+"""
 function ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, user_set=nothing)
     if isnothing(group_type)
         group_type = model_copy.group_type
@@ -153,17 +201,37 @@ function ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, use
     ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(user_set))
 end
 
-"Copy of ModelEC"
+"""
+    Base.copy(model_copy::ModelEC)
+
+Create a copy of a ModelEC opject
+
+## Arguments
+
+* `model_copy::ModelEC`: model to copy
+"""
 function Base.copy(model_copy::ModelEC)
     ModelEC(model_copy.data, model_copy.group_type, model_copy.optimizer, deepcopy(model_copy.user_set))
 end
 
-"Deepcopy of ModelEC"
+"""
+    Base.deepcopy(model_copy::ModelEC)
+
+Create a deepcopy of a ModelEC opject
+
+## Arguments
+
+* `model_copy::ModelEC`: model to copy
+"""
 function Base.deepcopy(model_copy::ModelEC)
     ModelEC(deepcopy(model_copy.data), model_copy.group_type, model_copy.optimizer, deepcopy(model_copy.user_set))
 end
 
-"""Function zero to represent the empty ModelEC"""
+"""
+    Base.zero(::ModelEC)
+
+Function zero to represent the empty ModelEC
+"""
 function Base.zero(::ModelEC)
     return ModelEC()
 end

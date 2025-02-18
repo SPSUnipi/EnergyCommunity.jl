@@ -1,25 +1,23 @@
 """
-    to_utility_callback_by_subgroup(ECModel::AbstractEC, base_group_type::AbstractGroup)
+    to_utility_callback_by_subgroup(
+        ECModel::AbstractEC, base_group_type::AbstractGroup;
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        kwargs...
+    )
 
 Function that returns a callback function that quantifies the benefit of a given subgroup of users
 The returned function utility_func accepts as arguments an AbstractVector of users and
 returns the benefit with respect to the base case of the users optimized independently
 
-Parameters
-----------
-ECModel : AbstractEC
-    Cooperative EC Model of the EC to study.
-    When the model is not cooperative an error is thrown.
-base_group_type : AbstractGroup
-    Type of the base case to consider
-no_aggregator_group : AbstractGroup (otional, default NonCooperative)
-    EC group type for when no aggregator is considered
+## Arguments
 
-Return
-------
-utility_callback_by_subgroup : Function
-    Function that accepts as input an AbstractVector (or Set) of users and returns
-    as output the benefit of the specified community
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `base_group_type::AbstractGroup`: Type of the base case to consider
+* `no_aggregator_group::AbstractGroup=GroupNC()`: EC group type for when no aggregator is considered
+
+## Returns
+
+* `utility_callback_by_subgroup::Function`: Function that accepts as input an AbstractVector (or Set) of users and returns as output the benefit of the specified community
 """
 function to_utility_callback_by_subgroup(
         ECModel::AbstractEC, base_group_type::AbstractGroup;
@@ -48,11 +46,20 @@ end
 
 
 """
-build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC)
+    build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC; base_model=nothing)
 
 When in the CO case the NC model is used as base case,
 then this function builds the corresponding constraint
 
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `base_group::AbstractGroupNC`: Type of the base case to consider
+* `base_model::ModelEC`: Model of the base case to consider
+
+## Returns
+
+* `BaseUtility`: JuMP expression of the base utility
 """
 function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupNC; base_model=nothing)
     
@@ -78,11 +85,20 @@ end
 
 
 """
-build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC)
+    build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; base_model=nothing)
 
 When in the CO case the ANC model is used as base case,
 then this function builds the corresponding constraint
 
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `base_group::AbstractGroupANC`: Type of the base case to consider
+* `base_model::ModelEC`: Model of the base case to consider
+
+## Returns
+
+* `BaseUtility`: JuMP expression of the base utility
 """
 function build_base_utility!(ECModel::AbstractEC, base_group::AbstractGroupANC; base_model=nothing)
     
@@ -157,11 +173,20 @@ end
 
 
 """
-build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC; base_model=nothing)
+    build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC; base_model=nothing)
 
 When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
 then this function builds the corresponding constraint
 
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `no_aggregator_group::AbstractGroupANC`: Type of the base case to consider
+* `base_model::ModelEC`: Model of the base case to consider
+
+## Returns
+
+* `SW`: JuMP expression of the Social Welfare
 """
 function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC; base_model=nothing)
     
@@ -248,6 +273,14 @@ build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC;
 When the NC case is the reference value when no aggregator is available,
 then no changes in the model are required
 
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `no_aggregator_group::AbstractGroupNC`: Type of the base case to consider
+
+## Returns
+
+* `SW`: JuMP expression of the Social Welfare; the same as in the input model
 """
 function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupNC; kwargs...)
     return ECModel.model[:SW]
@@ -255,10 +288,9 @@ end
 
 
 """
-build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any)
+    build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any)
 
 Not implemented case
-
 """
 function build_no_agg_utility!(ECModel::AbstractEC, no_aggregator_group::Any; kwargs...)
     return throw(ArgumentError("Argument $(string(no_aggregator_group)) not valid"))
@@ -266,11 +298,12 @@ end
 
 
 """
-build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
+    build_base_utility!(ECModel::AbstractEC, no_aggregator_group::AbstractGroupANC)
 
 When in the CO case the ANC model is used as reference case for when the aggregator is not in the group,
 then this function builds the corresponding constraint
 
+Not implemented
 """
 function build_base_utility!(ECModel::AbstractEC, kwargs...)
     return throw(ArgumentError("Model type $(string(typeof(no_aggregator_group))) not implemented"))
@@ -278,9 +311,27 @@ end
 
 
 """
-build_least_profitable!(ECModel::AbstractEC; no_aggregator_group::AbstractGroup=GroupNC(), add_EC=true)
+    build_least_profitable!(
+        ECModel::AbstractEC, base_group::AbstractGroup;
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        add_EC=true,
+        relax_combinatorial=false,
+        use_notations=false,
+        base_model=nothing,
+    )
 
-Function to build the model to identify the least profitable coalition
+Function to build the model to identify the least profitable coalition.
+This function builds the model in the ECModel object to identify the least profitable coalition using a MILP model.
+
+## Arguments
+
+* `ECModel::AbstractEC`: EC Model of the EC to study.
+* `base_group::AbstractGroup`: Type of the base case to consider
+* `no_aggregator_group::AbstractGroup=GroupNC()`: Type of the base case to consider when no aggregator is in the coalition
+* `add_EC::Bool=true`: Flag to include the EC in the coalition
+* `relax_combinatorial::Bool=false`: Flag to relax the combinatorial part of the MILP model
+* `use_notations::Bool=false`: Flag to use notations in the model
+* `base_model::ModelEC=nothing`: Model of the base case to consider
 """
 function build_least_profitable!(
         ECModel::AbstractEC, base_group::AbstractGroup;
@@ -444,9 +495,16 @@ end
 
 
 """
-build_noagg_least_profitable(ECModel::ModelEC; use_notations=false, optimizer=nothing)
+    build_noagg_least_profitable(ECModel::ModelEC; use_notations=false, optimizer=nothing, base_model=nothing)
 
-Function to create an ecmodel that returns the least profitable coalition for ANC models
+Function to create a specialized model to identify the least profitable coalition for an energy community of ANC type.
+
+## Arguments
+
+* `ECModel::ModelEC`: Model of the community
+* `use_notations::Bool=false`: Flag to use notations in the model
+* `optimizer::Optimizer=nothing`: Optimizer to use
+* `base_model::ModelEC=nothing`: Model of the base case to consider
 """
 function build_noagg_least_profitable!(
         ECModel::ModelEC;
@@ -482,16 +540,14 @@ function build_noagg_least_profitable!(
 end
 
 """
-set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
+    set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
 
-Function to set the profit distribution of the least profitable problem
+Function to set the profit distribution of the least profitable problem.
 
-Parameters
-----------
-ECModel : ModelEC
-    Model of the community
-profit_distribution : AbstractDict
-    Profit distribution per user
+## Arguments
+
+* `ECModel::AbstractEC`: Model of the community
+* `profit_distribution::AbstractDict`: Profit distribution per user
 """
 function set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
 
@@ -508,7 +564,11 @@ function set_least_profitable_profit!(ECModel::AbstractEC, profit_distribution)
     end
 end
 
-"Get variables related to the user u_name for a DenseAxisArray"
+"""
+    get_subproblem_vars_by_user(var::Containers.DenseAxisArray{T}, u_name) where T <: VariableRef
+
+Get variables related to the user `u_name` for a DenseAxisArray
+"""
 function get_subproblem_vars_by_user(var::Containers.DenseAxisArray{T}, u_name) where T <: VariableRef
     list_axes = axes(var)
 
@@ -519,14 +579,22 @@ function get_subproblem_vars_by_user(var::Containers.DenseAxisArray{T}, u_name) 
     end
 end
 
-"Get variables related to the user u_name for a SparseAxisArray"
+"""
+    get_subproblem_vars_by_user(var::Containers.SparseAxisArray{T}, u_name) where T <: VariableRef
+
+Get variables related to the user `u_name` for a SparseAxisArray
+"""
 function get_subproblem_vars_by_user(var::Containers.SparseAxisArray{T}, u_name) where T <: VariableRef
     key_set = eachindex(var)
     
     return T[var[k...] for k in key_set if k[1] == u_name]
 end
 
-"Get annotations for Benders decomposition"
+"""
+    get_annotations(ECModel::AbstractEC)
+
+Get annotations for Benders decomposition
+"""
 function get_annotations(ECModel::AbstractEC)
     variable_annotations = Dict{Int, Vector{VariableRef}}()
     
@@ -563,13 +631,20 @@ function get_annotations(ECModel::AbstractEC)
     return variable_annotations
 end
 
-"General fallback for notations"
+"""
+    add_notations!(ECModel::AbstractEC, ::Any)
+General fallback for notations
+"""
 function add_notations!(ECModel::AbstractEC, ::Any)
     @warn "Annotations not supported for the current solver; annotations are ignored"
     return
 end
 
-"General fallback for branching priorities"
+"""
+    add_branching_priorities!(ECModel::AbstractEC, ::Any) end
+
+General fallback for branching priorities
+"""
 function add_branching_priorities!(ECModel::AbstractEC, ::Any) end
 
 try
@@ -593,7 +668,9 @@ end
 try
 
     """
-        Add notations for CPLEX backend
+        add_notations!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
+
+    Add notations for CPLEX backend
     """
     function add_notations!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
 
@@ -639,7 +716,9 @@ try
     
 
     """
-        Add branching priorities for CPLEX backend
+        add_branching_priorities!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
+
+    Add branching priorities for CPLEX backend
     """
     function add_branching_priorities!(ECModel::AbstractEC, ::Type{CPLEX.Optimizer})
 
@@ -667,7 +746,21 @@ catch e
     @warn "Special features by CPLEX are not enabled"
 end
 
-"""Function to create output data after the optimization for TheoryOfGames.jl"""
+"""
+    create_output_data(ecm_copy::ModelEC, number_of_solutions)
+
+Function to create output data after the optimization for TheoryOfGames.jl.
+This functions obtains multiple solutions out of the optimization.
+
+## Arguments
+
+* `ecm_copy::ModelEC`: Model of the community
+* `number_of_solutions::Int`: Number of solutions to return
+
+## Returns
+
+* `output_data::Vector{NamedTuple}`: Output data
+"""
 function create_output_data(ecm_copy::ModelEC, number_of_solutions)
     user_set_tot = axes(ecm_copy.model[:profit_distribution])[1]
 
@@ -707,54 +800,48 @@ function create_output_data(ecm_copy::ModelEC, number_of_solutions)
 end
 
 """
-    to_least_profitable_coalition_callback(ECModel::AbstractEC, base_group::AbstractGroup=GroupNC(); no_aggregator_group::AbstractGroup=GroupNC())
+    to_least_profitable_coalition_callback(
+        ECModel::AbstractEC,
+        base_group::AbstractGroup;
+        no_aggregator_group::AbstractGroup=GroupNC(),
+        optimizer=nothing,
+        raw_outputs=false,
+        number_of_solutions=1,
+        relax_combinatorial=false,
+        use_notations=false,
+        callback_solution=Dict(),
+        branching_priorities=true,
+        decompose_ANC=true,
+        decompose_rel_tolerance=0.05,
+        decompose_abs_tolerance=1e-2,
+        kwargs...
+    )
 
 Function that returns a callback function that, given as input a profit distribution scheme,
 returns the coalition that has the least benefit in remaining in the grand coalition.
-The returned function least_profitable_coalition_callback accepts an AbstractDict as argument
+The returned function `least_profitable_coalition_callback` accepts an `AbstractDict` as argument
 that specifies the profit distribution by user that is used to compute the least benefit procedure.
 
-Parameters
-----------
-ECModel : AbstractEC
-    Cooperative EC Model of the EC to study.
-    When the model is not cooperative an error is thrown.
-base_group : AbstractGroup (optional, default GroupNC())
-    Base group with respect the benefit is calculated.
-no_aggregator_group : AbstractGroup (optional, default GroupNC())
-    Type of aggregation group of the community when no aggregator is available
-    When not provided, an equivalent NonCooperative model is created and the corresponding
-    utilities by user are used as reference case.
-number_of_solutions : (optional, default 1)
-    Number of solutions to be returned at every iteration
-    number_of_solutions <= 0: all solutions are returned
-    number_of_solutions >= 1: specific number of solutions are returned
-relax_combinatorial : (optional, default false)
-    When true, the full least profitable coalition MILP problem is relaxed to continuous,
-    in the combinatorial part
-direct_model : (optional, default false)
-    When true the JuMP model is direct
-callback_solution : Dict (optional, default empty)
-    Dictionary of callbacks depending on the termination status of the optimization.
-    Keys shall be of type JuMP.TerminationStatusCode, and outputs a function with as argument a ModelEC
-branching_priorities : Bool (optional, default true) 
-    Option to specify if add the branching priorities
-decompose_ANC : Bool (optional, default false)
-    When True, if the no_aggregator_group is ANC and, then the main optimization model is decomposed
-    into two models: (a) when no Aggregator is in the coalition and (b) when the aggregator is in the coalition
-    In this case, (a) is optimized first and if the optimization is beyond a given threshold,
-    the execution is terminated without optimizing (b). The threshold is provided as an optional input
-    in the callback function returned by the function. Otherwise the optimization continues with (b).
-decompose_rel_tolerance : Float
-    Relative tolerance of the decompose_ANC procedure that compares the stopping criterion with the current result
-decompose_abs_tolerance : Float
-    Absolute tolerance of the decompose_ANC procedure that compares the stopping criterion with the current result
+## Arguments
 
-Return
-------
-least_profitable_coalition_callback : Function
-    Function that accepts as input an AbstractDict representing the benefit distribution
-    by user
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study. When the model is not cooperative an error is thrown.
+* `base_group::AbstractGroup`: Base group with respect the benefit is calculated
+* `no_aggregator_group::AbstractGroup=GroupNC()`: Type of aggregation group of the community when no aggregator is available
+* `optimizer::Optimizer=nothing`: Optimizer to use
+* `raw_outputs::Bool=false`: Flag to return raw outputs; see return section for more details
+* `number_of_solutions::Int=1`: Number of solutions to return from each iteration; when `number_of_solutions <= 0` all solutions are returned
+* `relax_combinatorial::Bool=false`: Flag to relax the combinatorial part of the MILP model
+* `use_notations::Bool=false`: Flag to use notations in the model
+* `callback_solution::Dict()`: Dictionary of callbacks depending on the termination status of the optimization. Keys shall be of type JuMP.TerminationStatusCode, and outputs a function with as argument a ModelEC
+* `branching_priorities::Bool=true`: Option to specify if add the branching priorities
+* `decompose_ANC::Bool=true`: When True, if the no_aggregator_group is ANC and, then the main optimization model is decomposed into two models: (a) when no Aggregator is in the coalition and (b) when the aggregator is in the coalition. In this case, (a) is optimized first and if the optimization is beyond a given threshold, the execution is terminated without optimizing (b). The threshold is provided as an optional input in the callback function returned by the function. Otherwise the optimization continues with (b).
+* `decompose_rel_tolerance=0.05`: Relative tolerance of the `decompose_ANC` procedure
+* `decompose_abs_tolerance=1e-2`: Absolute tolerance of the `decompose_ANC` procedure
+
+## Returns
+
+* `least_profitable_coalition_callback`: Function that accepts as input an AbstractDict representing the benefit distribution by user
+* `ecm_copy`: (when `raw_outputs=true`) ModelEC copy of the ECModel, used in the callback function
 """
 function to_least_profitable_coalition_callback(
         ECModel::AbstractEC,
@@ -830,16 +917,14 @@ function to_least_profitable_coalition_callback(
         Callback function that, given a profit distribution scheme by user,
         returns the worst coalition and its total benefit with respect to base case
 
-        Parameters
-        ----------
-        profit_distribution : AbstractDict
-            Dictionary of profit distribution by user
-        modify_solver_options : Vector{Pair} (optional)
-            Vector of the pairs of solver options to set or modify
+        ## Arguments
 
-        Returns
-        -------
-        least_profitable_coalition : Vector{NamedTuple}
+        * `profit_distribution::AbstractDict`: Dictionary of profit distribution by user
+        * `modify_solver_options::Vector{Pair}`: Vector of the pairs of solver options to set or modify
+        
+        ## Returns
+
+        * `output_data::Vector{NamedTuple}`: Output data
             Vector of NamedTuple with the components of the coalition leading to the worst benefit,
             given the current distribution scheme.
             Each NamedTuple has the following fields of the vector entry o:
@@ -848,7 +933,6 @@ function to_least_profitable_coalition_callback(
             - least_profitable_coalition: members of the worst coalition, for result o
             - coalition_benefit: benefit of the coalition, for result o
             - min_surplus: minimum surplus of the coalition, for result o
-
         """
         function least_profitable_coalition_callback(
                 profit_distribution;
@@ -913,9 +997,37 @@ end
 
 
 """
-    IterMode(ECModel::AbstractEC, base_group_type::AbstractGroup)
+    TheoryOfGames.IterMode(
+        ECModel::AbstractEC,
+        base_group_type::AbstractGroup; 
+        no_aggregator_type::AbstractGroup=GroupNC(),
+        optimizer=nothing,
+        number_of_solutions=0,
+        use_notations=false,
+        decompose_ANC=true,
+        decompose_abs_tolerance=1e-4,
+        decompose_rel_tolerance=1e-4,
+        kwargs...
+    )
 
-Function to create the IterMode item for the TheoryOfGames.jl package 
+Function to create the IterMode item for the TheoryOfGames.jl package
+
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `base_group_type::AbstractGroup`: Type of the base case to consider
+* `no_aggregator_type::AbstractGroup=GroupNC()`: Type of the base case to consider when no aggregator is available
+* `optimizer::Optimizer=nothing`: Optimizer to use
+* `number_of_solutions::Int=0`: Number of solutions to return from each iteration; when `number_of_solutions <= 0` all solutions are returned
+* `use_notations::Bool=false`: Flag to use notations in the model
+* `decompose_ANC::Bool=true`: When True, if the no_aggregator_group is ANC and, then the main optimization model is decomposed into two models. See `to_least_profitable_coalition_callback` for more details
+* `decompose_rel_tolerance=0.05`: Relative tolerance of the `decompose_ANC` procedure
+* `decompose_abs_tolerance=1e-2`: Absolute tolerance of the `decompose_ANC` procedure
+* `kwargs...`: Additional arguments
+
+## Returns
+
+* `iter_mode`: TheoryOfGames.IterMode object
 """
 function TheoryOfGames.IterMode(
         ECModel::AbstractEC,
@@ -946,16 +1058,27 @@ function TheoryOfGames.IterMode(
         kwargs...
     )
 
-    robust_mode = TheoryOfGames.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
+    iter_mode = TheoryOfGames.IterMode([EC_CODE; ECModel.user_set], utility_callback, worst_coalition_callback)
 
-    return robust_mode
+    return iter_mode
 end
 
 
 """
-    EnumMode(ECModel::AbstractEC)
+    TheoryOfGames.EnumMode(ECModel::AbstractEC, base_group::AbstractGroup; verbose::Bool=true, kwargs...)
 
-Function to create the EnumMode item for the TheoryOfGames.jl package 
+Function to create the EnumMode item for the TheoryOfGames.jl package.
+
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
+* `base_group::AbstractGroup`: Type of the base case to consider
+* `verbose::Bool=true`: Flag to print the results
+* `kwargs...`: Additional arguments
+
+## Returns
+
+* `enum_mode`: TheoryOfGames.EnumMode object
 """
 function TheoryOfGames.EnumMode(ECModel::AbstractEC, base_group::AbstractGroup; verbose::Bool=true, kwargs...)
     utility_callback = to_utility_callback_by_subgroup(ECModel, base_group; kwargs...)

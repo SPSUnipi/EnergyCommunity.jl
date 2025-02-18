@@ -1,27 +1,57 @@
-"Return main data elements of the dataset of the ECModel: general parameters, users data and market data"
+"""
+    explode_data(ECModel::AbstractEC)
+
+Return main data elements of the dataset of the `ECModel`: general parameters, users data and market data, retrieved from the `data` dictionary of the `ECModel`.
+
+## Arguments
+
+* `ECModel::AbstractEC`: Energy Community model
+
+## Returns
+
+* `general_data::Dict`: General data of the ECModel
+* `users_data::Dict`: Users data of the ECModel
+* `market_data::Dict`: Market data of the ECModel
+"""
 function explode_data(ECModel::AbstractEC)
     return general(ECModel.data), users(ECModel.data), market(ECModel.data)
 end
 
 
-"Get the EC group type"
+"""
+    get_group_type(ECModel::AbstractEC)
+
+Returns the EC group type
+"""
 function get_group_type(ECModel::AbstractEC)
     return ECModel.group_type
 end
 
-"Set the EC group type"
+"""
+    set_group_type!(ECModel::AbstractEC)
+
+Sets the EC group type
+"""
 function set_group_type!(ECModel::AbstractEC, group::AbstractGroup)
     ECModel.group_type = group
 end
 
 
-"Get the EC user set"
+"""
+    get_user_set(ECModel::AbstractEC)
+
+Returns the EC user set
+"""
 function get_user_set(ECModel::AbstractEC)
     return ECModel.user_set
 end
 
 
-"Set the EC user set"
+"""
+    set_user_set(ECModel::AbstractEC)
+
+Sets the EC user set
+"""
 function set_user_set!(ECModel::AbstractEC, user_set)
     if EC_CODE in user_set
         println("Aggregator code '$EC_CODE' removed from the list of users")
@@ -31,12 +61,20 @@ function set_user_set!(ECModel::AbstractEC, user_set)
 end
 
 
-"Set the EC user set equal to the stored user_set"
+"""
+    reset_user_set!(ECModel::AbstractEC)
+
+Reset the EC user set to match the stored `user_set` of the `ECModel` data
+"""
 function reset_user_set!(ECModel::AbstractEC)
     set_user_set!(ECModel::AbstractEC, collect(keys(ECModel.users_data)))
 end
 
-"Build the mathematical problem for the EC"
+"""
+    build_model!(ECModel::AbstractEC; kwargs...)
+
+Build the mathematical problem for the EC.
+"""
 function build_model!(ECModel::AbstractEC; kwargs...)
 
     # build the model
@@ -47,14 +85,18 @@ function build_model!(ECModel::AbstractEC; kwargs...)
 end
 
 """
-Function to return the objective function by User
+    objective_by_user(ECModel::AbstractEC; add_EC=true)
+
+Returns the objective function by user; when `add_EC` is true, the EC is added to the user set
 """
 function objective_by_user(ECModel::AbstractEC; add_EC=true)
     return objective_by_user(ECModel.group_type, ECModel; add_EC=add_EC)
 end
 
 """
-Function to return the objective function by User
+    JuMP.objective_value(ECModel::AbstractEC)
+
+Returns the objective value of the EC model
 """
 function JuMP.objective_value(ECModel::AbstractEC)
     if isempty(ECModel.results)
@@ -64,7 +106,16 @@ function JuMP.objective_value(ECModel::AbstractEC)
     end
 end
 
-"Abstract build function model for generic EnergyCommunity model"
+"""
+    build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer; use_notations=false)
+
+Build function model for generic EnergyCommunity model.
+This functions triggers specific functions for the different aggregation types.
+
+In particular, first the function `build_base_model!` is called to build the base model of the EC.
+Then, the function `build_specific_model!` is called to build the specific model of the EC dependin on the group type.
+Finally, the function `set_objective!` is called to set the objective of the EC, based on their group type.
+"""
 function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer; use_notations=false)
 
     # the build model for the NC/ANC case is eqvuivalent to the base model
@@ -80,8 +131,13 @@ function build_model!(group_type::AbstractGroup, ECModel::AbstractEC, optimizer;
     return ECModel
 end
 
-"Solve the optimization problem for the EC"
-function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
+"""
+    JuMP.optimize!(ECModel::AbstractEC)
+
+Solve the optimization problem for the EC.
+It optimizes the model of the EC and stores the results in the `results` attribute of the `ECModel`.
+"""
+function JuMP.optimize!(ECModel::AbstractEC)
     optimize!(ECModel.model)
     ECModel.results = _jump_to_dict(ECModel.model)
     finalize_results!(ECModel.group_type, ECModel)
@@ -89,26 +145,13 @@ function JuMP.optimize!(ECModel::AbstractEC; update_results=true)
 end
 
 
-"Solve the optimization problem for the EC"
+"""
+    JuMP.result_count(ECModel::AbstractEC)
+
+Returns the result count of the JuMP model of the EC model
+"""
 function JuMP.result_count(ECModel::AbstractEC)
     return result_count(ECModel.model)
-end
-
-
-"Output results for the NC configuration"
-function output_results(ECModel::AbstractEC,
-    output_file::AbstractString, output_file_plot::AbstractString,
-    ::Union{GroupNC, GroupANC}; user_set::Vector = Vector())
-    return output_results_NC(ECModel.data, ECModel.results_NC, 
-            output_file, output_file_plot, user_set=user_set)
-end
-
-"Output results for the EC configuration"
-function output_results(ECModel::AbstractEC,
-    output_file::AbstractString, output_file_plot::AbstractString,
-    ::GroupCO; user_set::Vector = Vector())
-    return output_results_EC(ECModel.data, ECModel.results,
-            output_file, output_file_plot, ECModel.results_NC, user_set=user_set)
 end
 
 """
@@ -118,16 +161,14 @@ Function that returns a callback function that quantifies the objective of a giv
 The returned function objective_func accepts as arguments an AbstractVector of users and
 returns the objective of the aggregation for any model
 
-Parameters
-----------
-ECModel : AbstractEC
-    Cooperative EC Model of the EC to study.
+## Arguments
+
+* `ECModel::AbstractEC`: Cooperative EC Model of the EC to study.
     When the model is not cooperative an error is thrown.
 
-Return
-------
-objective_callback_by_subgroup : Function
-    Function that accepts as input an AbstractVector (or Set) of users and returns
+## Returns
+
+* `objective_callback_by_subgroup`: Function that accepts as input an AbstractVector (or Set) of users and returns
     as output the benefit of the specified community
 """
 function to_objective_callback_by_subgroup(ECModel::AbstractEC; kwargs...)
@@ -138,7 +179,9 @@ end
 
 """
     save(output_file::AbstractString, ECModel::AbstractEC)
-Function to save the results and the model to the hard drive
+
+Function to save the results and the model to the hard drive.
+The function saves data, user_set, group_type and results of the ECModel in a dictionary and then saves the dictionary in the output_file.
 """
 function FileIO.save(output_file::AbstractString, ECModel::AbstractEC)
     save_model = Dict(
@@ -152,7 +195,10 @@ end
 
 """
     load!(output_file::AbstractString, ECModel::AbstractEC)
-Function to save the results and the model to the hard drive
+
+Loads the Energy Community model stored in the file specified by `output_file` and updates the relevant fields of `ECModel`.
+This function performs basic checks on the loaded data, verifying the existence of the necessary keys ("data", "user_set", "group_type", "results"),
+and restores the model components (such as data, users_data, and results) accordingly.
 """
 function load!(output_file::AbstractString, ECModel::AbstractEC)
 
@@ -212,8 +258,10 @@ function load!(output_file::AbstractString, ECModel::AbstractEC)
 end
 
 """
-    load(output_file::AbstractString)
-Function to save the results and the model to the hard drive
+    load(output_file::AbstractString, ECModel::AbstractEC)
+
+Function to save the results and the model to the hard drive; ECModel is not modified.
+The function saves data, user_set, group_type and results of the ECModel in a dictionary and then saves the dictionary in the output_file.
 """
 function FileIO.load(output_file::AbstractString, ECModel::AbstractEC)
     return load!(output_file, zero(ECModel))
@@ -221,8 +269,9 @@ end
 
 
 """
+    _verify_data(data::Dict)
 
-Function to verify the data loaded from the disk
+Function to verify the data loaded from the disk (Not yet implemented)
 """
 function _verify_data(data::Dict)
 
@@ -231,6 +280,7 @@ end
 
 
 """
+    _verify_users_data(users_data::Dict)
 
 Function to verify the users data loaded from the disk
 """
@@ -261,6 +311,7 @@ function _verify_users_data(users_data::Dict)
 end
 
 """
+    Plots.plot(ECModel::ModelEC, output_plot_file::AbstractString="")
 
 Function to plot the EC model
 """
@@ -270,6 +321,8 @@ end
 
 
 """
+    print_summary(ECModel::AbstractEC; kwargs...)
+
 Function to print a summary of the results of the model.
 The function dispatches the execution to the appropriate function depending on the Aggregation type of the EC
 """
@@ -279,6 +332,8 @@ end
 
 
 """
+    save_summary(ECModel::AbstractEC, output_file::AbstractString; kwargs...)
+
 Function to save a summary of the results of the model.
 The function dispatches the execution to the appropriate function depending on the Aggregation type of the EC
 """
@@ -325,12 +380,10 @@ end
 Calculate grid usage for the energy community and users.
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-grid_frac : DenseAxisArray
-    Reliance on the grid demand for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray containing the power withdrawn from the grid
+for each user and the whole aggregate
 """
 function calculate_grid_import(ECModel::AbstractEC; per_unit::Bool=true)
     return calculate_grid_import(ECModel.group_type, ECModel, per_unit=per_unit)
@@ -343,12 +396,10 @@ end
 Calculate grid export for the energy community and users.
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-grid_frac : DenseAxisArray
-    Reliance on the grid demand for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray containing the power fed to the grid
+for each user and the whole aggregate
 """
 function calculate_grid_export(ECModel::AbstractEC; per_unit::Bool=true)
     return calculate_grid_export(ECModel.group_type, ECModel, per_unit=per_unit)
@@ -362,12 +413,10 @@ Calculate the time series of the shared consumed energy for the Energy Community
 For every time step and user, this time series highlight the quantity of production that meets
 needs by other users.
 
-'''
-Outputs
--------
-shared_prod_us : DenseAxisArray
-    Shared production for each user and the aggregation and time step
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power fed to the grid
+but consumed by another user for each user and the whole aggregate
 """
 function calculate_time_shared_production(ECModel::AbstractEC; kwargs...)
     return calculate_time_shared_production(ECModel.group_type, ECModel; kwargs...)
@@ -381,12 +430,10 @@ Calculate the time series of the shared consumed energy for the Energy Community
 For every time step and user, this time series highlight the quantity of load that is met
 by using shared energy.
 
-'''
-Outputs
--------
-shared_cons_us : DenseAxisArray
-    Shared consumption for each user and the aggregation and time step
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power withdrawn from the grid
+but produced by another user for each user and the whole aggregate
 """
 function calculate_time_shared_consumption(ECModel::AbstractEC; kwargs...)
     return calculate_time_shared_consumption(ECModel.group_type, ECModel; kwargs...)
@@ -400,12 +447,10 @@ Calculate the demand that each user meets using its own sources or other users.
 When only_shared is false, also self consumption is considered, otherwise only shared consumption.
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-shared_cons_frac : DenseAxisArray
-    Shared consumption for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power withdrawn from the grid
+but consumed by another user for each user and the whole aggregate
 """
 function calculate_shared_consumption(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
     return calculate_shared_consumption(ECModel.group_type, ECModel,
@@ -421,12 +466,10 @@ commercially consumed within the EC, when creaded.
 When only_shared is false, also self production is considered, otherwise only shared energy.
 Output is normalized with respect to the demand when per_unit is true
 
-'''
-Outputs
--------
-shared_cons_frac : DenseAxisArray
-    Shared consumption for each user and the aggregation
-'''
+## Returns
+
+It returns a DenseAxisArray containing the time-dependent share of power fed to the grid
+but consumed by another user for each user and the whole aggregate
 """
 function calculate_shared_production(ECModel::AbstractEC; per_unit::Bool=true, only_shared::Bool=false)
     return calculate_shared_production(ECModel.group_type, ECModel,
@@ -435,10 +478,9 @@ end
 
 
 """
-
     termination_status(ECModel::AbstractEC)
 
-Calculate the optimization status of the model
+Calculates the optimization status of the model
 """
 function JuMP.termination_status(ECModel::AbstractEC)
     if isempty(ECModel.results)
@@ -450,10 +492,9 @@ end
 
 
 """
-
     objective_function(ECModel::AbstractEC)
 
-Get the objective function of the model
+Gets the objective function of the model
 """
 function JuMP.objective_function(ECModel::AbstractEC)
     if isempty(ECModel.results)
@@ -465,18 +506,30 @@ end
 
 
 """
-    plot_sankey(ECModel::AbstractEC)
+    data_sankey(ECModel::AbstractEC; name_units=nothing, norm_value=nothing, market_color = palette(:rainbow)[2], community_color = palette(:rainbow)[5], users_colors = palette(:default))
 
 Function to create the input data for plotting any Sankey diagram representing the energy flows across the energy community
 
-Inputs
-------
-ECModel : AbstractEC
-    Energy Community model
-name_units : (optional) Vector
-    Labels used for the sankey diagram with the following order:
-    "Market buy", [users labels], "Community", "Market sell", [users labels]
+## Arguments
 
+* `ECModel::AbstractEC`: Energy Community model
+* `name_units`: (optional) Labels used for the sankey diagram with the following order:
+    "Market buy", [users labels], "Community", "Market sell", [users labels]
+* `norm_value`: (optional) Normalization value for the flows
+* `market_color`: (optional) Color of the market
+* `community_color`: (optional) Color of the community
+* `users_colors`: (optional) Colors of the users
+
+## Returns
+
+* `sank_data`: Dictionary containing the data to plot the Sankey diagram, in agreement to SankeyPlots.jl package
+    - "source": sources of the Sankey
+    - "target": targets of the Sankey
+    - "value": value of each flow
+    - "labels": labels of the Sankey
+    - "colors": colors of the Sankey
+    - "layer": layer of the Sankey
+    - "order": order of the Sankey
 """
 function data_sankey(ECModel::AbstractEC;
     name_units=nothing,
@@ -639,19 +692,15 @@ end
 
 
 """
-    plot_sankey(ECModel::AbstractEC, sank_data::Dict)
+    plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size = 10)
 
 Function to plot the Sankey diagram representing the energy flows across the energy community.
 This function can be used to plot the sankey diagram of already processed data sank_data.
 
-Inputs
-------
-ECModel : AbstractEC
-    Energy Community model
-name_units : (optional) Vector
-    Labels used for the sankey diagram with the following order:
-    "Market buy", [users labels], "Community", "Market sell", [users labels]
+## Arguments
 
+* `ECModel::AbstractEC`: Energy Community model
+* `sank_data::Dict`: Dictionary containing the data to plot the Sankey diagram, in agreement to SankeyPlots.jl package
 """
 function plot_sankey(ECModel::AbstractEC, sank_data::Dict; label_size = 10)
 
@@ -674,18 +723,20 @@ end
 
 
 """
-    plot_sankey(ECModel::AbstractEC)
+    function plot_sankey(ECModel::AbstractEC; name_units=nothing, norm_value=nothing, market_color=palette(:rainbow)[2], community_color=palette(:rainbow)[5], users_colors=palette(:default), label_size=10)
 
 Function to plot the Sankey diagram representing the energy flows across the energy community
 
-Inputs
-------
-ECModel : AbstractEC
-    Energy Community model
-name_units : (optional) Vector
-    Labels used for the sankey diagram with the following order:
-    "Market buy", [users labels], "Community", "Market sell", [users labels]
+## Arguments
 
+* `ECModel::AbstractEC`: Energy Community model
+* `name_units`: (optional) Labels used for the sankey diagram with the following order:
+    "Market buy", [users labels], "Community", "Market sell", [users labels]
+* `norm_value`: (optional) Normalization value for the flows
+* `market_color`: (optional) Color of the market
+* `community_color`: (optional) Color of the community
+* `users_colors`: (optional) Colors of the users
+* `label_size`: (optional) Size of the labels in the Sankey diagram
 """
 function plot_sankey(ECModel::AbstractEC;
         name_units=nothing,
@@ -709,31 +760,29 @@ end
 
 
 """
-    split_financial_terms(ECModel::AbstractEC, profit_distribution)
+    split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
 
-Function to describe the cost term distributions by all users.
+Function to describe the cost term distributions for each user.
+Each entry that follows is DenseAxisArray for an economic parameter by user.
 
-Parameters
-----------
-- ECModel : AbstractEC
-    EnergyCommunity model
-- profit_distribution
-    Final objective function
+## Arguments
 
-Returns
--------
-    The output value is a NamedTuple with the following elements
-    - NPV: the NPV of each user given the final profit_distribution adjustment
-    by game theory techniques
-    - CAPEX: the annualized CAPEX
-    - OPEX: the annualized operating costs (yearly maintenance and yearly peak and energy grid charges)
-    - REP: the annualized replacement costs
-    - RV: the annualized recovery charges
-    - REWARD: the annualized reward distribution by user
-    - PEAK: the annualized peak costs
-    - EN_SELL: the annualized revenues from energy sales
-    - EN_BUY: the annualized costs from energy consumption and buying
-    - EN_NET: the annualized net energy costs
+* `ECModel::AbstractEC`: Energy Community model
+* `profit_distribution`: (optional) DenseAxisArray with the profit distribution by user
+
+## Returns
+
+The output value is a NamedTuple with the following elements:
+* `NPV`: the NPV of each user given the final profit_distribution adjustment by game theory
+* `CAPEX`: the annualized CAPEX
+* `OPEX`: the annualized operating costs (yearly maintenance and yearly peak and energy grid charges)
+* `REP`: the annualized replacement costs
+* `RV`: the annualized recovery charges
+* `REWARD`: the annualized reward distribution by user
+* `PEAK`: the annualized peak costs
+* `EN_SELL`: the annualized revenues from energy sales
+* `EN_BUY`: the annualized costs from energy consumption and buying
+* `EN_NET`: the annualized net energy costs
 """
 function split_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     if isnothing(profit_distribution)
@@ -863,30 +912,28 @@ end
 """
 split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution)
 
-Function to describe the cost term distributions by all users for all years.
+Function to describe the cost term distributions by all users for year.
+It returns major economic inputs summed across users and the community by year.
 
-Parameters
-----------
-- ECModel : AbstractEC
-    EnergyCommunity model
-- profit_distribution
-    Final objective function
-- user_set_financial
-    User set to be considered for the financial analysis
+## Arguments
 
-Returns
--------
-    The output value is a NamedTuple with the following elements
-    - NPV: the NPV of each user given the final profit_distribution adjustment by game theory techniques
-    - CAPEX: the annualized CAPEX
-    - OPEX: the annualized operating costs (yearly maintenance and yearly peak and energy grid charges)
-    - REP: the annualized replacement costs
-    - RV: the annualized recovery charges
-    - REWARD: the annualized reward distribution by user
-    - PEAK: the annualized peak costs
-    - EN_SELL: the annualized revenues from energy sales
-    - EN_BUY: the annualized costs from energy consumption and buying
-    - EN_NET: the annualized net energy costs
+* `ECModel::AbstractEC`: Energy Community model
+* `profit_distribution`: (optional) DenseAxisArray with the profit distribution by user
+
+## Returns
+
+The output value is a NamedTuple with the following elements:
+* `NPV`: the NPV of each user given the final profit_distribution adjustment by game theory
+* `CAPEX`: the CAPEX by year
+* `OPEX`: the operating costs by year (yearly maintenance and yearly peak and energy grid charges)
+* `REP`: the replacement costs by year
+* `RV`: the recovery charges by year
+* `REWARD`: the reward distribution by year
+* `PEAK`: the peak costs by year
+* `EN_SELL`: the revenues from energy sales by year
+* `EN_BUY`: the costs from energy consumption and buying by year
+* `EN_NET`: the net energy costs by year
+* `year_set`: the list of years under consideration
 """
 function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=nothing)
     gen_data = ECModel.gen_data
@@ -1021,24 +1068,19 @@ function split_yearly_financial_terms(ECModel::AbstractEC, profit_distribution=n
 end
 
 """
-    business_plan(ECModel::AbstractEC, profit_distribution)
+    business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_set_financial=nothing)
 
-Function to describe the cost term distributions by all users for all years.
+Function to describe the business plan
 
-Parameters
-----------
-- ECModel : AbstractEC
-    EnergyCommunity model
-- profit_distribution
-    Final objective function
-- user_set_financial
-    User set to be considered for the financial analysis
+## Arguments
 
-Returns
--------
-    The output value is a NamedTuple with the following elements
-    - df_business
-        Dataframe with the business plan information
+* `ECModel::AbstractEC`: Energy Community model
+* `profit_distribution`: (optional) DenseAxisArray with the profit distribution by user
+* `user_set_financial`: (optional) User set to be considered for the financial analysis
+
+## Returns
+
+The output value is a DataFrame with the business plan information
 """
 function business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_set_financial=nothing)
     gen_data = ECModel.gen_data
@@ -1053,7 +1095,7 @@ function business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_se
     gen_data = ECModel.gen_data
     project_lifetime = field(gen_data, "project_lifetime")
 
-    business_plan = split_yearly_financial_terms(ECModel)
+    business_plan = split_yearly_financial_terms(ECModel, profit_distribution)
     year_set = business_plan.year_set
 
     # Create an empty DataFrame
@@ -1089,25 +1131,32 @@ function business_plan(ECModel::AbstractEC, profit_distribution=nothing, user_se
 end
 
 """
-    business_plan_plot(ECModel::AbstractEC, profit_distribution)
+    business_plan_plot(ECModel::AbstractEC, ...)
 
-Function to describe the cost term distributions by all users for all years.
+Function to plot the business plan of the EnergyCommunity.
 
-Parameters
-----------
-- ECModel : AbstractEC
-    EnergyCommunity model
-- df_business
-    Dataframe with the business plan information
-- plot_struct
-    Plot structure of the business plan
+## Arguments
 
-Returns
--------
-    The output value is a plot with the business plan information
+* `ECModel::AbstractEC`: Energy Community model
+* `profit_distribution`: (optional) Dictionary with the profit distribution by user
+* `user_set_financial`: (optional) User set to be considered for the financial analysis
+* `plot_struct`: (optional) Dictionary with the structure of the plot. The keys are the labels of the bars and the values are a list of tuples with the sign and the name of the variable to be plotted.
+  Example is `Dict("CAPEX" => [(-1, :CAPEX)])` for plotting the CAPEX with a negative sign.
+* `xlabel`: (optional) Label for the x-axis
+* `ylabel`: (optional) Label for the y-axis
+* `title`: (optional) Title of the plot
+* `legend`: (optional) Position of the legend
+* `color`: (optional) Color of the bars
+* `xrotation`: (optional) Rotation of the x-axis labels
+* `bar_width`: (optional) Width of the bars
+* `grid`: (optional) Grid visibility
+* `framestyle`: (optional) Style of the frame
+* `barmode`: (optional) Mode of the bars
+* `scaling_factor`: (optional) Scaling factor for the values
+* `kwargs`: (optional) Additional arguments to be passed to Plots.bar function
 """
 function business_plan_plot(
-    ECModel::AbstractEC;
+    ECModel::AbstractEC, profit_distribution=nothing, user_set_financial=nothing;
     plot_struct=nothing,
     xlabel="Year",
     ylabel="Amount [k€]",
@@ -1123,7 +1172,7 @@ function business_plan_plot(
     kwargs...
 )
 
-    df_business = business_plan(ECModel)
+    df_business = business_plan(ECModel, profit_distribution, user_set_financial)
 
     if  isnothing(plot_struct)
         # Define the plot structure
@@ -1186,12 +1235,10 @@ Create an example data for the Energy Community model.
 This function creates in the specified folder the necessary data to run the Energy Community model,
 based on the specified configuration name.
 
-Parameters
-----------
-- parent_folder : AbstractString
-    Parent folder where the example data will be created
-- config_name : String
-    Configuration name to be used to create the example data
+## Arguments
+
+* `parent_folder`: Parent folder where the example data will be created
+* `config_name`: Configuration name to be used to create the example data
     Supported values: "default"
 """
 function create_example_data(folder; config_name::String = "default")
