@@ -1,5 +1,5 @@
 # accepted technologies
-ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal"]
+ACCEPTED_TECHS = ["load", "renewable", "battery", "converter", "thermal", "load_adj", "load_shift"]
 
 """
     build_base_model!(ECModel::AbstractEC, optimizer)
@@ -60,7 +60,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         ) * TOL_BOUNDS
     )
 
-    # Overestimation of the power exchanged by each POD when buying from the external market bu each user
+    # Overestimation of the power exchanged by each POD when buying from the external market by each user
     @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
         max(0,
             sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
@@ -77,7 +77,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
 
     ## Variable definition
-    
+
     # Energy stored in the battery
     @variable(model_user, 
         0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], BATT), t=time_set] 
@@ -118,7 +118,41 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user,
         0 <= n_us[u=user_set, a=device_names(users_data[u])]
             <= field_component(users_data[u], a, "max_capacity"))
-
+    # Adjusted positive power for single adjustable appliance by user when supplying to public grid
+    @variable(model_user,
+        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "max_supply")[t])
+    # Adjusted positive power for single adjustable appliance by user when absorbing from public grid
+    @variable(model_user,
+        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "max_withdrawal")[t])
+    # Adjusted energy for single adjustable appliance by user
+    @variable(model_user,
+        profile_component(users_data[u], e, "min_energy")[t] <= 
+            E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "max_energy")[t])
+    # Energy demand excahge outside the POD by user and appliance
+    @variable(model_user,
+        0 <= ED_adj[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "energy_exchange")[t])
+    # Fixed power for single fixed appliance by user
+    @variable(model_user,
+        0 <= P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set]
+            <= profile_component(users_data[u], f, "load")[t])
+    # Efficiency of the adjustable load
+    @variable(model_user,
+        0 <= eta[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= field_component(users_data[u], e, "eta"))
+    # Binary variable to indicate the activation availability for each time window
+    # TODO add a function to create the matrix from input in YAML
+    @variable(model_user, 
+        z_shift[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), t=time_windows], Bin)
+    # Shiftable load for each time window
+    # TODO check if the variable is coherent with the definition of the expression
+    @variable(model_user, 
+        0 <= P_shift_window[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), w=time_windows(s), t=time_set]
+            <= profile_component(users_data[u], s, "original_profile")[t])
+    
     # Set integer capacity
     for u in user_set
         for a in device_names(users_data[u])
@@ -270,6 +304,32 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
     )
 
+    # Total adjustable load dispatch for each appliance
+    # TODO check on the expression P and N is coherent with the definition of the variables
+    @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
+        P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
+    )
+
+    # Total energy load by user and time step for adjustable load
+    @expression(model_user, P_adj_tot_us[u=user_set, t=time_set],
+        sum(P_adj_us[u,e,t] for e in asset_names(users_data[u], LOAD_ADJ))
+    )
+
+    # Total energy load by user and time step for fixed load
+    @expression(model_user, P_fix_tot_us[u=user_set, t=time_set],
+        sum(P_fix_us[u,e,t] for e in asset_names(users_data[u], LOAD))
+    )
+
+    # Total energy load by user and time step for shiftable load
+    @expression(model_user, P_shift_tot_us[u=user_set, t=time_set],
+        sum(P_shift_window[u,s,w,t] for s in asset_names(users_data[u], LOAD_SHIFT), w in time_windows)
+    )
+
+    # Total energy load by user and time step
+    @expression(model_user, P_L_tot_us[u=user_set, t=time_set],
+        P_adj_tot_us[u,t] + P_fix_tot_us[u,t] + P_shift_tot_us[u,t]
+    )
+
     ## Inequality constraints
 
     # Set that the hourly dispatch cannot go beyond the maximum dispatch of the corresponding peak power period
@@ -353,6 +413,28 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             sqrt(field_component(users_data[u], b, "eta"))*field_component(users_data[u], field_component(users_data[u], b, "corr_asset"), "eta"))  # Contribution of the converter when absorbing power from AC
         == 0
     )
+
+    # Total energy balance for adjustable load
+    @constraint(model_user,
+        E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
+        E_adj_us[u, e, t] - E_adj_us[u, e, pre(t, time_set)] 
+        + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta"))
+        - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta")) 
+        + ED_adj[u, e, t] 
+        == 0
+    )
+
+    # Constraint to ensure the shiftable load maintains the same pattern within the specified time windows
+    # TODO check coherent    
+    @constraint(model_user, 
+    con_shift_pattern[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), t=time_set],
+    sum(P_shift_window[u, s, w, t] for w in time_windows) == P_shift_us[u, s, t])
+    
+    # Constraint to ensure the shiftable load is active only if the binary variable is active
+    # TODO check coherent
+    @constraint(model_user, 
+    con_shift_activation[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), w=time_windows, t=time_set],
+    P_shift_window[u, s, w, t] <= z_shift[u, s, w] * profile_component(users_data[u], s, "original_profile")[t])
     
     return ECModel
 end
@@ -406,10 +488,12 @@ function calculate_demand(ECModel::AbstractEC)
     time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
-    data_load = Float64[sum(sum(
-                profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
-                for l in asset_names(users_data[u], LOAD)
-            ) for u in user_set]
+    data_load = Float64[sum(
+        sum((profile_component(users_data[u], l, "load") + ECModel.results[:P_adj_tot_us][u, :])
+        .* time_res .* energy_weight)
+        for l in asset_names(users_data[u], LOAD))
+        for u in user_set
+        ]
 
     # sum of the load power by user and EC
     demand_us_EC = JuMP.Containers.DenseAxisArray(
@@ -696,6 +780,7 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     shared_cons_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(0.0, 
                 sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
+                .+ sum(ECModel.results[:P_adj_tot_us][u, :])
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set

@@ -12,6 +12,7 @@ general:  # general input parameters
   optional_datasets:  # optional csv files storing data
     - input_resource.csv
     - market_data.csv
+    - flexibility_resource.csv
 
 market:  # market characteristics
   non_commercial:
@@ -68,15 +69,31 @@ users:  # list of users and the corresponding assets
       profile:
         load: load_user1
     
-    # load_adj:  # component adjustable load
-    #   type: load_adj
-    #   eta: 0.9
-    #   profile:
-    #     load: load_user1_adj
-    #     max_supply: max_supply_user1
-    #     max_withdrawal: max_withdrawal_user1
-    #     min_energy: min_energy_user1
-    #     max_energy: max_energy_user1
+    load_adj:  # component adjustable load
+      type: load_adj
+      eta: 0.9
+      CAPEX_lin: 100  # [€/kW] specific investment cost of the component
+      OEM_lin: 5  # [€/kW/y] specific O&M cost
+      lifetime_y: 25  # [y] lifetime of the component
+      max_capacity: 11  # [kW] maximum capacity
+      profile:
+        energy_exchange: load_user1_adj
+        max_supply: max_supply_user1
+        max_withdrawal: max_withdrawal_user1
+        min_energy: min_energy_user1
+        max_energy: max_energy_user1
+
+    load_shift: # component shiftable load
+      type: load_shift
+      CAPEX_lin: 50 # [€/kW] specific investment cost of the component
+      OEM_lin: 5 # [€/kW/y] specific O&M cost
+      lifetime_y: 25 # [y] lifetime of the component
+      max_capacity: 10 # [kW] maximum capacity
+      start_list: [1, 5, 10]  # Start times of activation
+      time_period: 2 # [h] Time period of activation
+      repeat_interval: 24 # [h] Repeat interval
+      profile:
+        original_profile: load_user1_shift
 
     # generator:  # component thermal
     #   type: thermal
