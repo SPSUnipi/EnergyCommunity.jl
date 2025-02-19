@@ -216,8 +216,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
             - market_profile_by_user(ECModel,u,"consumption_price")[t] * (sum(
                 Float64[profile_component(users_data[u], l, "load")[t]
-                for l in asset_names(users_data[u], LOAD)])
-                +P_adj_tot_us[u,t]))  # economic flow with the market
+                for l in asset_names(users_data[u], LOAD)])))  # economic flow with the market
     )
 
     # Energy revenues by user
