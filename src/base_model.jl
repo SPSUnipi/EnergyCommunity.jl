@@ -52,8 +52,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
             + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
                 for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)]
-            + P_adj_tot_us[u,t])  # Minimum demand
+            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
         ) * TOL_BOUNDS
     )
 
