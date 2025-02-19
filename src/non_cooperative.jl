@@ -268,8 +268,8 @@ function add_users_design_summary!(
     design_users = DataFrames.DataFrame(
         vcat(
             [[u for u in user_set]],
-            [[maximum(sum(P_L_tot_us for t in time_set)) for u in user_set]],
-            [[sum(P_L_tot_us[u,t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
+            [[maximum(sum(ECModel.results[:P_L_tot_us] for t in time_set)) for u in user_set]],
+            [[sum(ECModel.results[:P_L_tot_us][u,t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
                 for t in time_set) for u in user_set]],
             [[if (a in device_names(users_data[u])) _x_us[u, a] else missing end for u in user_set] for a in asset_set_unique]
         ),

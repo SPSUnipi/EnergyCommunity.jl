@@ -280,7 +280,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     # Total adjustable load dispatch for each appliance
-    # TODO check on the expression P and N is coherent with the definition of the variables
     @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
         P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
     )
