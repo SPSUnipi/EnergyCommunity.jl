@@ -52,7 +52,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
             + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
                 for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
+            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)]
+            + P_adj_tot_us[u,t])  # Minimum demand
         ) * TOL_BOUNDS
     )
 
@@ -214,8 +215,10 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, R_Energy_us[u in user_set, t in time_set],
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
-            - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
-                P_L_tot_us[u, t]))  # economic flow with the market
+            - market_profile_by_user(ECModel,u,"consumption_price")[t] * (sum(
+                Float64[profile_component(users_data[u], l, "load")[t]
+                for l in asset_names(users_data[u], LOAD)])
+                +P_adj_tot_us[u,t]))  # economic flow with the market
     )
 
     # Energy revenues by user
