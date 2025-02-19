@@ -320,7 +320,7 @@ function _jump_to_dict(model::Model)
     return results
 end
 
-function create_time_window_matrix(start_list, end_list, repeat_interval, n_steps)
+function create_time_windows(start_list, end_list, repeat_interval, n_steps)
     time_window_matrix = zeros(Bool, length(start_list), n_steps)
     for (i, (start, finish)) in enumerate(zip(start_list, end_list))
         for t in start:repeat_interval:n_steps

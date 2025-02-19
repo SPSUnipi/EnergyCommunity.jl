@@ -144,8 +144,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user, 
         z_shift[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), t=time_windows], Bin)
     # Shiftable load for each time window
+    # TODO check if the variable is coherent with the definition of the expression
     @variable(model_user, 
-        0 <= P_shift_window[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), w=time_windows, t=time_set]
+        0 <= P_shift_window[u=user_set, s=asset_names(users_data[u], LOAD_SHIFT), w=time_windows(s), t=time_set]
             <= profile_component(users_data[u], s, "original_profile")[t])
     
     # Set integer capacity
