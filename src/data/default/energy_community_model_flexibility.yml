@@ -89,9 +89,9 @@ users:  # list of users and the corresponding assets
       OEM_lin: 5 # [€/kW/y] specific O&M cost
       lifetime_y: 25 # [y] lifetime of the component
       max_capacity: 10 # [kW] maximum capacity
-      start_list: [1, 5, 10]  # Start times
-      end_list: [3, 7, 18]    # End times
-      repeat_interval: 24     # Repeat interval
+      start_list: [1, 5, 10]  # Start times of activation
+      time_period: 2 # [h] Time period of activation
+      repeat_interval: 24 # [h] Repeat interval
       profile:
         original_profile: load_user1_shift
 
