@@ -52,14 +52,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
             + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
                 for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
+            - sum(P_L_tot_us[u, t])  # Minimum demand
         ) * TOL_BOUNDS
     )
 
     # Overestimation of the power exchanged by each POD when buying from the external market by each user
     @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
         max(0,
-            sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+            sum(P_L_tot_us[u, t])
                 # Maximum demand
             + sum(Float64[field_component(users_data[u], c, "max_capacity") 
                 for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
@@ -215,8 +215,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
             - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
-                Float64[profile_component(users_data[u], l, "load")[t]
-                for l in asset_names(users_data[u], LOAD)]))  # economic flow with the market
+                P_L_tot_us[u, t]))  # economic flow with the market
     )
 
     # Energy revenues by user
@@ -373,7 +372,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t] for c in asset_names(users_data[u], CONV)])
         + P_ren_us[u, t]
         ==
-        sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+        sum(P_L_tot_us[u, t] for u in user_set)
     )
 
     # Set the balance at each battery system
@@ -722,8 +721,7 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     # self consumption by user only
     shared_cons_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(0.0, 
-                sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
-                .+ sum(ECModel.results[:P_adj_tot_us][u, :])
+                sum(ECModel.results[:P_L_tot_us][u, :])
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set
