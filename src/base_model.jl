@@ -391,8 +391,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @constraint(model_user,
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
         E_adj_us[u, e, t] - E_adj_us[u, e, pre(t, time_set)] 
-        + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
-        - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
+        + P_adj_N_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_N"))
+        - P_adj_P_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_P")) 
         + profile_component(users_data[u], e, "energy_exchange")[t] 
         == 0
     )
