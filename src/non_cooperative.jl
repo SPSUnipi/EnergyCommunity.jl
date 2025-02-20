@@ -182,7 +182,7 @@ function Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::Ab
     for (u_i, u_name) in enumerate(ECModel.user_set)
 
         # Power dispatch plot
-        pt[u_i, 1] = plot(time_set_plot, results[:P_L_tot_us][u_name, :],
+        pt[u_i, 1] = plot(time_set_plot, results[:P_L_tot_us][u_name, :].data,
                         label="Load", w=line_width, legend=:outerright)
         plot!(pt[u_i, 1], time_set_plot, results[:P_us][u_name, :].data, label="Grid", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, [
@@ -268,7 +268,7 @@ function add_users_design_summary!(
     design_users = DataFrames.DataFrame(
         vcat(
             [[u for u in user_set]],
-            [[maximum(sum(ECModel.results[:P_L_tot_us] for t in time_set)) for u in user_set]],
+            [[maximum(sum(ECModel.results[:P_L_tot_us][u,:])) for u in user_set]],
             [[sum(ECModel.results[:P_L_tot_us][u,t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
                 for t in time_set) for u in user_set]],
             [[if (a in device_names(users_data[u])) _x_us[u, a] else missing end for u in user_set] for a in asset_set_unique]
