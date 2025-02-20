@@ -134,7 +134,7 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
             ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
         [sum(
-            P_L_tot_us[u, t] for t in time_set
+            P_L_tot_us[u, :]
         ) for u in user_set]/1000...)  # Total load by user
 
 end
@@ -182,7 +182,7 @@ function Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::Ab
     for (u_i, u_name) in enumerate(ECModel.user_set)
 
         # Power dispatch plot
-        pt[u_i, 1] = plot(time_set_plot, [sum(results[:P_L_tot_us][u_name, t]) for t in time_set],
+        pt[u_i, 1] = plot(time_set_plot, results[:P_L_tot_us][u_name, :],
                         label="Load", w=line_width, legend=:outerright)
         plot!(pt[u_i, 1], time_set_plot, results[:P_us][u_name, :].data, label="Grid", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, [
