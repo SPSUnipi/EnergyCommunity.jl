@@ -44,6 +44,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     model_user = ECModel.model
 
     # Overestimation of the power exchanged by each POD when selling to the external market by each user
+    # TODO modify this expression to include adj_load
     @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
         max(0,
             sum(Float64[field_component(users_data[u], c, "max_capacity") 
@@ -214,9 +215,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, R_Energy_us[u in user_set, t in time_set],
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
-            - market_profile_by_user(ECModel,u,"consumption_price")[t] * (sum(
+            - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
                 Float64[profile_component(users_data[u], l, "load")[t]
-                for l in asset_names(users_data[u], LOAD)])))  # economic flow with the market
+                for l in asset_names(users_data[u], LOAD)]))  # economic flow with the market
     )
 
     # Energy revenues by user
@@ -372,7 +373,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t] for c in asset_names(users_data[u], CONV)])
         + P_ren_us[u, t]
         ==
-        sum(P_L_tot_us[u, t] for u in user_set)
+        sum(P_L_tot_us[u, t])
     )
 
     # Set the balance at each battery system
@@ -391,8 +392,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @constraint(model_user,
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
         E_adj_us[u, e, t] - E_adj_us[u, e, pre(t, time_set)] 
-        + P_adj_N_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_N"))
-        - P_adj_P_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_P")) 
+        - P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
+        + P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
         + profile_component(users_data[u], e, "energy_exchange")[t] 
         == 0
     )

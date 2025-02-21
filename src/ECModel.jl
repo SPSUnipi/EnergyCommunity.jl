@@ -1179,7 +1179,6 @@ function EnergyCommunity.split_financial_terms(ECModel::AbstractEC, profit_distr
     )
 end
 
-
 """
     create_example_data(parent_folder, config_name::String = "default")
 
