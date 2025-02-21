@@ -270,8 +270,8 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
                 for g in asset_names(users_data[u], THER) for t in time_set
             ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
-        [sum(results_EC[:P_L_tot_us][u, :] for t in time_set
-        ) for u in user_set]/1000...)  # Total load by user
+        [sum(results_EC[:P_L_tot_us][u, :])
+         for u in user_set]/1000...)  # Total load by user
 end
 
 

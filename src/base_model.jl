@@ -443,8 +443,7 @@ function calculate_demand(ECModel::AbstractEC)
     time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
-    data_load = Float64[sum(
-        sum(ECModel.results[:P_L_tot_us][u, :]) .* time_res .* energy_weight) for u in user_set
+    data_load = Float64[sum(ECModel.results[:P_L_tot_us][u, :]) .* time_res .* energy_weight for u in user_set
         ]
 
 
