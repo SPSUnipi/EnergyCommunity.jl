@@ -115,14 +115,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user,
         0 <= n_us[u=user_set, a=device_names(users_data[u])]
             <= field_component(users_data[u], a, "max_capacity"))
-    # Adjusted positive power for single adjustable appliance by user when supplying to public grid
-    @variable(model_user,
-        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
-            <= profile_component(users_data[u], e, "max_supply")[t])
     # Adjusted positive power for single adjustable appliance by user when absorbing from public grid
     @variable(model_user,
-        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_withdrawal")[t])
+    # Adjusted positive power for single adjustable appliance by user when supplying to public grid
+    @variable(model_user,
+        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "max_supply")[t])
     # Adjusted energy for single adjustable appliance by user
     @variable(model_user,
         profile_component(users_data[u], e, "min_energy")[t] <= 
@@ -280,12 +280,12 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
     )
 
-    # Total adjustable load dispatch for each appliance
+    # Total adjustable load dispatch for each appliance: positive when charging the vehicle
     @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
         P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
     )
 
-    # Total energy load by user and time step for adjustable load
+    # Total energy load by user and time step for adjustable load: positive when charging the vehicle
     @expression(model_user, P_adj_tot_us[u=user_set, t=time_set],
         sum(P_adj_us[u,e,t] for e in asset_names(users_data[u], LOAD_ADJ))
     )
@@ -391,11 +391,11 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Total energy balance for adjustable load
     @constraint(model_user,
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        E_adj_us[u, e, t] - E_adj_us[u, e, pre(t, time_set)] 
-        - P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
-        + P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
-        + profile_component(users_data[u], e, "energy_exchange")[t] 
-        == 0
+        E_adj_us[u, e, t] == 
+            E_adj_us[u, e, pre(t, time_set)] 
+            + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
+            - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
+            + profile_component(users_data[u], e, "energy_exchange")[t]
     )
     
     return ECModel
@@ -443,9 +443,7 @@ function calculate_demand(ECModel::AbstractEC)
     time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
-    data_load = Float64[sum(ECModel.results[:P_L_tot_us][u, :]) .* time_res .* energy_weight for u in user_set
-        ]
-
+    data_load = Float64[sum(ECModel.results[:P_L_tot_us][u, :] .* time_res .* energy_weight) for u in user_set]
 
     # sum of the load power by user and EC
     demand_us_EC = JuMP.Containers.DenseAxisArray(
@@ -720,10 +718,14 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
 
     # self consumption by user only
     shared_cons_us = JuMP.Containers.DenseAxisArray(
-        Float64[sum(time_res .* energy_weight .* max.(0.0, 
-                sum(ECModel.results[:P_L_tot_us][u, :])
+        Float64[sum(
+            time_res .* energy_weight .* max.(
+                0.0, 
+                max.(ECModel.results[:P_L_tot_us][u, :].data, 0.0)
                 + min.(_P_us[u, :], 0.0)
-            )) for u in user_set],
+            )
+            ) for u in user_set
+        ],
         user_set
     )
 

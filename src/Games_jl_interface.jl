@@ -292,9 +292,9 @@ function build_least_profitable!(
     )
     
     # list of variables to modify
-    list_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :P_P_us, :P_N_us, :n_us, :z_gen_us]
+    list_vars = [:E_batt_us, :P_conv_P_us, :P_conv_N_us, :P_ren_us, :P_max_us, :P_P_us, :P_N_us, :n_us, :z_gen_us, :P_adj_P_us, :P_adj_N_us, :E_adj_us]
     # list of constraints to modify
-    list_cons = [:con_us_balance]
+    list_cons = [:con_us_balance, :E_adj_us_balance]
     # list of expressions to modify
     list_exprs = []  # [:R_Energy_us]
 
