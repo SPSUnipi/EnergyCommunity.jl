@@ -130,9 +130,10 @@ users:  # list of users and the corresponding assets
         load: load_user2
 
   user3:  # name of the user
-    # list of components
+
     tariff_name: commercial #type of market
 
+  # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1600  # [€/kW] specific investment cost of the component
@@ -187,8 +188,9 @@ users:  # list of users and the corresponding assets
       EER_nom = 5.0 # nominal EER for T_ref (example 25°C)
       T_ref = 25.0 # [°C] Reference temperature for nominal EER
       alpha = 0.01 # Efficiency decrease coefficient (0.01 per °C)
-      max_capacity_e: 2 # [kWel] maximum electic energy consumption
-      max_capacity: 6 # [kWth] maximum thermal capacity
+      #sistemare qui e base_model la loro differenza
+      # max_capacity_e: 2 # [kWel] maximum electic energy consumption
+      # max_capacity: 6 # [kWth] maximum thermal capacity
       corr_storage: tes # corresponding storage
       corr_load: t_load # corresponding load
       profile:
@@ -217,8 +219,14 @@ users:  # list of users and the corresponding assets
       lifetime_y: 20  # [y] lifetime of the component
       eta: 0.94  # [-] efficiency
       PCI: 9.97  # [kWh/m³] lower heating value of methane gas
-      #max_capacity: 30  # [kW] maximum fuel consumption
+      fuel_price: 0.2  # [€/m³] fuel price
       max_mass_flow: 3.01  # [m³/h] maximum gas flow rate at nominal power
+      inter_map: 0.54  # [unit/kWh] intercept of the fuel consumption map
+      slope_map: 3.7  # [unit/kWh] slope of the fuel consumption map
+      min_technical: 0.2  # [-] minimum technical working point of the generator
+      max_technical: 1.0  # [-] maximum technical working point of the generator
+      modularity: true  # [integer/continuous] whether the installation is continuous or integer
+      nom_capacity: 10  # [kW] nominal capacity of the generator
       max_capacity: 28  # [kWth] maximum thermal power capacity
       corr_storage: tes  # corresponding thermal storage
       corr_load: t_load  # corresponding thermal load
@@ -235,6 +243,40 @@ users:  # list of users and the corresponding assets
       corr_storage: tes
       profile:
         t_load: t_load_u3
+
+
+      
+    DHN:  # District Heating Network connection
+      connected: true  # If user is connected to the district heating network
+      #connected: false  # If user is not connected to the district heating network
+      supply_temperature: 80  # DHN supply temperature [°C]
+      return_temperature: 50  # DHN return temperature [°C]
+      #pressure: 5.0  # Pressione della rete [bar]
+      heat_tariff: 0.08  # heat market tariff (from a2a) [€/kWh]
+      corr_conv: ECU  # corresponding heating converter
+      corr_load: t_load  # corresponding thermal load
+      corr_storage: tes  # corresponding thermal storage
+
+    ECU:  # component heating converter: Exchange Control Unit
+      type: converter  # type of component
+      CAPEX_lin: 200  # [€/kW] specific investment cost of the component
+      OEM_lin: 2  # [€/kW/y] specific O&M cost
+      lifetime_y: 10  # [y] lifetime of the component
+      eta: 0.9  # [-] roudtrip efficiency
+      UA_value: 500  # [W/K] Coefficiente di trasmissione termica (U*A)
+      min_temperature_approach: 5  # [°C] Minima differenza di temperatura per il trasferimento di calore
+      max_dch: 1.0  # [-] maximum discharge
+      min_ch: 0.1  # [-] maximum charge
+      max_capacity: 999999  # [kW] infinity maximum capacity
+      corr_asset: DHN  # corresponding district heating network
+      corr_storage: tes  # corresponding thermal storage
+      corr_load: t_load  # corresponding thermal load
+      primary_side:  
+        supply_temperature: 80  # [°C] Primary side (DHN) inlet temperature
+        return_temperature: 50  # [°C] Primary side (DHN) output temperature
+      secondary_side:
+        supply_temperature: 40  # [°C] Secondary side (user's thermal component) inlet temperature
+        return_temperature: 60  # [°C] Secondary side (user's thermal component) output temperature
 
   user4:  # name of the user
     # list of components 
