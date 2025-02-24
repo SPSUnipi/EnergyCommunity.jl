@@ -155,7 +155,7 @@ users:  # list of users and the corresponding assets
     
     
     batt:  # component battery
-      type: storage  # type of component
+      type: battery  # type of component
       CAPEX_lin: 400  # [€/kWh] specific investment cost of the component
       OEM_lin: 5  # [€/kWh/y] specific O&M cost
       lifetime_y: 15  # [y] lifetime of the component
@@ -231,7 +231,7 @@ users:  # list of users and the corresponding assets
       corr_storage: tes  # corresponding thermal storage
       corr_load: t_load  # corresponding thermal load
 
-    e_load:  # component load
+    load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
       profile:
@@ -245,38 +245,7 @@ users:  # list of users and the corresponding assets
         t_load: t_load_u3
 
 
-      
-    DHN:  # District Heating Network connection
-      connected: true  # If user is connected to the district heating network
-      #connected: false  # If user is not connected to the district heating network
-      supply_temperature: 80  # DHN supply temperature [°C]
-      return_temperature: 50  # DHN return temperature [°C]
-      #pressure: 5.0  # Pressione della rete [bar]
-      heat_tariff: 0.08  # heat market tariff (from a2a) [€/kWh]
-      corr_conv: ECU  # corresponding heating converter
-      corr_load: t_load  # corresponding thermal load
-      corr_storage: tes  # corresponding thermal storage
-
-    ECU:  # component heating converter: Exchange Control Unit
-      type: converter  # type of component
-      CAPEX_lin: 200  # [€/kW] specific investment cost of the component
-      OEM_lin: 2  # [€/kW/y] specific O&M cost
-      lifetime_y: 10  # [y] lifetime of the component
-      eta: 0.9  # [-] roudtrip efficiency
-      UA_value: 500  # [W/K] Coefficiente di trasmissione termica (U*A)
-      min_temperature_approach: 5  # [°C] Minima differenza di temperatura per il trasferimento di calore
-      max_dch: 1.0  # [-] maximum discharge
-      min_ch: 0.1  # [-] maximum charge
-      max_capacity: 999999  # [kW] infinity maximum capacity
-      corr_asset: DHN  # corresponding district heating network
-      corr_storage: tes  # corresponding thermal storage
-      corr_load: t_load  # corresponding thermal load
-      primary_side:  
-        supply_temperature: 80  # [°C] Primary side (DHN) inlet temperature
-        return_temperature: 50  # [°C] Primary side (DHN) output temperature
-      secondary_side:
-        supply_temperature: 40  # [°C] Secondary side (user's thermal component) inlet temperature
-        return_temperature: 60  # [°C] Secondary side (user's thermal component) output temperature
+    
 
   user4:  # name of the user
     # list of components 

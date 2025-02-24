@@ -1,5 +1,5 @@
 # accepted technologies
-ACCEPTED_TECHS = ["load", "renewable", "converter", "thermal", "storage"]
+ACCEPTED_TECHS = ["load", "t_load", "renewable", "converter", "thermal", "storage", "battery"]
 """
     build_base_model!(ECModel::AbstractEC, optimizer)
 
@@ -55,14 +55,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
                 for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
             + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
                 for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(Float64[profile_component(users_data[u], l, "e_load")[t] for l in asset_names(users_data[u], LOAD)]) # Minimum demand
+            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)]) # Minimum demand
         ) * TOL_BOUNDS
     )
 
     # Overestimation of the power exchanged by each POD when buying from the external market bu each user
     @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
         max(0,
-            sum(Float64[profile_component(users_data[u], l, "e_load")[t] for l in asset_names(users_data[u], LOAD)])
+            sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
                 # Maximum demand
             + sum(Float64[field_component(users_data[u], c, "max_capacity") 
                 for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
@@ -95,7 +95,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             + sum(Float64[field_component(users_data[u], g, "max_capacity") 
                 for g in asset_names(users_data[u], THER)])  # Maximum capacity of thermal generator
             + sum(Float64[field_component(users_data[u], s, "max_capacity") 
-                for s in asset_names(users_data[u], STOR)])  # Maximum capacity of thermal storage
+                for s in asset_names(users_data[u], TES)])  # Maximum capacity of thermal storage
         ) * TOL_BOUNDS
     )
 
@@ -103,7 +103,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     
     # Energy stored in the battery
     @variable(model_user, 
-        0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], STOR), t=time_set] 
+        0 <= E_batt_us[u=user_set, b=asset_names(users_data[u], BATT), t=time_set] 
             <= field_component(users_data[u], b, "max_capacity"))
     # Converter dispatch positive when supplying to AC
     @variable(model_user, 0 <= 
@@ -143,7 +143,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             <= field_component(users_data[u], a, "max_capacity"))
     # Energy stored in the thermal storage
     @variable(model_user,
-        0 <= E_tes_us[u=user_set, s=asset_names(users_data[u], STOR), t=time_set] 
+        0 <= E_tes_us[u=user_set, s=asset_names(users_data[u], TES), t=time_set] 
             <= field_component(users_data[u], s, "max_capacity"))
     # Thermal Power of the heat pump
     @variable(model_user,
@@ -186,7 +186,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     #     # Total energy available in the batteries
     #     @expression(model, E_batt_tot_us[u=user_set, t=time_set],
-    #     sum(E_batt_us[u, b, t] for b in asset_names(users_data[u], THER))
+    #     sum(E_batt_us[u, b, t] for b in asset_names(users_data[u], BATT))
     # )
 
     # Total thermal power given by heat pumps
@@ -199,37 +199,25 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         sum(P_hp_T[u, g, t]/field_component(users_data[u], g, "COP") for g in asset_names(users_data[u],THER))
     )
 
-    # Energy Efficiency Ratio of the heat pump in cooling mode by each pump and user
-    @expression(model_user, EER[t in time_set],
-    field_component(users_data[u], g,"EER_nom")[t]* (1 - field_component(users_data[u], g,"alpha")*(profile_component(users_data[u], g,"T_ext")[t]
-    - field_component(users_data[u], g,"T_ref")[t]))
-    )
-
-    # Electrical power for thermal use of heat pump in cooling mode by each pump and user
-    @expression(model_user, P_el_cool[u in user_set, t in time_set],
-        sum(P_hp_T[u, g, t]/EER[t] 
-        for g in asset_names(users_data[u],THER))
-    )
-
     # Total energy available in the thermal storage
     @expression(model, E_tes_tot_us[u=user_set, t=time_set],
-    sum(E_tes_us[u, s, t] for s in asset_names(users_data[u], STOR))
+    sum(E_tes_us[u, s, t] for s in asset_names(users_data[u], TES))
     )
 
     # Unheated zone Temperature of each tes and user
-    @expression(model_user, T_u[u in user_set, s in asset_names(users_data[u],STOR), t in time_set],
+    @expression(model_user, T_u[u in user_set, s in asset_names(users_data[u],TES), t in time_set],
         (profile_component(users_data[u], s,"T_int")[t])
         - field_component(users_data[u], s,"b_tr_x")*(profile_component(users_data[u], s, "T_int")[t]
         - profile_component(users_data[u], s,"T_ext")[t]) 
     )
 
     # Heat Energy losses in Thermal Storage by each tes and user
-    @expression(model_user, Tes_heat_loss[u in user_set, s in asset_names(users_data[u],STOR), t  in time_set],
+    @expression(model_user, Tes_heat_loss[u in user_set, s in asset_names(users_data[u],TES), t  in time_set],
         field_component(users_data[u], s, "k")*E_tes_us[u, s, pre(t, time_set)]*(profile_component(users_data[u], s, "T_ref")[t] - T_u[u, s, t])
     )
 
     # Capacity Energy losses in Thermal Storage by each tes and user (if the energy stored is greater than the maximum capacity, and DHN is not available)
-    @expression(model_user, Tes_capacity_loss[u in user_set, s in asset_names(users_data[u], STOR), t in time_set], 
+    @expression(model_user, Tes_capacity_loss[u in user_set, s in asset_names(users_data[u], TES), t in time_set], 
         max(0, E_tes_us[u, s, pre(t, time_set)]
         + (P_hp_T[u, g, t] + P_boil_us[u, g, t]) * profile(market_data, "time_res")[t]
         - field_component(users_data[u], s, "max_capacity"))
@@ -237,7 +225,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # Total energy losses in the storage by each user
     @expression(model_user, Tes_total_loss[u in user_set, t in time_set], 
-        sum(Tes_heat_loss[u, s, t] + Tes_capacity_loss[u, s, t] for s in asset_names(users_data[u], STOR))
+        sum(Tes_heat_loss[u, s, t] + Tes_capacity_loss[u, s, t] for s in asset_names(users_data[u], TES))
     )
 
     # Thermal power for use of boiler by each boiler and user
@@ -317,7 +305,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
             - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
-                Float64[profile_component(users_data[u], l, "e_load")[t]
+                Float64[profile_component(users_data[u], l, "load")[t]
                 for l in asset_names(users_data[u], LOAD)]))  # economic flow with the market
     )
 
@@ -358,43 +346,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         sum(C_gen_tot_us_asset[u,g] for g  in asset_names(users_data[u], THER))
     )
 
-    # Heat loss cost for each user by user
-    @expression(model_user, C_heat_loss[u in user_set, t in time_set],
-    profile(market_data, "time_res")[t] *
-    (
-        # If user is connected to the DHN, heat loss cost, from tes energy losses, is calculated with heat_tariff
-        users_data[u]["DHN"]["connected"] ? 
-            sum(Tes_total_loss[u, s, t] for s in asset_names(users_data[u], STOR), init=0) * users_data[u]["DHN"]["heat_tariff"]
-            :
-            # If user is NOT connected to the DHN
-            (
-                length(asset_names(users_data[u], STOR)) > 0 ?  
-                    # If user has a TES, Energy loss is given by Tes_total_loss multiplied by fuel price
-                    sum(Tes_total_loss[u, s, t] for s in asset_names(users_data[u], STOR)) *
-                    (
-                        length(asset_names(users_data[u], BOIL)) > 0 ?  
-                            field_component(users_data[u], "boil", "fuel_price") / field_component(users_data[u], "boil", "eta")  # If use gas (boiler)
-                            :
-                            profile(market_data, "energy_weight")[t] * field_component(users_data[u], "hp", "buy_price") / field_component(users_data[u], "hp", "COP")  # If use electricity (heat pump)
-                    )
-                    :
-                    # If user has NOT a TES, Energy loss is given by thermal component's oversizing compared to thermal load
-                    sum(
-                        max(
-                            0, 
-                            (P_hp_T[u, g, t] + P_boil_us[u, g, t]) - profile_component(users_data[u], "t_load", "value")[t] / profile(market_data, "time_res")[t]
-                        ) *
-                        (
-                            g in asset_names(users_data[u], BOIL) ?
-                                field_component(users_data[u], g, "fuel_price") / field_component(users_data[u], g, "eta")  # Boiler: use fuel_price and eta
-                                :
-                                profile(market_data, "energy_weight")[t] * field_component(users_data[u], g, "buy_price") / field_component(users_data[u], g, "COP")   # Heat pump: use buy_price and COP
-                        )
-                        for g in asset_names(users_data[u], THER)
-                    )
-            )
-    )
-)
 
     # CASH FLOW
     # Cash flow of each user
@@ -460,12 +411,12 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
 
     # Set the minimum level of the energy stored in the battery to be proportional to the capacity
-    @constraint(model_user, con_us_min_E_batt[u in user_set, b in asset_names(users_data[u], THER), t in time_set],
+    @constraint(model_user, con_us_min_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
         x_us[u, b] * field_component(users_data[u], b, "min_SOC") - E_batt_us[u, b, t] <= 0
     )
 
     # Set the maximum level of the energy stored in the battery to be proportional to the capacity
-    @constraint(model_user, con_us_max_E_batt[u in user_set, b in asset_names(users_data[u], THER), t in time_set],
+    @constraint(model_user, con_us_max_E_batt[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
         - x_us[u, b] * field_component(users_data[u], b, "max_SOC") + E_batt_us[u, b, t] <= 0
     )
 
@@ -486,7 +437,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # Set the maximum level of the energy stored in the storage to be proportional to the capacity
     @constraint(model,
-        con_us_max_tes[u in user_set, s in asset_names(users_data[u], STOR), t in time_set],
+        con_us_max_tes[u in user_set, s in asset_names(users_data[u], TES), t in time_set],
         E_tes_us[u, s, t] <= x_us[u, s]
     )  
     # Set the maximun dispatch of the heat pump 
@@ -516,12 +467,12 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t] for c in asset_names(users_data[u], CONV)])
         + P_ren_us[u, t]
         ==
-        sum(Float64[profile_component(users_data[u], l, "e_load")[t] for l in asset_names(users_data[u], LOAD)])
+        sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
     )
 
     # Set the balance at each battery system
     @constraint(model_user,
-        con_us_bat_balance[u in user_set, b in asset_names(users_data[u], THER), t in time_set],
+        con_us_bat_balance[u in user_set, b in asset_names(users_data[u], BATT), t in time_set],
         #E_batt_us[u, b, t] - E_batt_us[u, b, if (t>1) t-1 else final_step end]  # Difference between the energy level in the battery. Note that in the case of the first time step, the last id is used
         E_batt_us[u, b, t] - E_batt_us[u, b, pre(t, time_set)]  # Difference between the energy level in the battery. Note that in the case of the first time step, the last id is used
         + profile(gen_data, "time_res")[t] * P_conv_P_us[u, field_component(users_data[u], b, "corr_asset"), t]/(
@@ -558,38 +509,6 @@ function market_profile_by_user(ECModel::AbstractEC, u_name, profile_name)
 end
 
 """
-    get_dhn_data(ECModel::AbstractEC, u_name)
-
-Function to retrieve district heating network (DHN) data for a user.
-If the user is connected to the DHN, it returns both the DHN data and the corresponding heat exchanger data.
-If the user is not connected, it returns the user's local heating components.
-
-## Arguments
-
-* `ECModel`: EC model object
-* `u_name`: user name
-
-## Returns
-
-It returns a dictionary containing DHN data and heat exchanger data if the user is connected.
-Otherwise, it returns the user's local heating components.
-"""
-function get_dhn_data(ECModel::AbstractEC, u_name)
-    user_data = ECModel.users_data[u_name]
-    
-    if haskey(user_data, "DHN") && user_data["DHN"]["connected"]
-        return Dict(
-            "DHN_data" => user_data["DHN"],  # District heating network data, if present
-            "ECU_data" => get(user_data, "ECU", Dict())  # Heat exchanger data
-        )
-    else
-        return Dict(
-            "local_heating_assets" => filter(p -> p.second["type"] == "thermal" || p.first == "tes", user_data)
-        )  # Return local heating assets if not connected to DHN
-    end
-end
-
-"""
     calculate_demand(ECModel::AbstractEC)
 
 Function to calculate the demand by user
@@ -615,14 +534,14 @@ function calculate_demand(ECModel::AbstractEC)
     time_res = profile(ECModel.gen_data, "time_res")
     energy_weight = profile(ECModel.gen_data,"energy_weight")
 
-    data_e_load = Float64[sum(sum(
-                profile_component(users_data[u], l, "e_load") .* time_res .* energy_weight)
+    data_load = Float64[sum(sum(
+                profile_component(users_data[u], l, "load") .* time_res .* energy_weight)
                 for l in asset_names(users_data[u], LOAD)
             ) for u in user_set]
 
     # sum of the electrical load power by user and EC
     demand_us_EC = JuMP.Containers.DenseAxisArray(
-        [sum(data_e_load); data_e_load],
+        [sum(data_load); data_load],
         user_set_EC
     )
 
@@ -860,7 +779,7 @@ function calculate_self_production(ECModel::AbstractEC; per_unit::Bool=true)
     shared_en_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(
                 0.0, _P_ren_us[u, :] - max.(_P_us[u, :], 0.0)
-            )) +  _tot_P_gen_us[u] + _tot_P_hp_us[u]
+            )) +  _tot_P_gen_us[u]
             for u in user_set],
         user_set
     )
@@ -922,7 +841,7 @@ function calculate_self_consumption(ECModel::AbstractEC; per_unit::Bool=true)
     # self consumption by user only
     shared_cons_us = JuMP.Containers.DenseAxisArray(
         Float64[sum(time_res .* energy_weight .* max.(0.0, 
-                sum(profile_component(users_data[u], l, "e_load") for l in asset_names(users_data[u], LOAD)) 
+                sum(profile_component(users_data[u], l, "load") for l in asset_names(users_data[u], LOAD)) 
                 + min.(_P_us[u, :], 0.0)
             )) for u in user_set],
         user_set

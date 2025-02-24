@@ -8,15 +8,16 @@ Implemented values:
 - REN: renewable assets
 - CONV: battery converters
 - THER: thermal generators
-- STOR: energy storage components
+- TES: energy storage components
+- BATT: battery components
 """
-@enum ASSET_TYPE LOAD=0 REN=1 CONV=2 THER=3 STOR=4
+@enum ASSET_TYPE LOAD=0 REN=1 CONV=2 THER=3 TES=4 BATT=5
 ANY = collect(instances(ASSET_TYPE))  # all assets code
 DEVICES = setdiff(ANY, [LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER, "storage"=>STOR)
+type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES)
 
 
 # Get the previous time step, with circular time step
