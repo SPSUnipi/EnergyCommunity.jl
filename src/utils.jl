@@ -11,13 +11,13 @@ Implemented values:
 - TES: energy storage components
 - BATT: battery components
 """
-@enum ASSET_TYPE LOAD=0 REN=1 CONV=2 THER=3 TES=4 BATT=5
+@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 CONV=3 THER=4 TES=5 BATT=6
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD])  # devices codes
+DEVICES = setdiff(ANY, [LOAD, T_LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES)
+type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>T_LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES)
 
 
 # Get the previous time step, with circular time step
