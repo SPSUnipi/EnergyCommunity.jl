@@ -4,19 +4,21 @@
 
 Enumeration type to specify the type of the assets.
 Implemented values:
-- LOAD: load components
+- LOAD: load type
 - REN: renewable assets
-- BATT: battery components
 - CONV: battery converters
 - THER: thermal generators
+- TES: energy storage components
+- BATT: battery components
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4
+@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 CONV=3 THER=4 TES=5 BATT=6
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD])  # devices codes
+DEVICES = setdiff(ANY, [LOAD, T_LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER)
+type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>T_LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES)
+
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
