@@ -43,30 +43,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     ECModel.model = (use_notations ? direct_model(optimizer) : Model(optimizer))
     model_user = ECModel.model
 
-    # Overestimation of the power exchanged by each POD when selling to the external market by each user
-    # TODO modify this expression to include adj_load
-    @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
-        max(0,
-            sum(Float64[field_component(users_data[u], c, "max_capacity") 
-                for c in asset_names(users_data[u], CONV)]) # Maximum capacity of the converters
-            + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
-                for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
-            + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
-                for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum demand
-        ) * TOL_BOUNDS
-    )
-
-    # Overestimation of the power exchanged by each POD when buying from the external market by each user
-    @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
-        max(0,
-            sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
-                # Maximum demand
-            + sum(Float64[field_component(users_data[u], c, "max_capacity") 
-                for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
-        ) * TOL_BOUNDS
-    )
-
     # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
     @expression(model_user, P_us_overestimate[u in user_set, t in time_set],
         max(P_P_us_overestimate[u, t], P_N_us_overestimate[u, t])  # Max between the maximum values calculated previously
@@ -153,6 +129,30 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     ## Expressions
 
+    # Total adjustable load dispatch for each appliance: positive when charging the vehicle
+    @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
+        P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
+    )
+
+    # Total energy load by user and time step for adjustable load: positive when charging the vehicle
+    @expression(model_user, P_adj_tot_us[u=user_set, t=time_set],
+        sum(P_adj_us[u,e,t] for e in asset_names(users_data[u], LOAD_ADJ))
+    )
+    
+    # Fixed power for single fixed appliance by user
+    @expression(model_user, P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set],
+        profile_component(users_data[u], f, "load")[t])
+
+    # Total energy load by user and time step for fixed load
+    @expression(model_user, P_fix_tot_us[u=user_set, t=time_set],
+        sum(P_fix_us[u,e,t] for e in asset_names(users_data[u], LOAD))
+    )
+
+    # Total energy load by user and time step
+    @expression(model_user, P_L_tot_us[u=user_set, t=time_set],
+        P_adj_tot_us[u,t] + P_fix_tot_us[u,t]
+    )
+
     # CAPEX by user and asset
     @expression(model_user, CAPEX_us[u in user_set, a in device_names(users_data[u])],
         x_us[u,a]*field_component(users_data[u], a, "CAPEX_lin")  # Capacity of the asset times specific investment costs
@@ -210,15 +210,15 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, C_Peak_tot_us[u in user_set],
         sum(C_Peak_us[u, w] for w in peak_set)  # Sum of peak costs
     ) 
-
+    
+    #TODO add the adjustable load costs
     # Revenues of each user in non-cooperative approach
     @expression(model_user, R_Energy_us[u in user_set, t in time_set],
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
             - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
-                Float64[profile_component(users_data[u], l, "load")[t]
-                for l in asset_names(users_data[u], LOAD)]))  # economic flow with the market
-    )
+                P_L_tot_us[u, t]))
+    )  # economic flow with the market
 
     # Energy revenues by user
     @expression(model_user, R_Energy_tot_us[u in user_set],
@@ -280,28 +280,27 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
     )
 
-    # Total adjustable load dispatch for each appliance: positive when charging the vehicle
-    @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
+    # Overestimation of the power exchanged by each POD when selling to the external market by each user
+    # TODO modify this expression to include adj_load
+    @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
+        max(0,
+            sum(Float64[field_component(users_data[u], c, "max_capacity") 
+                for c in asset_names(users_data[u], CONV)]) # Maximum capacity of the converters
+            + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
+                for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
+            + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
+                for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
+            - sum(P_L_tot_us[u, t])  # Minimum demand
+        ) * TOL_BOUNDS
     )
 
-    # Total energy load by user and time step for adjustable load: positive when charging the vehicle
-    @expression(model_user, P_adj_tot_us[u=user_set, t=time_set],
-        sum(P_adj_us[u,e,t] for e in asset_names(users_data[u], LOAD_ADJ))
-    )
-    
-    # Fixed power for single fixed appliance by user
-    @expression(model_user, P_fix_us[u=user_set, f=asset_names(users_data[u], LOAD), t=time_set],
-        profile_component(users_data[u], f, "load")[t])
-
-    # Total energy load by user and time step for fixed load
-    @expression(model_user, P_fix_tot_us[u=user_set, t=time_set],
-        sum(P_fix_us[u,e,t] for e in asset_names(users_data[u], LOAD))
-    )
-
-    # Total energy load by user and time step
-    @expression(model_user, P_L_tot_us[u=user_set, t=time_set],
-        P_adj_tot_us[u,t] + P_fix_tot_us[u,t]
+    # Overestimation of the power exchanged by each POD when buying from the external market by each user
+    @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
+        max(0,
+            sum(P_L_tot_us[u, t]) # Maximum demand
+            + sum(Float64[field_component(users_data[u], c, "max_capacity") 
+                for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
+        ) * TOL_BOUNDS
     )
 
     ## Inequality constraints
@@ -393,8 +392,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
         E_adj_us[u, e, t] == 
             E_adj_us[u, e, pre(t, time_set)] 
-            + P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
-            - P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
+            + profile(gen_data, "time_res")[t] * P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
+            - profile(gen_data, "time_res")[t] * P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
             + profile_component(users_data[u], e, "energy_exchange")[t]
     )
     
