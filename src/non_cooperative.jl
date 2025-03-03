@@ -162,8 +162,7 @@ function print_summary(::AbstractGroupNC, ECModel::AbstractEC)
             ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
         [sum(
-            Float64[profile_component(users_data[u], l, "load")[t]
-                for t in time_set for l in asset_names(users_data[u], LOAD)]
+            results[:P_L_tot_us][u, :]
         ) for u in user_set]/1000...)  # Total load by user
 
 end
@@ -219,8 +218,7 @@ function Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::Ab
     for (u_i, u_name) in enumerate(ECModel.user_set)
 
         # Power dispatch plot
-        pt[u_i, 1] = plot(time_set_plot, [sum(Float64[profile_component(ECModel.users_data[u_name], l, "load")[t] 
-                                        for l in asset_names(ECModel.users_data[u_name], LOAD)]) for t in time_set],
+        pt[u_i, 1] = plot(time_set_plot, results[:P_L_tot_us][u_name, :].data,
                         label="Load", w=line_width, legend=:outerright)
         plot!(pt[u_i, 1], time_set_plot, results[:P_us][u_name, :].data, label="Grid", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, [
@@ -319,10 +317,9 @@ function add_users_design_summary!(output_list::Vector, ECModel::AbstractEC, use
     design_users = DataFrames.DataFrame(
         vcat(
             [[u for u in user_set]],
-            [[maximum(sum(Float64[profile_component(users_data[u], l, "load")[t]
-                for l in asset_names(users_data[u]) if asset_type(users_data[u], l) == LOAD]) for t in time_set) for u in user_set]],
-            [[sum(Float64[profile_component(users_data[u], l, "load")[t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
-                for t in time_set for l in asset_names(users_data[u], LOAD)]) for u in user_set]],
+            [[maximum(sum(ECModel.results[:P_L_tot_us][u,:])) for u in user_set]],
+            [[sum(ECModel.results[:P_L_tot_us][u,t] * profile(ECModel.gen_data, "energy_weight")[t] * profile(ECModel.gen_data,"time_res")[t]/1000
+                for t in time_set) for u in user_set]],
             [[if (a in device_names(users_data[u])) _x_us[u, a] else missing end for u in user_set] for a in asset_set_unique]
         ),
         map(Symbol, vcat("User", "Peak demand [kW]", "Yearly Demand [MWh]", ["x_us_$a" for a in asset_set_unique]))
