@@ -43,8 +43,34 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     ECModel.model = (use_notations ? direct_model(optimizer) : Model(optimizer))
     model_user = ECModel.model
 
-    # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
-    @expression(model_user, P_us_overestimate[u in user_set, t in time_set],
+    # TODO modify this expression to include adj_load
+    # Overestimation of the power exchanged by each POD when selling to the external market by each user
+    @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
+        max(0,
+            sum(Float64[field_component(users_data[u], c, "max_capacity") 
+                for c in asset_names(users_data[u], CONV)]) # Maximum capacity of the converters
+            + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
+                for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
+            + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
+                for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
+            - sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])  # Minimum fix demand
+            + sum(Float64[profile_component(users_data[u], e, "max_supply")[t] for e in asset_names(users_data[u], LOAD_ADJ)])  # Maximum adjustable load
+        ) * TOL_BOUNDS
+    )
+
+    # Overestimation of the power exchanged by each POD when buying from the external market by each user
+    @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
+        max(0,
+            sum(Float64[profile_component(users_data[u], l, "load")[t] for l in asset_names(users_data[u], LOAD)])
+                # Maximum fix demand
+            + sum(Float64[profile_component(users_data[u], e, "max_withdrawal")[t] for e in asset_names(users_data[u], LOAD_ADJ)])  # Maximum adjustable load
+            + sum(Float64[field_component(users_data[u], c, "max_capacity") 
+                for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
+        ) * TOL_BOUNDS
+    )
+
+        # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
+        @expression(model_user, P_us_overestimate[u in user_set, t in time_set],
         max(P_P_us_overestimate[u, t], P_N_us_overestimate[u, t])  # Max between the maximum values calculated previously
     )
 
@@ -278,29 +304,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Total converter dispatch: positive when supplying to AC
     @expression(model_user, P_conv_us[u=user_set, c=asset_names(users_data[u], CONV), t=time_set],
         P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
-    )
-
-    # Overestimation of the power exchanged by each POD when selling to the external market by each user
-    # TODO modify this expression to include adj_load
-    @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
-        max(0,
-            sum(Float64[field_component(users_data[u], c, "max_capacity") 
-                for c in asset_names(users_data[u], CONV)]) # Maximum capacity of the converters
-            + sum(Float64[field_component(users_data[u], r, "max_capacity")*profile_component(users_data[u], r, "ren_pu")[t] 
-                for r = asset_names(users_data[u], REN)]) # Maximum dispatch of renewable assets
-            + sum(Float64[field_component(users_data[u], g, "max_capacity")*field_component(users_data[u], g, "max_technical")
-                for g = asset_names(users_data[u], THER)]) #Maximum dispatch of the fuel-fired generators
-            - sum(P_L_tot_us[u, t])  # Minimum demand
-        ) * TOL_BOUNDS
-    )
-
-    # Overestimation of the power exchanged by each POD when buying from the external market by each user
-    @expression(model_user, P_N_us_overestimate[u in user_set, t in time_set],
-        max(0,
-            sum(P_L_tot_us[u, t]) # Maximum demand
-            + sum(Float64[field_component(users_data[u], c, "max_capacity") 
-                for c in asset_names(users_data[u], CONV)])  # Maximum capacity of the converters
-        ) * TOL_BOUNDS
     )
 
     ## Inequality constraints
