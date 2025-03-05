@@ -69,8 +69,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         ) * TOL_BOUNDS
     )
 
-        # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
-        @expression(model_user, P_us_overestimate[u in user_set, t in time_set],
+    # Overestimation of the power exchanged by each POD, be it when buying or selling by each user
+    @expression(model_user, P_us_overestimate[u in user_set, t in time_set],
         max(P_P_us_overestimate[u, t], P_N_us_overestimate[u, t])  # Max between the maximum values calculated previously
     )
 
@@ -237,7 +237,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         sum(C_Peak_us[u, w] for w in peak_set)  # Sum of peak costs
     ) 
     
-    #TODO add the adjustable load costs
+    #TODO add the adjustable load costs (they are double counted as in P_N_us and P_L_tot_us)
     # Revenues of each user in non-cooperative approach
     @expression(model_user, R_Energy_us[u in user_set, t in time_set],
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
