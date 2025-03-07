@@ -71,12 +71,8 @@ users:  # list of users and the corresponding assets
     
     load_adj:  # component adjustable load
       type: load_adj
-      eta_P: 0.9 # [-] efficiency of the adjustable load
-      eta_N: 0.9 # [-] efficiency of the adjustable load
-      CAPEX_lin: 100  # [€/kW] specific investment cost of the component
-      OEM_lin: 5  # [€/kW/y] specific O&M cost
-      lifetime_y: 25  # [y] lifetime of the component
-      max_capacity: 22  # [kW] maximum capacity
+      eta_P: 0.95 # [-] efficiency of the adjustable load
+      eta_N: 0.95 # [-] efficiency of the adjustable load
       profile:
         energy_exchange: load_user1_adj
         max_supply: max_supply_user1

@@ -43,7 +43,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     ECModel.model = (use_notations ? direct_model(optimizer) : Model(optimizer))
     model_user = ECModel.model
 
-    # TODO modify this expression to include adj_load
     # Overestimation of the power exchanged by each POD when selling to the external market by each user
     @expression(model_user, P_P_us_overestimate[u in user_set, t in time_set],
         max(0,
@@ -117,14 +116,14 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @variable(model_user,
         0 <= n_us[u=user_set, a=device_names(users_data[u])]
             <= field_component(users_data[u], a, "max_capacity"))
-    # Adjusted positive power for single adjustable appliance by user when absorbing from public grid
-    @variable(model_user,
-        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
-            <= profile_component(users_data[u], e, "max_withdrawal")[t])
     # Adjusted positive power for single adjustable appliance by user when supplying to public grid
     @variable(model_user,
-        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+        0 <= P_adj_P_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_supply")[t])
+    # Adjusted positive power for single adjustable appliance by user when absorbing from public grid
+    @variable(model_user,
+        0 <= P_adj_N_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
+            <= profile_component(users_data[u], e, "max_withdrawal")[t])
     # Adjusted energy for single adjustable appliance by user
     @variable(model_user,
         profile_component(users_data[u], e, "min_energy")[t] <= 
@@ -155,9 +154,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     ## Expressions
 
-    # Total adjustable load dispatch for each appliance: positive when charging the vehicle
+    # Total adjustable load dispatch for each appliance: positive when charging the vehicle (absorbing from the grid)
     @expression(model_user, P_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set],
-        P_adj_P_us[u, e, t] - P_adj_N_us[u, e, t]
+        P_adj_N_us[u, e, t] - P_adj_P_us[u, e, t]
     )
 
     # Total energy load by user and time step for adjustable load: positive when charging the vehicle
@@ -242,8 +241,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, R_Energy_us[u in user_set, t in time_set],
         profile(ECModel.gen_data,"energy_weight")[t] * profile(ECModel.gen_data, "time_res")[t] * (market_profile_by_user(ECModel,u, "sell_price")[t]*P_P_us[u,t]
             - market_profile_by_user(ECModel,u,"buy_price")[t] * P_N_us[u,t] 
-            - market_profile_by_user(ECModel,u,"consumption_price")[t] * sum(
-                P_L_tot_us[u, t]))
+            - market_profile_by_user(ECModel,u,"consumption_price")[t] * P_L_tot_us[u, t])
     )  # economic flow with the market
 
     # Energy revenues by user
@@ -395,8 +393,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         E_adj_us_balance[u=user_set, e in asset_names(users_data[u], LOAD_ADJ), t=time_set],
         E_adj_us[u, e, t] == 
             E_adj_us[u, e, pre(t, time_set)] 
-            + profile(gen_data, "time_res")[t] * P_adj_P_us[u, e, t] * sqrt(field_component(users_data[u], e, "eta_P"))
-            - profile(gen_data, "time_res")[t] * P_adj_N_us[u, e, t] / sqrt(field_component(users_data[u], e, "eta_N")) 
+            - profile(gen_data, "time_res")[t] * P_adj_P_us[u, e, t] / field_component(users_data[u], e, "eta_P")
+            + profile(gen_data, "time_res")[t] * P_adj_N_us[u, e, t] * field_component(users_data[u], e, "eta_N")
             + profile_component(users_data[u], e, "energy_exchange")[t]
     )
     
