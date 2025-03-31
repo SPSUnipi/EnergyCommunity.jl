@@ -264,7 +264,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             ]) for u in user_set]/1000...)  # Total power supplied by converters by user
     printfmtln(printf_code_user, "PconvN [MWh]",
         [sum(Float64[results_EC[:P_conv_N_us][u, c, t] 
-        for c in asset_names(users_data[u], CONV) for t in time_set
+                for c in asset_names(users_data[u], CONV) for t in time_set
             ]) for u in user_set]/1000...)  # Total power loaded by converters by user
     printfmtln(printf_code_user, "Pren [MWh]",
         [sum(results_EC[:P_ren_us][u,:]) for u in user_set]/1000...)  # Total power supplied by renewables by each user
@@ -277,6 +277,28 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             Float64[profile_component(users_data[u], l, "load")[t]
                 for t in time_set for l in asset_names(users_data[u], LOAD)]
         ) for u in user_set]/1000...)  # Total load by user
+    if sum(
+        Float64[profile_component(users_data[u], l, "t_load")[t]
+            for t in time_set for l in asset_names(users_data[u], T_LOAD)]) > 0.0
+        # print thermal energy flows
+        printfmtln("\n\nEnergy flows")
+        printfmtln(printf_code_description, "USER", [u for u in user_set]...)
+        printfmtln(printf_code_user, "Php [MWh]",
+            [sum(Float64[results_EC[:P_hp_T][u, h, t] 
+                    for h in asset_names(users_data[u], HP) for t in time_set
+                ]) for u in user_set]/1000...)  # Total power supplied by heat pump by user
+        printfmtln(printf_code_user, "Pboil [MWh]",
+            [sum(Float64[results_EC[:P_boil_us][u, o, t] 
+                    for o in asset_names(users_data[u], BOIL) for t in time_set
+                ]) for u in user_set]/1000...)  # Total power supplied by boiler by user
+        printfmtln(printf_code_user, "T_Load [MWh]",
+            [sum(
+                Float64[profile_component(users_data[u], l, "t_load")[t]
+                    for t in time_set for l in asset_names(users_data[u], T_LOAD)]
+            ) for u in user_set]/1000...)  # Total thermal load by user
+    else 
+        printfmtln(" ")
+    end
 end
 
 
@@ -344,7 +366,7 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
         pt[u_i, 2] = plot(time_set_plot, [
             sum(Float64[results[:E_batt_us][u_name, b, t] 
                 for b in asset_names(users_data[u_name], BATT)]) for t in time_set],
-                label="Energy      ", w=line_width, legend=:outerright)
+                label="Energy", w=line_width, legend=:outerright)
         xaxis!("Time step [#]")
         yaxis!("Energy [kWh]")
         #ylims!(lims_y_axis_batteries[u])
@@ -984,9 +1006,9 @@ function to_objective_callback_by_subgroup(
             else
                 # otherwise return the value of the base case
                 return callback_base(user_set_callback)
-            end
-        end
+            end 
+        end 
 
         return objective_callback_by_subgroup
     end
-end
+end 

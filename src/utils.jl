@@ -1,23 +1,25 @@
-
 """
     @enum ASSET_TYPE
 
 Enumeration type to specify the type of the assets.
 Implemented values:
 - LOAD: load type
+- T_LOAD: thermal load
 - REN: renewable assets
 - CONV: battery converters
 - THER: thermal generators
-- TES: energy storage components
-- BATT: battery components
+- TES: thermal energy storage component
+- BATT: battery component
+- HP: heat pump
+- BOIL: boiler
 """
-@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 CONV=3 THER=4 TES=5 BATT=6
+@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 CONV=3 THER=4 TES=5 BATT=6 HP=7 BOIL=8
 ANY = collect(instances(ASSET_TYPE))  # all assets code
 DEVICES = setdiff(ANY, [LOAD, T_LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
 
 
-type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>T_LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES)
+type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>T_LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES, "heat_pump"=>HP, "boiler"=>BOIL)
 
 
 # Get the previous time step, with circular time step
