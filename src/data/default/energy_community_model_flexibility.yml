@@ -12,6 +12,7 @@ general:  # general input parameters
   optional_datasets:  # optional csv files storing data
     - input_resource.csv
     - market_data.csv
+    - flexibility_resource.csv
 
 market:  # market characteristics
   non_commercial:
@@ -68,15 +69,16 @@ users:  # list of users and the corresponding assets
       profile:
         load: load_user1
     
-    # load_adj:  # component adjustable load
-    #   type: load_adj
-    #   eta: 0.9
-    #   profile:
-    #     load: load_user1_adj
-    #     max_supply: max_supply_user1
-    #     max_withdrawal: max_withdrawal_user1
-    #     min_energy: min_energy_user1
-    #     max_energy: max_energy_user1
+    load_adj:  # component adjustable load
+      type: load_adj
+      eta_P: 0.95 # [-] efficiency of the adjustable load
+      eta_N: 0.95 # [-] efficiency of the adjustable load
+      profile:
+        energy_exchange: load_user1_adj
+        max_supply: max_supply_user1
+        max_withdrawal: max_withdrawal_user1
+        min_energy: min_energy_user1
+        max_energy: max_energy_user1
 
     # generator:  # component thermal
     #   type: thermal

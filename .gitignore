@@ -33,3 +33,6 @@ run_cloud/results*
 
 # folders
 results
+test/data
+docs/src/examples/data
+data

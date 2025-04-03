@@ -10,13 +10,14 @@ Implemented values:
 - CONV: battery converters
 - THER: thermal generators
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4
+@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4 LOAD_ADJ=5
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
+LOADS = [LOAD, LOAD_ADJ]  # load codes
+DEVICES = setdiff(ANY, LOADS)  # devices codes
+# TODO analyze implication of LOAD_ADJ in the code
 
-
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER)
+type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER, "load_adj"=>LOAD_ADJ)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end
