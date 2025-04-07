@@ -273,10 +273,8 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
                 for g in asset_names(users_data[u], THER) for t in time_set
             ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
-        [sum(
-            Float64[profile_component(users_data[u], l, "load")[t]
-                for t in time_set for l in asset_names(users_data[u], LOAD)]
-        ) for u in user_set]/1000...)  # Total load by user
+        [sum(results_EC[:P_L_tot_us][u, :])
+            for u in user_set]/1000...)  # Total load by user
     # for u in enumerate(user_set)
     #     if "t_load" in collect(keys(users_data[u_name]))
     #         # print thermal energy flows
@@ -343,8 +341,7 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
     for (u_i, u_name) in enumerate(user_set)
 
         # Power dispatch plot
-        pt[u_i, 1] = plot(time_set_plot, [-sum(Float64[profile_component(users_data[u_name], l, "load")[t] 
-                                        for l in asset_names(users_data[u_name], LOAD)]) for t in time_set],
+        pt[u_i, 1] = plot(time_set_plot, -results[:P_L_tot_us][u_name, :].data,
                             label="Load", width=line_width, legend=:outerright, dpi=3000)
         # plot!(pt[u_i, 1], time_set_plot, _P_public_us[u_name, :].data, label="Public grid", w=line_width)
         # plot!(pt[u_i, 1], time_set_plot, _P_micro_us[u_name, :].data, label="Microgrid", w=line_width)

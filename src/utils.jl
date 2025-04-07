@@ -13,14 +13,25 @@ Implemented values:
 - HP: heat pump
 - BOIL: boiler
 """
-@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 CONV=3 THER=4 TES=5 BATT=6 HP=7 BOIL=8
+
+@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 BATT=3 CONV=4 THER=5 LOAD_ADJ=6 TES=7 HP=8 BOIL=9
 ANY = collect(instances(ASSET_TYPE))  # all assets code
-DEVICES = setdiff(ANY, [LOAD, T_LOAD])  # devices codes
 GENS = [REN, THER]  # generator codes
+LOADS = [LOAD, LOAD_ADJ, T_LOAD]  # load codes
+DEVICES = setdiff(ANY, LOADS)  # devices codes
 
-
-type_codes = Base.Dict("renewable"=>REN, "converter"=>CONV, "t_load"=>T_LOAD, "load"=>LOAD, "thermal"=>THER, "battery"=>BATT, "storage"=>TES, "heat_pump"=>HP, "boiler"=>BOIL)
-
+type_codes = Base.Dict(
+    "renewable"=>REN,
+    "converter"=>CONV,
+    "t_load"=>T_LOAD,
+    "load"=>LOAD,
+    "thermal"=>THER,
+    "battery"=>BATT,
+    "storage"=>TES,
+    "heat_pump"=>HP,
+    "boiler"=>BOIL,
+    "load_adj"=>LOAD_ADJ,
+)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end

@@ -34,5 +34,7 @@ run_cloud/results*
 # folders
 results
 data
-examples
+test/data
+!examples/*.jl
+!examples/*.ipynb
 outputs
