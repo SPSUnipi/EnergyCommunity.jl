@@ -22,6 +22,7 @@ input_tests = Dict(
     "base_case"=>joinpath(@__DIR__, "./data/energy_community_model.yml"),
     "thermal_case"=>joinpath(@__DIR__, "./data/energy_community_model_thermal.yml"),
     "flexibility_case"=>joinpath(@__DIR__, "./data/energy_community_model_flexibility.yml"),
+    "heat_case"=>joinpath(@__DIR__, "./data/energy_community_model_heat.yml"),
 )
 
 
