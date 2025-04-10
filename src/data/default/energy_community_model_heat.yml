@@ -216,7 +216,6 @@ users:  # list of users and the corresponding assets
       # min_technical: 0.2  # [-] minimum technical working point of the generator
       # max_technical: 1.0  # [-] maximum technical working point of the generator
       max_capacity: 60  # [kWth] maximum thermal power capacity
-      corr_load: t_load  # corresponding thermal load
 
     load:  # component load
       type: load
@@ -226,6 +225,6 @@ users:  # list of users and the corresponding assets
 
     t_load:  # component load
       type: t_load
-      corr_asset: hp, boil, tes
+      corr_asset: [hp, boil, tes]
       profile:
         t_load: load_t_user3

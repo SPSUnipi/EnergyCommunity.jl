@@ -209,27 +209,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         field_component(users_data[u], s, "k") * E_tes_us[u, s, pre(t, time_set)]*(profile_component(users_data[u], s, "T_ref")[t] - T_u[u, s, t])
     )
 
-    # Capacity Energy losses in Thermal Storage by each tes and user (if the energy stored is greater than the maximum capacity, and DHN is not available)        
-    @expression(model_user, Tes_capacity_loss[u=user_set, s=asset_names(users_data[u], TES), t=time_set], 
-        sum( 
-            max(0, 
-                sum(E_tes_us[u, s, pre(t, time_set)]) * profile(gen_data, "time_res")[t] 
-                + sum((P_hp_T[u, h, t]) * profile(gen_data, "time_res")[t] 
-                    for h in asset_names(users_data[u], HP))
-                + sum((P_boil_us[u, o, t]) * profile(gen_data, "time_res")[t] 
-                    for o in asset_names(users_data[u], BOIL))
-                - (field_component(users_data[u], s, "max_capacity") !== nothing ? 
-                    field_component(users_data[u], s, "max_capacity") : 0)* profile(gen_data, "time_res")[t] 
-            ) 
-            for s in asset_names(users_data[u], TES)
-        )
-    )  
-
-    # Total energy losses in the storage by each user
-    @expression(model_user, Tes_total_loss[u=user_set, s=asset_names(users_data[u], TES), t=time_set], 
-        sum(Tes_heat_loss[u, s, t] + Tes_capacity_loss[u, s, t])
-    )
-
     # Mass flow rate of Fuel for use of boiler by each user and asset [m3/s]
     @expression(model_user, m_fuel[u=user_set, o=asset_names(users_data[u], BOIL), t=time_set], 
         (P_boil_us[u, o, t] / (field_component(users_data[u], o, "PCI") * field_component(users_data[u], o, "eta") / 3600))
@@ -485,34 +464,16 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_gen_us[u, g, t] - z_gen_us[u, g, t] * field_component(users_data[u], g, "nom_capacity") * field_component(users_data[u], g, "max_technical") <= 0
     )
 
-    # Set the minimun level of the energy stored in the storage 
-    @constraint(model_user,
-        con_us_min_tes[u in user_set, s=asset_names(users_data[u], TES), t in time_set],
-        E_tes_us[u, s, t] >= 0
-    )
-
     # Set the maximum level of the energy stored in the storage to be proportional to the capacity
     @constraint(model_user,
         con_us_max_tes[u in user_set, s=asset_names(users_data[u], TES), t in time_set],
         E_tes_us[u, s, t] <= x_us[u, s]
     )  
 
-    # Set the minimum dispatch of the heat pump 
-    @constraint(model_user,
-        con_us_min_hp[u in user_set, h=asset_names(users_data[u], HP), t in time_set],
-        P_hp_T[u, h, t] >= 0
-    )
-
     # Set the maximun dispatch of the heat pump 
     @constraint(model_user,
         con_us_max_hp[u in user_set, h=asset_names(users_data[u], HP), t in time_set],
         P_hp_T[u, h, t] <= x_us[u, h]
-    )
-
-    # Set the minimum dispatch of the boiler
-    @constraint(model_user,
-        con_us_min_boil[u in user_set, o=asset_names(users_data[u], BOIL), t in time_set],
-        P_boil_us[u, o, t] >= 0
     )
 
     # Set the maximun dispatch of the boiler
@@ -522,15 +483,23 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     ) 
 
     ## Equality constraints
+    # @constraint(model_user, [u in user_set, s in asset_names(users_data[u], TES)],
+    # E_tes_us[u, s, 1] == 0.0)
 
     @constraint(model_user, 
-        con_us_tes_balance[u in user_set, s in asset_names(users_data[u], TES), t in time_set],
-        (sum(E_tes_us[u, s, t] - E_tes_us[u, s, pre(t, time_set)])*(profile(gen_data, "time_res"))[t]
-        + (profile(gen_data, "time_res"))[t] * sum(Tes_heat_loss[u, s, t])
-        + sum((profile_component(users_data[u], l, "t_load"))[t] for l in asset_names(users_data[u], T_LOAD))
+        con_us_tes_balance[u in user_set, l in asset_names(users_data[u], T_LOAD), t in time_set],
+        sum(GenericAffExpr{Float64,VariableRef}[
+            E_tes_us[u, s, t] - E_tes_us[u, s, pre(t, time_set)] + Tes_heat_loss[u, s, t] * profile(gen_data, "time_res")[t]
+            for s in asset_names(users_data[u], TES) if s in field_component(users_data[u], l, "corr_asset")
+        ])
+        + profile_component(users_data[u], l, "t_load")[t] * profile(gen_data, "time_res")[t]
         == 
-        (profile(gen_data, "time_res"))[t] * sum(P_hp_T[u, h, t] for h in asset_names(users_data[u], HP))
-        + (profile(gen_data, "time_res"))[t] * sum(P_boil_us[u, o, t] for o in asset_names(users_data[u], BOIL)))
+        sum(GenericAffExpr{Float64,VariableRef}[
+            P_hp_T[u, h, t] for h in asset_names(users_data[u], HP) if h in field_component(users_data[u], l, "corr_asset")
+            ]) * profile(gen_data, "time_res")[t]
+        + sum(GenericAffExpr{Float64,VariableRef}[
+            P_boil_us[u, o, t] for o in asset_names(users_data[u], BOIL) if o in field_component(users_data[u], l, "corr_asset")
+            ]) * profile(gen_data, "time_res")[t]
     )
 
     # Set the electrical balance at the user system
@@ -1089,23 +1058,15 @@ function calculate_tes_losses(ECModel::AbstractEC)
     energy_weight = profile(gen_data, "energy_weight")
 
     _Tes_heat_loss = ECModel.results[:Tes_heat_loss]
-    _Tes_capacity_loss = ECModel.results[:Tes_capacity_loss]
 
     # total thermal energy losses by the whole EC
     data_heat_losses = Float64[
-        !has_asset(users_data[u], STOR) ? 0.0 : sum(time_res[t] * energy_weight[t] * get(_Tes_heat_loss[u, s, t], 0.0) 
+        !has_asset(users_data[u], STOR) ? 0.0 : sum(time_res[t] * energy_weight[t] * _Tes_heat_loss[u, s, t]
             for s in asset_names(users_data[u], STOR) for t in time_set)
         for u in user_set
     ]
 
-    # total capacity losses by the whole EC
-    data_capacity_losses = Float64[
-        !has_asset(users_data[u], STOR) ? 0.0 : sum(time_res[t] * energy_weight[t] * get(_Tes_capacity_loss[u, s, t], 0.0) 
-            for s in asset_names(users_data[u], STOR) for t in time_set)
-        for u in user_set
-    ]
-
-    data_tes_losses = data_heat_losses + data_capacity_losses
+    data_tes_losses = data_heat_losses
 
     # sum of thermal energy storage losses by user and EC
     th_tes_losses_us_EC = JuMP.Containers.DenseAxisArray(
