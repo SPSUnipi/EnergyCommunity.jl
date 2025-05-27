@@ -482,27 +482,25 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_boil_us[u, o, t] <= x_us[u, o]
     ) 
 
-    ## Equality constraints
-    # @constraint(model_user, [u in user_set, s in asset_names(users_data[u], TES)],
-    # E_tes_us[u, s, 1] == 0.0)
 
+    # Set the thermal balance at the user system [kWh]
     @constraint(model_user, 
-        con_us_tes_balance[u in user_set, l in asset_names(users_data[u], T_LOAD), t in time_set],
+        con_us_heat_balance[u in user_set, l in asset_names(users_data[u], T_LOAD), t in time_set],
         sum(GenericAffExpr{Float64,VariableRef}[
             E_tes_us[u, s, t] - E_tes_us[u, s, pre(t, time_set)] + Tes_heat_loss[u, s, t] * profile(gen_data, "time_res")[t]
             for s in asset_names(users_data[u], TES) if s in field_component(users_data[u], l, "corr_asset")
-        ])
+        ]) # available tes energy
         + profile_component(users_data[u], l, "t_load")[t] * profile(gen_data, "time_res")[t]
         == 
         sum(GenericAffExpr{Float64,VariableRef}[
             P_hp_T[u, h, t] for h in asset_names(users_data[u], HP) if h in field_component(users_data[u], l, "corr_asset")
-            ]) * profile(gen_data, "time_res")[t]
+            ]) * profile(gen_data, "time_res")[t] # hp energy supplied
         + sum(GenericAffExpr{Float64,VariableRef}[
             P_boil_us[u, o, t] for o in asset_names(users_data[u], BOIL) if o in field_component(users_data[u], l, "corr_asset")
-            ]) * profile(gen_data, "time_res")[t]
+            ]) * profile(gen_data, "time_res")[t] # boiler energy supplied
     )
 
-    # Set the electrical balance at the user system
+    # Set the electrical balance at the user system [kW]
     @constraint(model_user,
         con_us_balance[u in user_set, t in time_set],
         P_N_us[u, t] - P_P_us[u, t]
@@ -1061,8 +1059,8 @@ function calculate_tes_losses(ECModel::AbstractEC)
 
     # total thermal energy losses by the whole EC
     data_heat_losses = Float64[
-        !has_asset(users_data[u], STOR) ? 0.0 : sum(time_res[t] * energy_weight[t] * _Tes_heat_loss[u, s, t]
-            for s in asset_names(users_data[u], STOR) for t in time_set)
+        !has_asset(users_data[u], TES) ? 0.0 : sum(time_res[t] * energy_weight[t] * _Tes_heat_loss[u, s, t]
+            for s in asset_names(users_data[u], TES) for t in time_set)
         for u in user_set
     ]
 
@@ -1075,4 +1073,31 @@ function calculate_tes_losses(ECModel::AbstractEC)
     )
 
     return th_tes_losses_us_EC
+end
+
+function calculate_COP_T(ECModel::AbstractEC)
+
+    user_set = ECModel.user_set
+    users_data = ECModel.users_data
+
+    gen_data = ECModel.gen_data
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    time_set = init_step:final_step
+
+    # Complete list of all heat pump assets
+    hp_assets = unique(vcat([asset_names(users_data[u], HP) for u in user_set]...))
+
+    # Construction of the final result as a DenseAxisArray
+    _COP_T = JuMP.Containers.DenseAxisArray(
+        [if has_asset(users_data[u], HP) && h in asset_names(users_data[u], HP)
+            value(ECModel.model[:COP_T][u, h, t])
+         else
+            0.0
+         end
+         for u in user_set, h in hp_assets, t in time_set],
+        (user_set, hp_assets, time_set)
+    )
+
+    return _COP_T
 end
