@@ -1074,30 +1074,3 @@ function calculate_tes_losses(ECModel::AbstractEC)
 
     return th_tes_losses_us_EC
 end
-
-function calculate_COP_T(ECModel::AbstractEC)
-
-    user_set = ECModel.user_set
-    users_data = ECModel.users_data
-
-    gen_data = ECModel.gen_data
-    init_step = field(gen_data, "init_step")
-    final_step = field(gen_data, "final_step")
-    time_set = init_step:final_step
-
-    # Complete list of all heat pump assets
-    hp_assets = unique(vcat([asset_names(users_data[u], HP) for u in user_set]...))
-
-    # Construction of the final result as a DenseAxisArray
-    _COP_T = JuMP.Containers.DenseAxisArray(
-        [if has_asset(users_data[u], HP) && h in asset_names(users_data[u], HP)
-            value(ECModel.model[:COP_T][u, h, t])
-         else
-            0.0
-         end
-         for u in user_set, h in hp_assets, t in time_set],
-        (user_set, hp_assets, time_set)
-    )
-
-    return _COP_T
-end
