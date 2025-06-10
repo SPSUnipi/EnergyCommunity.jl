@@ -33,6 +33,8 @@ run_cloud/results*
 
 # folders
 results
-test/data
-docs/src/examples/data
 data
+test/data
+!examples/*.jl
+!examples/*.ipynb
+outputs

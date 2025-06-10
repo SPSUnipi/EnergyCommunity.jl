@@ -1,23 +1,37 @@
-
 """
     @enum ASSET_TYPE
 
 Enumeration type to specify the type of the assets.
 Implemented values:
-- LOAD: load components
+- LOAD: load type
+- T_LOAD: thermal load
 - REN: renewable assets
-- BATT: battery components
 - CONV: battery converters
 - THER: thermal generators
+- TES: thermal energy storage component
+- BATT: battery component
+- HP: heat pump
+- BOIL: boiler
 """
-@enum ASSET_TYPE LOAD=0 REN=1 BATT=2 CONV=3 THER=4 LOAD_ADJ=5
+
+@enum ASSET_TYPE LOAD=0 T_LOAD=1 REN=2 BATT=3 CONV=4 THER=5 LOAD_ADJ=6 TES=7 HP=8 BOIL=9
 ANY = collect(instances(ASSET_TYPE))  # all assets code
 GENS = [REN, THER]  # generator codes
-LOADS = [LOAD, LOAD_ADJ]  # load codes
+LOADS = [LOAD, LOAD_ADJ, T_LOAD]  # load codes
 DEVICES = setdiff(ANY, LOADS)  # devices codes
-# TODO analyze implication of LOAD_ADJ in the code
 
-type_codes = Base.Dict("renewable"=>REN, "battery"=>BATT,"converter"=>CONV,"load"=>LOAD, "thermal"=>THER, "load_adj"=>LOAD_ADJ)
+type_codes = Base.Dict(
+    "renewable"=>REN,
+    "converter"=>CONV,
+    "t_load"=>T_LOAD,
+    "load"=>LOAD,
+    "thermal"=>THER,
+    "battery"=>BATT,
+    "storage"=>TES,
+    "heat_pump"=>HP,
+    "boiler"=>BOIL,
+    "load_adj"=>LOAD_ADJ,
+)
 
 # Get the previous time step, with circular time step
 @inline pre(time_step::Int, gen_data::Dict) = if (time_step > field(gen_data, "init_step")) time_step-1 else field(gen_data, "final_step") end

@@ -264,7 +264,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             ]) for u in user_set]/1000...)  # Total power supplied by converters by user
     printfmtln(printf_code_user, "PconvN [MWh]",
         [sum(Float64[results_EC[:P_conv_N_us][u, c, t] 
-        for c in asset_names(users_data[u], CONV) for t in time_set
+                for c in asset_names(users_data[u], CONV) for t in time_set
             ]) for u in user_set]/1000...)  # Total power loaded by converters by user
     printfmtln(printf_code_user, "Pren [MWh]",
         [sum(results_EC[:P_ren_us][u,:]) for u in user_set]/1000...)  # Total power supplied by renewables by each user
@@ -274,7 +274,7 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
             ]) for u in user_set]/1000...)  # Total power supplied by thermal generators by user
     printfmtln(printf_code_user, "Load [MWh]",
         [sum(results_EC[:P_L_tot_us][u, :])
-         for u in user_set]/1000...)  # Total load by user
+            for u in user_set]/1000...)  # Total load by user
 end
 
 
@@ -341,7 +341,7 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
         pt[u_i, 2] = plot(time_set_plot, [
             sum(Float64[results[:E_batt_us][u_name, b, t] 
                 for b in asset_names(users_data[u_name], BATT)]) for t in time_set],
-                label="Energy      ", w=line_width, legend=:outerright)
+                label="Energy", w=line_width, legend=:outerright)
         xaxis!("Time step [#]")
         yaxis!("Energy [kWh]")
         #ylims!(lims_y_axis_batteries[u])
@@ -981,8 +981,8 @@ function to_objective_callback_by_subgroup(
             else
                 # otherwise return the value of the base case
                 return callback_base(user_set_callback)
-            end
-        end
+            end 
+        end 
 
         return objective_callback_by_subgroup
     end
