@@ -81,7 +81,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Conditioner Temperature of heat pump, heating mode, in Kelvin
     @expression(model_user, T_cond_heat[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
-            (273.15 + 5.0 + profile_component(users_data[u], h, "T_int")[t]) * (profile_component(users_data[u], l, "mode")[t] + 1) / 2
+            (273.15 + 5.0 + profile_component(users_data[u], h, "T_int")[t])
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -90,53 +90,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Temperature Evaporator of heat pump, cooling mode
     @expression(model_user, T_evap_cool[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
-            (273.15 - 5.0 + profile_component(users_data[u], h, "T_int")[t]) * (1 - profile_component(users_data[u], l, "mode")[t]) / 2
+            (273.15 - 5.0 + profile_component(users_data[u], h, "T_int")[t])
             for l in asset_names(users_data[u], T_LOAD)
         )
-    )
-
-    @expression(model_user, DeltaT_H[u in user_set, s in asset_names(users_data[u], TES), t in time_set],
-    begin
-        l = get(asset_names(users_data[u], T_LOAD), 1, nothing)
-        corr = field_component(users_data[u], l, "corr_asset")
-        mode = profile_component(users_data[u], l, "mode")[t]
-
-        hp_list = [h for h in asset_names(users_data[u], HP) if h in corr]
-        boil_list = [o for o in asset_names(users_data[u], BOIL) if o in corr]
-
-        hp_term = isempty(hp_list) ? 0.0 : begin
-            h = get(hp_list, 1, nothing)
-            (profile_component(users_data[u], s, "T_ref")[t] - T_cond_heat[u, h, t])
-        end
-
-        boil_term = isempty(boil_list) ? 0.0 : begin
-            o = get(boil_list, 1, nothing)
-            (profile_component(users_data[u], s, "T_ref")[t] - field_component(users_data[u], o, "T_input"))
-        end
-
-        s in corr ?
-            ((1 + mode) / 2) * (hp_term + boil_term) :
-            0.0
-    end
-    )
-
-    @expression(model_user, DeltaT_C[u in user_set, s in asset_names(users_data[u], TES), t in time_set],
-        begin
-            l = get(asset_names(users_data[u], T_LOAD), 1, nothing)
-            isnothing(l) && return 0.0
-
-            corr = field_component(users_data[u], l, "corr_asset")
-            mode = get(profile_component(users_data[u], l, "mode"), t, 0.0)
-
-            hp_list = [h for h in asset_names(users_data[u], HP) if h in corr]
-
-            term = isempty(hp_list) ? 0.0 : begin
-                h = get(hp_list, 1, nothing)
-                profile_component(users_data[u], s, "T_ref")[t] - T_evap_cool[u, h, t]
-            end
-
-            s in corr ? ((1 - mode) / 2) * term : 0.0
-        end
     )
 
     ## Variable definition
@@ -200,9 +156,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             <= field_component(users_data[u], s, "max_capacity"))
     # Energy stored in the thermal storage, in MWh: use (-) if DeltaT_C[t] is positive
     @variable(model_user,
-        field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * DeltaT_C[u, s, t] <= 
+        field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * delta_t_tes_lb(users_data, u, s, t) <= 
             E_tes_us[u=user_set, s=asset_names(users_data[u], TES), t in time_set] 
-            <= field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * DeltaT_H[u, s, t])
+            <= field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * delta_t_tes_ub(users_data, u, s, t))
     # Thermal Power of the heat pump: positive, but in balance with a negative EER in cooling mode
     @variable(model_user,
         0 <= P_hp_T[u in user_set, h=asset_names(users_data[u], HP), t in time_set] 
@@ -248,8 +204,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Temperature Conditioner of heat pump, cooling mode
     @expression(model_user, T_cond_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 - profile_component(users_data[u], l, "mode")[t]) / 2) *
-                (273.15 + 5.0 + profile_component(users_data[u], h, "T_ext")[t])
+            (273.15 + 5.0 + profile_component(users_data[u], h, "T_ext")[t])
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -257,8 +212,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Evaporator Temperature of heat pump, heating mode, in Kelvin
     @expression(model_user, T_evap_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-                (273.15 - 5.0 + profile_component(users_data[u], h, "T_ext")[t])
+            (273.15 - 5.0 + profile_component(users_data[u], h, "T_ext")[t])
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -266,8 +220,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # COP Carnot, maximum COP
     @expression(model_user, COP_Carnot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-                (T_cond_heat[u, h, t]/(T_cond_heat[u, h, t] - T_evap_heat[u, h, t]))
+            (T_cond_heat[u, h, t]/(T_cond_heat[u, h, t] - T_evap_heat[u, h, t]))
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -276,8 +229,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # EER Carnot, maximum EER
     @expression(model_user, EER_Carnot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 - profile_component(users_data[u], l, "mode")[t]) / 2) *
-                ((T_evap_cool[u, h, t] + 273.15)/(T_cond_cool[u, h, t] - T_evap_cool[u, h, t]))
+            ((T_evap_cool[u, h, t] + 273.15)/(T_cond_cool[u, h, t] - T_evap_cool[u, h, t]))
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -285,8 +237,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Ideal efficiency of heat pump, heating mode
     @expression(model_user, eta_II_Id_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-                field_component(users_data[u], h, "COP_nom")/COP_Carnot[u, h, t]
+            field_component(users_data[u], h, "COP_nom")/COP_Carnot[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -294,8 +245,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Ideal efficiency of heat pump, cooling mode
     @expression(model_user, eta_II_Id_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 - profile_component(users_data[u], l, "mode")[t]) / 2) *
-                field_component(users_data[u], h, "EER_nom")/EER_Carnot[u, h, t]
+            field_component(users_data[u], h, "EER_nom")/EER_Carnot[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -303,8 +253,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Real efficiency of heat pump, heating mode
     @expression(model_user, eta_II_Re_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-                eta_II_Id_heat[u, h, t] *
+            eta_II_Id_heat[u, h, t] *
                 (1 - field_component(users_data[u], h, "beta") *
                     (profile_component(users_data[u], h, "T_ext")[t] -
                     field_component(users_data[u], h, "T_ref_COP")))
@@ -315,7 +264,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Real efficiency of heat pump, cooling mode
     @expression(model_user, eta_II_Re_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((1 - profile_component(users_data[u], l, "mode")[t]) / 2) *
             eta_II_Id_cool[u, h, t] *
             (1 - field_component(users_data[u], h, "beta") *
                 (profile_component(users_data[u], h, "T_ext")[t] -
@@ -329,7 +277,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # COP value depending on T_ext
     @expression(model_user, COP_T[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            COP_Carnot[u, h, t] * eta_II_Re_heat[u, h, t] * (1 + profile_component(users_data[u], l, "mode")[t]) / 2
+            COP_Carnot[u, h, t] * eta_II_Re_heat[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -338,7 +286,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # EER value depending on T_ext
     @expression(model_user, EER_T[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
-            EER_Carnot[u, h, t] * eta_II_Re_cool[u, h, t] * (1 - profile_component(users_data[u], l, "mode")[t]) / 2
+            EER_Carnot[u, h, t] * eta_II_Re_cool[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -346,9 +294,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Alternative Electrical power for thermal use of heat pump in heating/cooling mode by each user
     @expression(model_user, P_el_hp[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
-            P_hp_T[u, h, t] * (
-                (1 + profile_component(users_data[u], l, "mode")[t]) / 2 / max(COP_T[u, h, t], 1e-3) +
-                (1 - profile_component(users_data[u], l, "mode")[t]) / 2 / max(EER_T[u, h, t], 1e-3)
+            P_hp_T[u, h, t] / (
+                profile_component(users_data[u], l, "mode")[t] < - 0.5 ? EER_T[u, h, t] : COP_T[u, h, t]
             )
             for l in asset_names(users_data[u], T_LOAD)
         )
@@ -357,17 +304,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Alternative Total electrical power for thermal use of heat pump in heating/cooling mode by each user
     @expression(model_user, P_el_hp_tot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(P_el_hp[u, h, t] for h in asset_names(users_data[u], HP))
-    )
-
-    # Thermal energy production from heat pump in both mode by each user and asset
-    @expression(model_user, E_hp_us[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
-        sum(
-            profile(gen_data, "time_res")[t] * max(P_hp_T[u, h, t], 1e-3) * (
-                (1 + profile_component(users_data[u], l, "mode")[t]) / 2 * COP_T[u, h, t] +
-                (1 - profile_component(users_data[u], l, "mode")[t]) / 2 * EER_T[u, h, t]
-            )
-            for l in asset_names(users_data[u], T_LOAD)
-        )
     )
     
     # Total energy available in the thermal storage
@@ -390,18 +326,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Mass flow rate of Fuel for use of boiler by each user and asset [m3/s]
     @expression(model_user, m_fuel[u=user_set, o=asset_names(users_data[u], BOIL), t=time_set],
         sum(
-            ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-                (P_boil_us[u, o, t] / (field_component(users_data[u], o, "PCI") * field_component(users_data[u], o, "eta") / 3600))
+            (P_boil_us[u, o, t] / (field_component(users_data[u], o, "PCI") * field_component(users_data[u], o, "eta") / 3600))
             for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # Thermal energy production from boiler by each user and asset [KWh]
-    @expression(model_user, E_boil_us[u=user_set, o=asset_names(users_data[u], BOIL), t=time_set],
-    sum(
-        ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-            profile(gen_data, "time_res")[t] * P_boil_us[u, o, t] * field_component(users_data[u], o, "eta")
-        for l in asset_names(users_data[u], T_LOAD)
         )
     )
 
@@ -549,10 +475,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Costs arising from the thermal energy production by users and asset
     @expression(model_user, C_t_load_us[u in user_set, o=asset_names(users_data[u], BOIL), h=asset_names(users_data[u], HP), t in time_set],
         sum(
-            ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) *
-                (C_boil_us[u, o, t] + C_hp_us[u, h, t]) +
-                ((1 - profile_component(users_data[u], l, "mode")[t]) / 2) *
-                C_hp_us[u, h, t]
+            C_boil_us[u, o, t] + C_hp_us[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -623,7 +546,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
             x_us[u, field_component(users_data[u], c, "corr_asset")] * field_component(users_data[u], field_component(users_data[u], c, "corr_asset"), "max_C_dch")
     )
 
-
     # Set the maximum hourly dispatch of converters not to exceed the C-rate of the battery in charge
     @constraint(model_user, con_us_converter_capacity_crate_ch[u in user_set, c in asset_names(users_data[u], CONV), t in time_set],
         P_conv_N_us[u, c, t] <= 
@@ -680,12 +602,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         P_boil_us[u, o, t] <= x_us[u, o]
     )
 
-    # Set the capability of the boiler to be on when there is a positive t_load
-    @constraint(model_user,
-        con_us_boil_act[u=user_set, l in asset_names(users_data[u], T_LOAD), o=asset_names(users_data[u], BOIL), t in time_set],
-        P_boil_us[u, o, t] * ((1 + profile_component(users_data[u], l, "mode")[t]) / 2) <= field_component(users_data[u], o, "max_capacity")
-    )
-
     # Set the thermal balance at the user system [kWh th]
     @constraint(model_user, 
         con_us_heat_balance[u in user_set, l in asset_names(users_data[u], T_LOAD), t in time_set],
@@ -697,10 +613,10 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         + profile_component(users_data[u], l, "t_load")[t] * profile(gen_data, "time_res")[t] # thermal load
         == 
         sum(GenericAffExpr{Float64,VariableRef}[
-            E_hp_us[u, h, t] for h in asset_names(users_data[u], HP) if h in field_component(users_data[u], l, "corr_asset")
+            P_hp_T[u, h, t] * profile(gen_data, "time_res")[t] for h in asset_names(users_data[u], HP) if h in field_component(users_data[u], l, "corr_asset")
             ]) # hp energy supplied
         + sum(GenericAffExpr{Float64,VariableRef}[
-            E_boil_us[u, o, t] for o in asset_names(users_data[u], BOIL) if o in field_component(users_data[u], l, "corr_asset")
+            P_boil_us[u, o, t] * profile(gen_data, "time_res")[t] for o in asset_names(users_data[u], BOIL) if o in field_component(users_data[u], l, "corr_asset")
             ]) # boiler energy supplied
     )
 
