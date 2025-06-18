@@ -227,9 +227,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # EER_Carnot = (Tevap +273.15)/ (Tcond − Tevap)
     # EER Carnot, maximum EER
-    @expression(model_user, EER_Carnot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+    @expression(model_user, EER_Carnot_inv[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            ((T_evap_cool[u, h, t] + 273.15)/(T_cond_cool[u, h, t] - T_evap_cool[u, h, t]))
+            (T_cond_cool[u, h, t] - T_evap_cool[u, h, t])/(T_evap_cool[u, h, t] + 273.15)
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -245,7 +245,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Ideal efficiency of heat pump, cooling mode
     @expression(model_user, eta_II_Id_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            field_component(users_data[u], h, "EER_nom")/EER_Carnot[u, h, t]
+            field_component(users_data[u], h, "EER_nom")/EER_Carnot_inv[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -286,7 +286,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # EER value depending on T_ext
     @expression(model_user, EER_T[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
-            EER_Carnot[u, h, t] * eta_II_Re_cool[u, h, t]
+            eta_II_Re_cool[u, h, t] / EER_Carnot_inv[u, h, t]
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
