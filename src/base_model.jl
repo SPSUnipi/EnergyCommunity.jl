@@ -159,9 +159,9 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * delta_t_tes_lb(users_data, u, s, t) <= 
             E_tes_us[u=user_set, s=asset_names(users_data[u], TES), t in time_set] 
             <= field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * delta_t_tes_ub(users_data, u, s, t))
-    # Thermal Power of the heat pump: positive, but in balance with a negative EER in cooling mode
+    # Electrical Power of the heat pump
     @variable(model_user,
-        0 <= P_hp_T[u in user_set, h=asset_names(users_data[u], HP), t in time_set] 
+        0 <= P_el_hp[u in user_set, h=asset_names(users_data[u], HP), t in time_set] 
             <= field_component(users_data[u], h, "max_capacity"))
     # Power of each boiler by each user, always positive     
     @variable(model_user, 
@@ -194,11 +194,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     #     @expression(model_user, E_batt_tot_us[u=user_set, t=time_set],
     #     sum(E_batt_us[u, b, t] for b in asset_names(users_data[u], BATT))
     # )
-
-    # Total Thermal power that could give heat pumps by each user 
-    @expression(model_user, P_hp_T_tot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(P_hp_T[u, h, t] for h in asset_names(users_data[u], HP))
-    )
     
     # Tcond (cooling) = Text + delta_Tcond (°C)
     # Temperature Conditioner of heat pump, cooling mode
@@ -292,13 +287,18 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     )
 
     # Alternative Electrical power for thermal use of heat pump in heating/cooling mode by each user
-    @expression(model_user, P_el_hp[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
+    @expression(model_user, P_hp_T[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
-            P_hp_T[u, h, t] / (
-                profile_component(users_data[u], l, "mode")[t] < - 0.5 ? EER_T[u, h, t] : COP_T[u, h, t]
+            P_el_hp[u, h, t] * (
+                profile_component(users_data[u], l, "mode")[t] < - 0.5 ? - EER_T[u, h, t] : COP_T[u, h, t]
             )
             for l in asset_names(users_data[u], T_LOAD)
         )
+    )
+
+    # Total Thermal power that could give heat pumps by each user 
+    @expression(model_user, P_hp_T_tot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+        sum(P_hp_T[u, h, t] for h in asset_names(users_data[u], HP))
     )
 
     # Alternative Total electrical power for thermal use of heat pump in heating/cooling mode by each user
@@ -593,7 +593,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # Set the maximun dispatch of the heat pump 
     @constraint(model_user,
         con_us_max_hp[u in user_set, h=asset_names(users_data[u], HP), t in time_set],
-        P_hp_T[u, h, t] <= x_us[u, h]
+        P_el_hp[u, h, t] <= x_us[u, h]
     )
 
     # Set the maximun dispatch of the boiler
