@@ -1210,32 +1210,20 @@ function calculate_COP_T(ECModel::AbstractEC)
     end
 
     # Construction of the final result as a DenseAxisArray
-    _T_cond_heat = JuMP.Containers.DenseAxisArray(
-        [safe_value(ECModel.model[:T_cond_heat], u, h, t)
+    _eta_II_c1_heat = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:eta_II_c1_heat], u, h, t)
          for u in user_set, h in hp_assets, t in time_set],
         (user_set, hp_assets, time_set)
     )
 
-    _T_evap_heat = JuMP.Containers.DenseAxisArray(
-        [safe_value(ECModel.model[:T_evap_heat], u, h, t)
+    _eta_II_c2_heat = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:eta_II_c2_heat], u, h, t)
          for u in user_set, h in hp_assets, t in time_set],
         (user_set, hp_assets, time_set)
     )
 
-    _COP_Carnot = JuMP.Containers.DenseAxisArray(
-        [safe_value(ECModel.model[:COP_Carnot], u, h, t)
-         for u in user_set, h in hp_assets, t in time_set],
-        (user_set, hp_assets, time_set)
-    )
-
-    _eta_II_Id_heat = JuMP.Containers.DenseAxisArray(
-        [safe_value(ECModel.model[:eta_II_Id_heat], u, h, t)
-         for u in user_set, h in hp_assets, t in time_set],
-        (user_set, hp_assets, time_set)
-    )
-
-    _eta_II_Re_heat = JuMP.Containers.DenseAxisArray(
-        [safe_value(ECModel.model[:eta_II_Re_heat], u, h, t)
+    _eta_II_cx_heat = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:eta_II_cx_heat], u, h, t)
          for u in user_set, h in hp_assets, t in time_set],
         (user_set, hp_assets, time_set)
     )
@@ -1248,12 +1236,81 @@ function calculate_COP_T(ECModel::AbstractEC)
 
     # Return the results as a tuple
     return (
-        T_cond_heat = _T_cond_heat,
-        T_evap_heat = _T_evap_heat,
-        COP_Carnot = _COP_Carnot,
-        eta_II_Id_heat = _eta_II_Id_heat,
-        eta_II_Re_heat = _eta_II_Re_heat,
+        eta_II_c1_heat = _eta_II_c1_heat,
+        eta_II_c2_heat = _eta_II_c2_heat,
+        eta_II_cx_heat = _eta_II_cx_heat,
         COP_T = _COP_T,
+    )
+
+end
+
+"""
+    calculate_EER_T(ECModel::AbstractEC)
+
+Function to calculate the characteristic values for a heat pump, in cooling mode, by user
+
+## Arguments
+
+* `ECModel`: EC model object
+
+## Returns
+
+It returns the characteristic values for a heat pump, in cooling mode, by user /and the whole EC/ as a DenseAxisArray
+"""
+
+function calculate_EER_T(ECModel::AbstractEC)
+
+    user_set = ECModel.user_set
+    users_data = ECModel.users_data
+
+    gen_data = ECModel.gen_data
+    init_step = field(gen_data, "init_step")
+    final_step = field(gen_data, "final_step")
+    time_set = init_step:final_step
+
+    # Complete list of all heat pump assets
+    hp_assets = unique(vcat([asset_names(users_data[u], HP) for u in user_set]...))
+
+    # Helper function
+    function safe_value(expr, u, h, t)
+        if has_asset(users_data[u], HP) && h in asset_names(users_data[u], HP)
+            return value(expr[u, h, t])
+        else
+            return 0.0
+        end
+    end
+
+    # Construction of the final result as a DenseAxisArray
+    _eta_II_h1_cool = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:eta_II_h1_cool], u, h, t)
+         for u in user_set, h in hp_assets, t in time_set],
+        (user_set, hp_assets, time_set)
+    )
+
+    _eta_II_h2_cool = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:eta_II_h2_cool], u, h, t)
+         for u in user_set, h in hp_assets, t in time_set],
+        (user_set, hp_assets, time_set)
+    )
+
+    _eta_II_hx_cool = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:eta_II_hx_cool], u, h, t)
+         for u in user_set, h in hp_assets, t in time_set],
+        (user_set, hp_assets, time_set)
+    )
+
+    _EER_T = JuMP.Containers.DenseAxisArray(
+        [safe_value(ECModel.model[:EER_T], u, h, t)
+         for u in user_set, h in hp_assets, t in time_set],
+        (user_set, hp_assets, time_set)
+    )
+
+    # Return the results as a tuple
+    return (
+        eta_II_h1_cool = _eta_II_h1_cool,
+        eta_II_h2_cool = _eta_II_h2_cool,
+        eta_II_hx_cool = _eta_II_hx_cool,
+        EER_T = _EER_T
     )
 
 end
