@@ -77,24 +77,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         max(P_P_us_overestimate[u, t], P_N_us_overestimate[u, t])  # Max between the maximum values calculated previously
     )
 
-    # Tcond (heating) = Tint + delta_Tapproach = Tmandata (°C)
-    # Conditioner Temperature of heat pump, heating mode, in Kelvin
-    @expression(model_user, T_cond_heat[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
-        sum(
-            (273.15 + 5.0 + profile_component(users_data[u], h, "T_int")[t])
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # Tevap (cooling) =  Tint (cooling) - delta_Tapproach = Tmandata (°C)
-    # Temperature Evaporator of heat pump, cooling mode
-    @expression(model_user, T_evap_cool[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
-        sum(
-            (273.15 - 5.0 + profile_component(users_data[u], h, "T_int")[t])
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
     ## Variable definition
 
     # Energy stored in the battery
@@ -194,99 +176,94 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     #     @expression(model_user, E_batt_tot_us[u=user_set, t=time_set],
     #     sum(E_batt_us[u, b, t] for b in asset_names(users_data[u], BATT))
     # )
-    
-    # Tcond (cooling) = Text + delta_Tcond (°C)
-    # Temperature Conditioner of heat pump, cooling mode
-    @expression(model_user, T_cond_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(
-            (273.15 + 5.0 + profile_component(users_data[u], h, "T_ext")[t])
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
 
-    # Evaporator Temperature of heat pump, heating mode, in Kelvin
-    @expression(model_user, T_evap_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+    # Real efficiency of heat pump, heating mode, conditions 1
+    @expression(model_user, eta_II_c1_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            (273.15 - 5.0 + profile_component(users_data[u], h, "T_ext")[t])
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # COP Carnot, maximum COP
-    @expression(model_user, COP_Carnot[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(
-            (T_cond_heat[u, h, t]/(T_cond_heat[u, h, t] - T_evap_heat[u, h, t]))
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # EER_Carnot = (Tevap +273.15)/ (Tcond − Tevap)
-    # EER Carnot, maximum EER
-    @expression(model_user, EER_Carnot_inv[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(
-            (T_cond_cool[u, h, t] - T_evap_cool[u, h, t])/(T_evap_cool[u, h, t] + 273.15)
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # Ideal efficiency of heat pump, heating mode
-    @expression(model_user, eta_II_Id_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(
-            field_component(users_data[u], h, "COP_nom")/COP_Carnot[u, h, t]
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # Ideal efficiency of heat pump, cooling mode
-    @expression(model_user, eta_II_Id_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(
-            field_component(users_data[u], h, "EER_nom")/EER_Carnot_inv[u, h, t]
-            for l in asset_names(users_data[u], T_LOAD)
-        )
-    )
-
-    # Real efficiency of heat pump, heating mode
-    @expression(model_user, eta_II_Re_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
-        sum(
-            eta_II_Id_heat[u, h, t] *
-                (1 - field_component(users_data[u], h, "beta") *
-                    (profile_component(users_data[u], h, "T_ext")[t] -
-                    field_component(users_data[u], h, "T_ref_COP")))
+            field_component(users_data[u], h, "COP_c1") /
+                ((field_component(users_data[u], h, "T_c1")[t] + 273.15 + 5) /
+                (field_component(users_data[u], h, "T_h")[t] - (field_component(users_data[u], h, "T_c1")[t] + 5))
+                    )
                 for l in asset_names(users_data[u], T_LOAD)
         )
     )
 
-    # Real efficiency of heat pump, cooling mode
-    @expression(model_user, eta_II_Re_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+    # Real efficiency of heat pump, heating mode, conditions 2
+    @expression(model_user, eta_II_c2_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            eta_II_Id_cool[u, h, t] *
-            (1 - field_component(users_data[u], h, "beta") *
-                (profile_component(users_data[u], h, "T_ext")[t] -
-                field_component(users_data[u], h, "T_ref_EER")))
-            for l in asset_names(users_data[u], T_LOAD)
+            field_component(users_data[u], h, "COP_c2") /
+                ((field_component(users_data[u], h, "T_c2")[t] + 273.15 + 5) /
+                (field_component(users_data[u], h, "T_h")[t] - (field_component(users_data[u], h, "T_c2")[t] + 5))
+                    )
+                for l in asset_names(users_data[u], T_LOAD)
         )
     )
 
+    # Real efficiency of heat pump, heating mode, x external conditions , time depending
+    @expression(model_user, eta_II_cx_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+        sum(
+            eta_II_c1_heat[u, h, t] + (eta_II_c2_heat[u, h, t] - eta_II_c1_heat[u, h, t]) *
+                ((profile_component(users_data[u], h, "T_ext")[t] - field_component(users_data[u], h, "T_c1")[t]) /
+                (field_component(users_data[u], h, "T_c2")[t] - field_component(users_data[u], h, "T_c1")[t])
+                    )
+                for l in asset_names(users_data[u], T_LOAD)
+        )
+    )
 
-    # COP(Text) = η_II(Text) ⋅ COP_Carnot
+    # COP(Text) = η_II(Text) ⋅ COP_Carnot(Text)
     # COP value depending on T_ext
     @expression(model_user, COP_T[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            COP_Carnot[u, h, t] * eta_II_Re_heat[u, h, t]
+            eta_II_cx_heat[u, h, t] * (profile_component(users_data[u], h, "T_ext")[t] + 273.15 + 5) /
+                (field_component(users_data[u], h, "T_h")[t] - (profile_component(users_data[u], h, "T_ext")[t] + 5))
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
 
-    # EER(Text) = η_II(Text) ⋅ EER_Carnot
-    # EER value depending on T_ext
-    @expression(model_user, EER_T[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
+    # Real efficiency of heat pump, cooling mode, conditions 1
+    @expression(model_user, eta_II_h1_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
-            eta_II_Re_cool[u, h, t] / EER_Carnot_inv[u, h, t]
+            field_component(users_data[u], h, "EER_h1") /
+                ((field_component(users_data[u], h, "T_h1")[t] + 273.15 + 5) /
+                ((field_component(users_data[u], h, "T_h1")[t] + 5) - field_component(users_data[u], h, "T_c")[t])
+                    )
+                for l in asset_names(users_data[u], T_LOAD)
+        )
+    )
+
+    # Real efficiency of heat pump, cooling mode, conditions 2
+    @expression(model_user, eta_II_h2_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+        sum(
+            field_component(users_data[u], h, "EER_h2") /
+                ((field_component(users_data[u], h, "T_h2")[t] + 273.15 + 5) /
+                ((field_component(users_data[u], h, "T_h2")[t] + 5) - field_component(users_data[u], h, "T_c")[t])
+                    )
+                for l in asset_names(users_data[u], T_LOAD)
+        )
+    )
+
+    # Real efficiency of heat pump, cooling mode, x external conditions , time depending
+    @expression(model_user, eta_II_hx_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+        sum(
+            eta_II_h1_cool[u, h, t] + (eta_II_h2_cool[u, h, t] - eta_II_h1_cool[u, h, t]) *
+                ((profile_component(users_data[u], h, "T_ext")[t] - field_component(users_data[u], h, "T_h1")[t]) /
+                (field_component(users_data[u], h, "T_h2")[t] - field_component(users_data[u], h, "T_h1")[t])
+                    )
+                for l in asset_names(users_data[u], T_LOAD)
+        )
+    )
+
+    # EER(Text) = η_II(Text) ⋅ EER_Carnot(text)
+    # EER value depending on T_ext
+    @expression(model_user, EER_T[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
+        sum(
+             eta_II_hx_cool[u, h, t] * (profile_component(users_data[u], h, "T_ext")[t] + 273.15 + 5) /
+                ((profile_component(users_data[u], h, "T_ext")[t] + 5) - field_component(users_data[u], h, "T_c")[t])
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
 
-    # Alternative Electrical power for thermal use of heat pump in heating/cooling mode by each user
+    # Thermal power of heat pump in heating/cooling mode by each user
     @expression(model_user, P_hp_T[u in user_set, h in asset_names(users_data[u], HP), t in time_set],
         sum(
             P_el_hp[u, h, t] * (
