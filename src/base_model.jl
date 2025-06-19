@@ -181,8 +181,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, eta_II_c1_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             field_component(users_data[u], h, "COP_c1") /
-                ((field_component(users_data[u], h, "T_c1")[t] + 273.15 + 5) /
-                (field_component(users_data[u], h, "T_h")[t] - (field_component(users_data[u], h, "T_c1")[t] + 5))
+                ((field_component(users_data[u], h, "T_c1") + 273.15 + 5) /
+                (field_component(users_data[u], h, "T_h") - (field_component(users_data[u], h, "T_c1") + 5))
                     )
                 for l in asset_names(users_data[u], T_LOAD)
         )
@@ -192,8 +192,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, eta_II_c2_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             field_component(users_data[u], h, "COP_c2") /
-                ((field_component(users_data[u], h, "T_c2")[t] + 273.15 + 5) /
-                (field_component(users_data[u], h, "T_h")[t] - (field_component(users_data[u], h, "T_c2")[t] + 5))
+                ((field_component(users_data[u], h, "T_c2") + 273.15 + 5) /
+                (field_component(users_data[u], h, "T_h") - (field_component(users_data[u], h, "T_c2") + 5))
                     )
                 for l in asset_names(users_data[u], T_LOAD)
         )
@@ -203,8 +203,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, eta_II_cx_heat[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             eta_II_c1_heat[u, h, t] + (eta_II_c2_heat[u, h, t] - eta_II_c1_heat[u, h, t]) *
-                ((profile_component(users_data[u], h, "T_ext")[t] - field_component(users_data[u], h, "T_c1")[t]) /
-                (field_component(users_data[u], h, "T_c2")[t] - field_component(users_data[u], h, "T_c1")[t])
+                ((profile_component(users_data[u], h, "T_ext")[t] - field_component(users_data[u], h, "T_c1")) /
+                (field_component(users_data[u], h, "T_c2") - field_component(users_data[u], h, "T_c1"))
                     )
                 for l in asset_names(users_data[u], T_LOAD)
         )
@@ -215,7 +215,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, COP_T[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             eta_II_cx_heat[u, h, t] * (profile_component(users_data[u], h, "T_ext")[t] + 273.15 + 5) /
-                (field_component(users_data[u], h, "T_h")[t] - (profile_component(users_data[u], h, "T_ext")[t] + 5))
+                (field_component(users_data[u], h, "T_h") - (profile_component(users_data[u], h, "T_ext")[t] + 5))
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
@@ -224,8 +224,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, eta_II_h1_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             field_component(users_data[u], h, "EER_h1") /
-                ((field_component(users_data[u], h, "T_h1")[t] + 273.15 + 5) /
-                ((field_component(users_data[u], h, "T_h1")[t] + 5) - field_component(users_data[u], h, "T_c")[t])
+                ((field_component(users_data[u], h, "T_h1") + 273.15 + 5) /
+                ((field_component(users_data[u], h, "T_h1") + 5) - field_component(users_data[u], h, "T_c"))
                     )
                 for l in asset_names(users_data[u], T_LOAD)
         )
@@ -235,8 +235,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, eta_II_h2_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             field_component(users_data[u], h, "EER_h2") /
-                ((field_component(users_data[u], h, "T_h2")[t] + 273.15 + 5) /
-                ((field_component(users_data[u], h, "T_h2")[t] + 5) - field_component(users_data[u], h, "T_c")[t])
+                ((field_component(users_data[u], h, "T_h2") + 273.15 + 5) /
+                ((field_component(users_data[u], h, "T_h2") + 5) - field_component(users_data[u], h, "T_c"))
                     )
                 for l in asset_names(users_data[u], T_LOAD)
         )
@@ -246,8 +246,8 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, eta_II_hx_cool[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
             eta_II_h1_cool[u, h, t] + (eta_II_h2_cool[u, h, t] - eta_II_h1_cool[u, h, t]) *
-                ((profile_component(users_data[u], h, "T_ext")[t] - field_component(users_data[u], h, "T_h1")[t]) /
-                (field_component(users_data[u], h, "T_h2")[t] - field_component(users_data[u], h, "T_h1")[t])
+                ((profile_component(users_data[u], h, "T_ext")[t] - field_component(users_data[u], h, "T_h1")) /
+                (field_component(users_data[u], h, "T_h2") - field_component(users_data[u], h, "T_h1"))
                     )
                 for l in asset_names(users_data[u], T_LOAD)
         )
@@ -258,7 +258,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @expression(model_user, EER_T[u=user_set, h=asset_names(users_data[u], HP), t=time_set],
         sum(
              eta_II_hx_cool[u, h, t] * (profile_component(users_data[u], h, "T_ext")[t] + 273.15 + 5) /
-                ((profile_component(users_data[u], h, "T_ext")[t] + 5) - field_component(users_data[u], h, "T_c")[t])
+                ((profile_component(users_data[u], h, "T_ext")[t] + 5) - field_component(users_data[u], h, "T_c"))
             for l in asset_names(users_data[u], T_LOAD)
         )
     )
