@@ -333,3 +333,66 @@ function _jump_to_dict(model::Model)
 
     return results
 end
+
+
+"""
+    delta_t_tes_lb(users_data, u, s, t)
+
+Function to compute the lower bound of the temperature difference for a thermal energy storage (TES) at time t.
+When the thermal load the TES is linked to is in cooling mode, the lower bound is the difference between the reference temperature (T_ref_cool) and the input temperature (T_input_cool) for cooling.
+When the load is in heating mode, the lower bound is 0.0.
+The corresponding thermal load is identified by the `corr_asset` field in the load component.
+
+## Arguments
+- `users_data`: dictionary with the users data
+- `u`: user index
+- `s`: name of the thermal energy storage
+- `t`: time index
+
+## Returns
+- [°C] The lower bound of the temperature difference for the TES at time t
+"""
+function delta_t_tes_lb(users_data, u, s, t)
+    l = first([  # Load corresponding to the TES
+        l for l in asset_names(users_data[u], T_LOAD)
+        if field_component(users_data[u], l, "corr_asset") == s || s in field_component(users_data[u], l, "corr_asset")
+    ])
+    md = profile_component(users_data[u], l, "mode")[t]  # mode of the load at time t
+    if md < -0.5 # cooling
+        return field_component(users_data[u], s, "T_ref_cool") - field_component(users_data[u], s, "T_input_cool") # T_ref < T_input -> valore negativo
+    else
+        return 0.0
+    end
+end
+
+
+
+"""
+    delta_t_tes_ub(users_data, u, s, t)
+
+Function to compute the upper bound of the temperature difference for a thermal energy storage (TES) at time t.
+When the thermal load the TES is linked to is in heating mode, the upper bound is the difference between the reference temperature (T_ref_heat) and the input temperature (T_input_heat) for heating.
+When the load is in cooling mode, the upper bound is 0.0.
+The corresponding thermal load is identified by the `corr_asset` field in the first load component that contains the object.
+
+## Arguments
+- `users_data`: dictionary with the users data
+- `u`: user index
+- `s`: name of the thermal energy storage
+- `t`: time index
+
+## Returns
+- [°C] The lower bound of the temperature difference for the TES at time t
+"""
+function delta_t_tes_ub(users_data, u, s, t)
+    l = first([  # Load corresponding to the TES
+        l for l in asset_names(users_data[u], T_LOAD)
+        if field_component(users_data[u], l, "corr_asset") == s || s in field_component(users_data[u], l, "corr_asset")
+    ])
+    md = profile_component(users_data[u], l, "mode")[t]  # mode of the load at time t
+    if md > 0.5 # heating
+        return field_component(users_data[u], s, "T_ref_heat") - field_component(users_data[u], s, "T_input_heat")
+    else
+        return 0.0
+    end
+end
