@@ -42,6 +42,9 @@ create_example_data("data")
 # define input configuration (available in the package)
 input_file = "./data/energy_community_model.yml"
 
+# define pattern of plot by user: the "{:s}" will be filled with the name of the user
+output_plot_combined = "outputs/Img/plot_user_{:s}_EC.png"
+
 # create the Energy Community model in Cooperation mode GroupCO()
 ECModel = ModelEC(input_file, EnergyCommunity.GroupCO(), HiGHS.Optimizer)
 
