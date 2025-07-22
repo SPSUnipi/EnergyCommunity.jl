@@ -132,28 +132,28 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile_component(users_data[u], e, "min_energy")[t] <= 
             E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_energy")[t])
-    # Volume of the thermal storage, in m3 or lt
+    # Volume of the thermal storage [dm3]
     @variable(model_user,
-        0 <= V_tes_us[u=user_set, s=asset_names(users_data[u], TES), t in time_set] 
+        0 <= V_tes_us[u=user_set, s=asset_names(users_data[u], TES), t=time_set] 
             <= field_component(users_data[u], s, "max_capacity"))
-    # Energy stored in the thermal storage, in MWh
+    # Energy stored in the thermal storage [kWh]
     @variable(model_user,
-        field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * delta_t_tes_lb(users_data, u, s, t) <= 
-            E_tes_us[u=user_set, s=asset_names(users_data[u], TES), t in time_set] 
-            <= field_component(users_data[u], s, "max_capacity") / 1000 * field_component(users_data[u], s, "cp") * delta_t_tes_ub(users_data, u, s, t))
-    # Electrical Power of the heat pump
+        field_component(users_data[u], s, "max_capacity") * field_component(users_data[u], s, "cp") * delta_t_tes_lb(users_data, u, s, t) <= 
+            E_tes_us[u=user_set, s=asset_names(users_data[u], TES), t=time_set] 
+            <= field_component(users_data[u], s, "max_capacity") * field_component(users_data[u], s, "cp") * delta_t_tes_ub(users_data, u, s, t))
+    # Electrical Power of the heat pump [kW]
     @variable(model_user,
-        0 <= P_el_hp[u in user_set, h=asset_names(users_data[u], HP), t in time_set] 
+        0 <= P_el_hp[u in user_set, h=asset_names(users_data[u], HP), t=time_set] 
             <= field_component(users_data[u], h, "max_capacity"))
-    # Power of each boiler by each user, always positive     
-    @variable(model_user, 
-        0 <= P_boil_us[u=user_set, o=asset_names(users_data[u], BOIL), t in time_set] 
-            <= field_component(users_data[u], o, "max_capacity"))               
+    # Power of each boiler by each user, always positive [kW]
+    @variable(model_user,
+        0 <= P_boil_us[u=user_set, o=asset_names(users_data[u], BOIL), t=time_set]
+            <= field_component(users_data[u], o, "max_capacity"))
 
     # Set integer capacity
     for u in user_set
         for a in device_names(users_data[u])
-            if (has_component(users_data[u], a, "modularity") && field_component(users_data[u], a, "modularity") == true)
+            if (has_component(users_data[u], a, "modularity") && field_component(users_data[u], a, "modularity") == false)
                 set_integer(n_us[u,a])
                 # It should be always true that if the component has a modularity, then a nominal capacity should be available
                 set_upper_bound(n_us[u,a], field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"))
@@ -283,7 +283,16 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
 
     # Heat Energy losses in Thermal Storage by each tes and user [KWh]
     @expression(model_user, Tes_heat_loss[u=user_set, s=asset_names(users_data[u], TES), t=time_set],
-        field_component(users_data[u], s, "k") * E_tes_us[u, s, pre(t, time_set)]*(profile_component(users_data[u], s, "T_ref")[t] - T_u[u, s, t])
+        sum(
+            field_component(users_data[u], s, "k") * E_tes_us[u, s, pre(t, time_set)] * (
+                profile_component(users_data[u], l, "mode")[t] < - 0.5 ? 
+                - (field_component(users_data[u], s, "T_ref_cool") - T_u[u, s, t]) : 
+                (field_component(users_data[u], s, "T_ref_heat") - T_u[u, s, t])
+            )
+            for l in asset_names(users_data[u], T_LOAD) if s in field_component(users_data[u], l, "corr_asset")
+        ) / length(
+            [l for l in asset_names(users_data[u], T_LOAD) if s in field_component(users_data[u], l, "corr_asset")]
+        )  # Average over all thermal loads
     )
 
     # Mass flow rate of Fuel for use of boiler by each user and asset [m3/s]
@@ -434,6 +443,26 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile(ECModel.gen_data, "time_res")[t] *
         (m_fuel[u,o,t] * field_component(users_data[u], o,"fuel_price"))
     )
+
+    # Total costs arising from the use of fuel-fired boilers by users and asset for heating production
+    @expression(model_user, C_boil_tot_us_asset[u in user_set, o=asset_names(users_data[u], BOIL)],
+        sum(C_boil_us[u, o, t] for t in time_set) 
+    )
+
+    # Total costs arising from the use of fuel-fired boilers by users
+    @expression(model_user, C_boil_tot_us[u in user_set],
+        sum(C_boil_tot_us_asset[u,o] for o in asset_names(users_data[u], BOIL))
+    )
+
+    # Total costs arising from the use of heat pumps by users and asset for thermal production
+    @expression(model_user, C_pump_tot_us_asset[u in user_set, h=asset_names(users_data[u], HP)],
+        sum(C_hp_us[u, h, t] for t in time_set) 
+    )
+
+    # Total costs arising from the use of heat pumps by users
+    @expression(model_user, C_pump_tot_us[u in user_set],
+        sum(C_pump_tot_us_asset[u,h] for h  in asset_names(users_data[u], HP))
+    )
           
     # Costs arising from the thermal energy production by users and asset
     @expression(model_user, C_t_load_us[u in user_set, o=asset_names(users_data[u], BOIL), h=asset_names(users_data[u], HP), t in time_set],
@@ -569,8 +598,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     @constraint(model_user, 
         con_us_heat_balance[u in user_set, l in asset_names(users_data[u], T_LOAD), t in time_set],
         sum(GenericAffExpr{Float64,VariableRef}[
-            #E_tes_us[u, s, t] - E_tes_us[u, s, pre(t, time_set)] + Tes_heat_loss[u, s, t] * profile(gen_data, "time_res")[t]
-            E_tes_us[u, s, t] - E_tes_us[u, s, pre(t, time_set)] + Tes_heat_loss[u, s, t]
+            E_tes_us[u, s, t] - E_tes_us[u, s, pre(t, time_set)] + Tes_heat_loss[u, s, t] * profile(gen_data, "time_res")[t]
             for s in asset_names(users_data[u], TES) if s in field_component(users_data[u], l, "corr_asset")
         ]) # available tes energy
         + profile_component(users_data[u], l, "t_load")[t] * profile(gen_data, "time_res")[t] # thermal load

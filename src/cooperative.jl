@@ -229,9 +229,15 @@ function print_summary(::AbstractGroupCO, ECModel::AbstractEC; base_case::Abstra
         [sum(results_EC[:C_OEM_tot_us][u])/1000
             for u in user_set]...)  # print OPEX by user
     printfmtln(printf_code_user, "YBill [k€]", results_EC[:yearly_rev]/1000...)  # print yearly bill by user
-    printfmtln(printf_code_user, "Cthermal [k€]", 
-        [sum( !has_asset(users_data[u], THER) ? 0.0 : results_EC[:C_gen_tot_us][u]/1000)
-            for u in user_set]...)  # print costs of thermal generators
+    # printfmtln(printf_code_user, "Cthermal [k€]", 
+    #     [sum( !has_asset(users_data[u], THER) ? 0.0 : results_EC[:C_gen_tot_us][u]/1000)
+    #         for u in user_set]...)  # print costs of thermal generators
+    printfmtln(printf_code_user, "Cboiler [k€]", 
+        [sum( !has_asset(users_data[u], BOIL) ? 0.0 : results_EC[:C_boil_tot_us][u]/1000)
+            for u in user_set]...)  # print costs of boiler generators 
+    printfmtln(printf_code_user, "Cpumps [k€]", 
+        [sum( !has_asset(users_data[u], HP) ? 0.0 : results_EC[:C_pump_tot_us][u]/1000)
+            for u in user_set]...)  # print costs of pump generators
     if !isempty(base_case.user_set)
         printfmtln(printf_code_user, "NPVNOA[k€]", results_base[:NPV_us]/1000...)  # print NPV by user in the base case
         printfmtln(printf_code_user, "CAPEXNOA [k€]",
@@ -328,9 +334,13 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
                 for c in asset_names(users_data[u_name], CONV)]) for t in time_set],
             label="Converters", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, [
-                sum(Float64[results[:P_gen_us][u_name, g, t] 
-                    for g in asset_names(users_data[u_name], THER)]) for t in time_set],
-                label="Thermal", w=line_width)
+                sum(Float64[-results[:P_el_hp][u_name, h, t] 
+                    for h in asset_names(users_data[u_name], HP)]) for t in time_set],
+                label="Heat Pumps", w=line_width)
+        # plot!(pt[u_i, 1], time_set_plot, [
+        #         sum(Float64[results[:P_gen_us][u_name, g, t] 
+        #             for g in asset_names(users_data[u_name], THER)]) for t in time_set],
+        #         label="Thermal", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, results[:P_ren_us][u_name, :].data, label="Renewables", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, results[:P_us][u_name, :].data, label="Commercial POD", w=line_width, linestyle = :dash)
         xaxis!("Time step [#]")
@@ -341,7 +351,7 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
         pt[u_i, 2] = plot(time_set_plot, [
             sum(Float64[results[:E_batt_us][u_name, b, t] 
                 for b in asset_names(users_data[u_name], BATT)]) for t in time_set],
-                label="Energy", w=line_width, legend=:outerright)
+                label="Battery Energy", w=line_width, legend=:outerright)
         xaxis!("Time step [#]")
         yaxis!("Energy [kWh]")
         #ylims!(lims_y_axis_batteries[u])
