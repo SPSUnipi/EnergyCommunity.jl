@@ -38,3 +38,4 @@ test/data
 !examples/*.jl
 !examples/*.ipynb
 outputs
+Heating_Cooling/*
