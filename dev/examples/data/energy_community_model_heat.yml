@@ -174,32 +174,40 @@ users:  # list of users and the corresponding assets
       type: heat_pump  # type of component
       CAPEX_lin: 1300 # [€/kW] specific investment cost of the component
       OEM_lin: 15 # [€/kW/y] specific (fixed) O&M cost linked to installed capacity
-      OEM_com: 0.01 # [€/kWh/y] specific O&M cost arising from commitment
       lifetime_y: 20 # [y] lifetime of the component
-      COP: 4  # [-] nominal COP (coefficient of performance) for T_ref
-      T_ref_COP: 7.0 # [°C] Reference temperature for nominal COP
-      T_cond_COP: 60.0 # [°C] condensation temperature
-      alpha: 0.01 # Efficiency decrease coefficient (0.01 per °C)
-      max_capacity: 50 # [kWth] maximum thermal power supplied aka Heating Capacity
+      COP_c1: 2.3 # [-] nominal COP (coefficient of performance) for T_c1
+      COP_c2: 2.7 # [-] nominal COP (coefficient of performance) for T_c2
+      EER_h1: 3.0  # [-] nominal EER (coefficient of performance) for T_h1
+      EER_h2: 2.6  # [-] nominal EER (coefficient of performance) for T_h2
+      T_c1: 2.0 # [°C] Reference external air temperature for nominal COP_1
+      T_c2: 7.0 # [°C] Reference external air temperature for nominal COP_2
+      T_h: 55.0 # [°C] Reference external air temperature for nominal COP/ mandata o condensazione
+      T_h1: 30.0 # [°C] Reference external air temperature for nominal EER_1
+      T_h2: 35.0 # [°C] Reference external air temperature for nominal EER_2
+      T_c: 7.0 # [°C] Reference external air temperature for nominal EER/ mandata o evaporazione
+      delta_T_approach: 5.0 # [K] delta T for the heat pump
+      max_capacity: 50 # [kW] maximum electrical power supplied
       profile:
         T_int: T_int # code name of the specific internal temperature profile of the component
-        T_ext: T_ext # code name of the specific external temperature profile of the component
+        T_ext: T_ext # code name of the specific external temperature profile
 
     tes:  # component storage
       type: storage  # type of component
-      CAPEX_lin: 3 # [€/kWh] specific investment cost of the component
-      OEM_lin: 0.05 # [€/kW/y] specific (fixed) O&M cost linked to installed capacity
-      OEM_com: 0.005 # [€/kWh/y] specific O&M cost arising from commitment
+      CAPEX_lin: 1 # [€/l] specific investment cost of the component
+      OEM_lin: 0.005 # [€/l/y] specific (fixed) O&M cost linked to installed capacity
       lifetime_y: 35 # [y] lifetime of the component
       eta: 0.9 
-      max_capacity: 40  # [kW] maximum capacity
-      b_tr_x: 0.5 
-      k: 0.003 # [1/°C] costant of proportionality
-      # corr_asset: hp  # corresponding heat pump
+      max_capacity: 50000  # [l] maximum capacity
+      cp: 0.00116  # [kWh/l °C] specific heat capacity of water
+      b_tr_x: 0.5  # [-] thermal inertia of the storage
+      k: 0.0003 # [kWh/h °C] per-unit storage losses for every °C of temperature difference with respect to reference
+      T_ref_heat: 50.0 # [°C] reference storage temperature for heating
+      T_ref_cool: 10.0 # [°C] reference storage temperature for cooling
+      T_input_heat: 20.0 # [°C] low reference temperature for heating
+      T_input_cool: 20.0 # [°C] low reference temperature for cooling
       profile:
         T_int: T_int # code name of the specific internal temperature profile of the component
         T_ext: T_ext # code name of the specific external temperature profile of the component
-        T_ref: T_ref # code name of the specific reference temperature profile of the component
 
     boil:  # component boiler 
       type: boiler  # type of component
@@ -227,4 +235,5 @@ users:  # list of users and the corresponding assets
       type: t_load
       corr_asset: [hp, boil, tes]
       profile:
-        t_load: load_t_user3
+        t_load: t_load_u1_heat_cool
+        mode: mode  # flag to activate t_load for heating or cooling (heating: "+1", cooling: "-1" or list/string to retrieve a time series)
