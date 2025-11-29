@@ -122,6 +122,9 @@ generator_names(d) = asset_names(d, GENS)
 "Function to check whether an user has any asset"
 has_any_asset(d, a_types::Vector{ASSET_TYPE}=DEVICES) = !isempty(asset_names(d, a_types))
 
+"Function to check whether an user has any asset different from the provided ones"
+has_any_different_asset(d, ex::Vector{ASSET_TYPE}) = !isempty(asset_names_ex(d, ex))
+
 "Function to check whether an user has an asset type"
 has_asset(d, atype::ASSET_TYPE) = !isempty(asset_names(d, atype))
 
@@ -316,9 +319,10 @@ end
 """
     _jump_to_dict
 
-Function to turn a JuMP model to a dictionary
+Function to turn a JuMP model to a dictionary.
+If the stochastich flag is set, only relevant quantities are inserted into the dictionary.
 """
-function _jump_to_dict(model::Model)
+function _jump_to_dict(model::Model, stoch_flag = 0)
     results = Dict{Symbol, Any}()
 
     # push the information on the optimization status
@@ -326,14 +330,61 @@ function _jump_to_dict(model::Model)
     results[:termination_status] = Int(termination_status(model))
     results[:objective_value] = objective_value(model)
 
-    # push all JuMP objects values into the dict
-    for key_model in keys(model.obj_dict)
-        push!(results, key_model=>value.(model[key_model]))
+    if stoch_flag == 0
+        # push all JuMP objects values into the dict
+        for key_model in keys(model.obj_dict)
+            push!(results, key_model=>value.(model[key_model]))
+        end
+    else
+        # push all (relevant) JuMP objects values into the dict
+        for key_model in keys(model.obj_dict)
+            if (findfirst("con_",String(key_model)) == nothing) # constraint value are not relevant
+                try
+                    push!(results, String(key_model)=>value.(model[key_model]))
+                catch
+                    if findfirst("tot",String(key_model)) != nothing || findfirst("NPV",String(key_model)) != nothing  
+                            || findfirst("SW",String(key_model)) != nothing # all total cost and NPV user are relevant
+                        if (typeof(model[key_model]) == DecisionAffExpr{Float64})
+                            val = value.(model[key_model].decisions)
+                        else
+                            val = extract_value_DecisionAffExpr(model[key_model])
+                        end
+                        push!(results, String(key_model)=>val)
+                    end
+                end
+            end
+        end
     end
 
     return results
 end
 
+"""
+Function to extract values from a JuMP DecisionAffExpr for stochastich models.
+"""
+function extract_value_DecisionAffExpr(exp::JuMP.Containers.DenseAxisArray)
+    keys_exp = keys(exp)
+    values = map(keys_exp) do k
+        v = exp[k]
+        if v isa JuMP.DecisionAffExpr{Float64}
+            return value.(v.decisions)
+        else
+            return 0
+        end
+    end
+    return JuMP.Containers.DenseAxisArray(values, keys_exp)
+end
+
+"""
+Convert a flat scenario index into its corresponding (s, eps) pair. Throws an error if `scen` is out of range.
+"""
+function convert_scen(n_scen_s::Int, n_scen_eps::Int, scen::Int)
+    s = ceil(Int, scen / n_scen_eps)
+    s > n_scen_s && error("Scenario index out of range")
+
+    eps = scen - (s - 1) * n_scen_eps
+    return (s, eps)
+end
 
 """
     delta_t_tes_lb(users_data, u, s, t)
@@ -396,3 +447,9 @@ function delta_t_tes_ub(users_data, u, s, t)
         return 0.0
     end
 end
+
+# Convert Dict{Int, T} → Vector{T}
+dict2array(A::Dict{Int,T}, n::Int) where {T} = [A[i] for i in 1:n]
+
+# Convert AbstractVector{T} → Dict{Int, T}
+array2dict(p::AbstractVector{T}) where {T} = Dict(i => p[i] for i in eachindex(p))
