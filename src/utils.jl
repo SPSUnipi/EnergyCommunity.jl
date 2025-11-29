@@ -320,7 +320,7 @@ end
     _jump_to_dict
 
 Function to turn a JuMP model to a dictionary.
-If the stochastich flag is set, only relevant quantities are inserted into the dictionary.
+If the stochastic flag is set, only relevant quantities are inserted into the dictionary.
 """
 function _jump_to_dict(model::Model, stoch_flag = 0)
     results = Dict{Symbol, Any}()
@@ -360,7 +360,7 @@ function _jump_to_dict(model::Model, stoch_flag = 0)
 end
 
 """
-Function to extract values from a JuMP DecisionAffExpr for stochastich models.
+Function to extract values from a JuMP DecisionAffExpr for stochastic models.
 """
 function extract_value_DecisionAffExpr(exp::JuMP.Containers.DenseAxisArray)
     keys_exp = keys(exp)

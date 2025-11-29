@@ -120,6 +120,27 @@ mutable struct ModelEC <: AbstractEC
     results::Dict  # results of the model in Dictionary format
 end
 
+"""
+    StochasticEC <: AbstractEC
+
+Concrete type for an EnergyCommunity stochastic model.
+
+## Attributes
+
+* `base::ModelEC`: data from the deterministic structure
+* `model::StochasticProgram`: stochastic model. Note: the determinstic equivalent is stored in ModelEC.model
+* `scenarios::Vector{Scenario_Load_Renewable}`: scenarios used to optimize the model
+* `n_scen_s::Int`: number of long-term scenarios
+* `n_scen_eps::Int`: number of short-term scenarios
+"""
+mutable struct StochasticEC <: AbstractEC
+    base::ModelEC                                   # <— include everything from the deterministic struct
+    model::StochasticProgram                        # stochastic model
+    scenarios::Vector{Scenario_Load_Renewable}      # scenarios used to optimize the model
+    n_scen_s::Int                                   # number of long-term scenarios
+    n_scen_eps::Int                                 # number of short-term scenarios
+end
+
 
 """
     ModelEC(data::Dict=ZERO_DD, group_type=GroupNC(), optimizer=nothing, user_set::Vector=Vector())
@@ -156,6 +177,64 @@ function ModelEC(
 end
 
 """
+    StochasticEC(data::Dict=ZERO_DD, group_type=GroupNC(),
+                 optimizer=nothing, user_set::Vector=Vector(),
+                 scenarios=[zero(Scenario_Load_Renewable)],
+                 n_scen_s::Int=1, n_scen_eps::Int=1)
+
+Constructor for the stochastic EnergyCommunity model.
+"""
+function StochasticEC(
+    data::Dict=ZERO_DD,
+    group_type=GroupNC(),
+    optimizer=nothing,
+    user_set::Vector=Vector(),
+    scenarios::Vector{Scenario_Load_Renewable}=[zero(Scenario_Load_Renewable)],
+    n_scen_s::Int=1,
+    n_scen_eps::Int=1,
+)
+    # 1. Build deterministic base struct
+    base = ModelEC(data, group_type, optimizer, user_set)
+
+    # 2. Build stochastic program
+    stoch_model = StochasticProgram(scenarios, Deterministic())
+
+    # 3. If optimizer is not provided, set base.model using direct_model()
+    if isnothing(optimizer)
+        println("WARNING: Optimizer not specified; assigning default direct_model().")
+        base.model = direct_model()
+    else
+        # otherwise use the provided optimizer to build the deterministic equivalent
+        base.model = direct_model(optimizer())
+    end
+    
+    # 4. Package everything in a StochasticEC
+    return StochasticEC(base, stoch_model, scenarios, n_scen_s, n_scen_eps)
+end
+
+"""
+    StochasticEC(data::Dict=ZERO_DD, group_type=GroupNC(),
+                 optimizer=nothing, user_set::Vector=Vector(),
+                 scenarios=[zero(Scenario_Load_Renewable)],
+                 n_scen_s::Int=1, n_scen_eps::Int=1)
+
+Constructor for the stochastic EnergyCommunity model given an already defined base model.
+"""
+function StochasticEC(
+    base::ModelEC,
+    scenarios::Vector{Scenario_Load_Renewable}=[zero(Scenario_Load_Renewable)],
+    n_scen_s::Int=1,
+    n_scen_eps::Int=1,
+)
+
+    # Build stochastic program
+    stoch_model = StochasticProgram(scenarios, Deterministic())
+    
+    # Package everything in a StochasticEC
+    return StochasticEC(base, stoch_model, scenarios, n_scen_s, n_scen_eps)
+end
+
+"""
     ModelEC(file_name::AbstractString, group_type, optimizer=nothing)
 
 Load EnergyCommunity model from disk
@@ -174,6 +253,36 @@ function ModelEC(file_name::AbstractString,
     user_set = user_names(general(data), users(data))
 
     ModelEC(data, group_type, optimizer, user_set)
+end
+
+"""
+    StochasticEC(file_name::AbstractString, group_type, optimizer=nothing,
+                scenarios=[zero(Scenario_Load_Renewable)],
+                n_scen_s::Int=1, n_scen_eps::Int=1)
+
+Load EnergyCommunity stochastic model from disk
+
+## Arguments
+
+* `file_name::AbstractString`: name of the file to load the data
+* `group_type`: aggregation type of model
+* `optimizer`: optimizer of the JuMP model
+* `scenarios::Vector{Scenario_Load_Renewable}`: scenarios used to optimize the model
+* `n_scen_s::Int`: number of long-term scenarios
+* `n_scen_eps::Int`: number of short-term scenarios
+"""
+function StochasticEC(file_name::AbstractString,
+        group_type,
+        optimizer=nothing,
+        scenarios::Array{Scenario_Load_Renewable, 1}=[zero(Scenario_Load_Renewable)],
+        n_scen_s::Int=1,
+        n_scen_eps::Int=1
+    )
+
+    data = read_input(file_name)
+    user_set = user_names(general(data), users(data))
+
+    StochasticEC(data, group_type, optimizer, user_set, scenarios, n_scen_s, n_scen_eps)
 end
 
 """
@@ -202,9 +311,51 @@ function ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, use
 end
 
 """
+    StochasticEC(model_copy::StochasticEC, group_type=nothing; optimizer=nothing, user_set=nothing, 
+                scenarios=nothing, n_scen_s=nothing, n_scen_eps=nothing)
+
+Copy constructor of stochastic model.
+
+## Arguments
+
+* `model_copy::ModelEC`: model to copy
+* `group_type=nothing`: aggregation type of model; default is the same as `model_copy`
+* `optimizer=nothing`: optimizer of the JuMP model; default is the same as `model_copy`
+* `user_set=nothing`: desired user set; default is the same as `model_copy`
+* `scenarios=nothing`: desired scenarios set; default is the same as `model_copy`
+* `n_scen_s::Int`: desired number of long-term scenarios; default is the same as `model_copy`
+* `n_scen_eps::Int`: desired number of short-term scenarios; default is the same as `model_copy`
+"""
+function StochasticEC(model_copy::StochasticEC, group_type=nothing; optimizer=nothing, user_set=nothing, scenarios=nothing, n_scen_s=nothing, n_scen_eps=nothing)
+    
+    # Deep copy of base elements
+    if isnothing(group_type)
+        group_type = model_copy.group_type
+    end
+    if isnothing(optimizer)
+        optimizer = deepcopy(model_copy.optimizer)
+    end
+    if isnothing(user_set)
+        user_set = model_copy.user_set
+    end
+
+    # Deep copy the remaining elements
+    if isnothing(scenarios)
+        scenarios = model_copy.scenarios
+    end
+    if isnothing(n_scen_s)
+        n_scen_s = model.n_scen_s
+    end
+    if isnothing(n_scen_eps)
+        n_scen_eps = model.n_scen_eps
+    end
+    StochasticEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(user_set),scenarios,n_scen_s,n_scen_eps)
+end
+
+"""
     Base.copy(model_copy::ModelEC)
 
-Create a copy of a ModelEC opject
+Create a copy of a ModelEC object
 
 ## Arguments
 
@@ -215,9 +366,22 @@ function Base.copy(model_copy::ModelEC)
 end
 
 """
+    Base.copy(model_copy::StochasticEC)
+
+Create a copy of a StochasticEC object
+
+## Arguments
+
+* `model_copy::StochasticEC`: model to copy
+"""
+function Base.copy(model_copy::StochasticEC)
+    StochasticEC(model_copy.base, model_copy.scenarios, model_copy.n_scen_s, model_copy.n_scen_eps)
+end
+
+"""
     Base.deepcopy(model_copy::ModelEC)
 
-Create a deepcopy of a ModelEC opject
+Create a deepcopy of a ModelEC object
 
 ## Arguments
 
@@ -228,12 +392,34 @@ function Base.deepcopy(model_copy::ModelEC)
 end
 
 """
+    Base.deepcopy(model_copy::StochasticEC)
+
+Create a deepcopy of a StochasticEC object
+
+## Arguments
+
+* `model_copy::StochasticEC`: model to copy
+"""
+function Base.deepcopy(model_copy::ModelEC)
+    StochasticEC(deepcopy(model_copy.base), model_copy.scenarios, model_copy.n_scen_s, model_copy.n_scen_eps)
+end
+
+"""
     Base.zero(::ModelEC)
 
 Function zero to represent the empty ModelEC
 """
 function Base.zero(::ModelEC)
     return ModelEC()
+end
+
+"""
+    Base.zero(::StochasticEC)
+
+Function zero to represent the empty StochasticEC
+"""
+function Base.zero(::StochasticEC)
+    return StochasticEC()
 end
 
 
@@ -252,6 +438,13 @@ Return the name of the model.
 """
 name(model::ModelEC) = "An Energy Community Model"
 
+"""
+    name(model::StochasticEC)
+
+Return the name of the model.
+"""
+name(model::StochasticEC) = "An Energy Community Stochastic Model"
+
 
 """
     _print_summary(io::IO, model::AbstractEC)
@@ -262,6 +455,12 @@ function _print_summary(io::IO, model::AbstractEC)
     println(io, name(model))
     println(io, "Energy Community problem for a " * name(get_group_type(model)))
     println(io, "User set: " * string(model.user_set))
+
+    if model isa StochasticEC
+        println(io, "Number of scenarios s: " * string(model.n_scen_s))
+        println(io, "Number of scenarios epsilon: " * string(model.n_scen_eps))
+    end
+
     if isempty(model.results)
         println("Model not optimized")
     else
