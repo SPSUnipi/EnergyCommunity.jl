@@ -342,8 +342,7 @@ function _jump_to_dict(model::Model, stoch_flag = 0)
                 try
                     push!(results, String(key_model)=>value.(model[key_model]))
                 catch
-                    if findfirst("tot",String(key_model)) != nothing || findfirst("NPV",String(key_model)) != nothing  
-                            || findfirst("SW",String(key_model)) != nothing # all total cost and NPV user are relevant
+                    if findfirst("tot",String(key_model)) != nothing || findfirst("NPV",String(key_model)) != nothing  || findfirst("SW",String(key_model)) != nothing  # all total cost and NPV user are relevant
                         if (typeof(model[key_model]) == DecisionAffExpr{Float64})
                             val = value.(model[key_model].decisions)
                         else

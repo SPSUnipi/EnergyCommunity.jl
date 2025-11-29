@@ -10,7 +10,7 @@ Function to set the parameters for the stochastic optimization of the model
     time_limit = maximum time for the optimization (in second)
     threads = number of threads used for the parallel mode
 """
-
+# TODO manca gestione esplicita Gurobi, HiGHS e GLPK
 function set_parameters_ECmodel!(ECModel::AbstractEC,
         tol::Float64=1e-3, # default gap set to 0.1
         time_limit::Int=60*60, # default time limit set to one hour
@@ -317,7 +317,7 @@ function extract_dispatch_values_NC(ECModel::ModelEC)
     energy_weight = profile(market_data, "energy_weight")[1]
     time_res = profile(market_data, "time_res")[1]
 
-    load_demand_tot = sum(calculate_demand(ECModel)[1][u] for u in user_set)
+    load_demand_tot = sum(calculate_demand(ECModel)[1][u] for u in useextract_dispatch_values_COr_set)
     P_P_tot = sum(ECModel.results["P_P_us" * sub_scen]) * time_res * energy_weight
     P_N_tot = sum(ECModel.results["P_N_us" * sub_scen]) * time_res * energy_weight
     P_sq_P_tot = sum(ECModel.results["P_sq_P_us" * sub_scen]) * time_res * energy_weight
@@ -341,7 +341,7 @@ function extract_dispatch_values_CO(ECModel::ModelEC)
 
     load_demand_tot = sum(calculate_demand(ECModel)[1][u] for u in user_set)
     P_P_tot = sum(ECModel.results["P_P_us" * sub_scen]) * time_res * energy_weight
-    P_N_tot = sum(ECModel.results["P_N_us" * sub_scen]) * time_res * energy_weight
+    P_N_tot = sum(ECModel.results["P_N_us" * sub_enscen]) * time_res * energy_weight
     P_sq_P_tot = sum(ECModel.results["P_sq_P_agg" * sub_scen]) * time_res * energy_weight
     P_sq_N_tot = sum(ECModel.results["P_sq_N_agg" * sub_scen]) * time_res * energy_weight
     P_ren_tot = sum(ECModel.results["P_ren_us" * sub_scen]) * time_res * energy_weight
@@ -353,3 +353,148 @@ function extract_dispatch_values_CO(ECModel::ModelEC)
     return (load_demand_tot,P_P_tot,P_N_tot,P_sq_P_tot,P_sq_N_tot,P_ren_tot,P_gen_tot,P_conv_P_tot,P_conv_N_tot,P_Shared_tot)
 end
 
+
+#===============================================================================
+TODO verificare se ci piacciono di più.
+===============================================================================#
+
+"""
+    extract_economic_values(ECModel::AbstractEC)
+
+Extract economic values based on the model's group type (determined at runtime).
+Uses accessor functions for compatibility with both ModelEC and StochasticEC.
+
+## Returns
+- For Non-Cooperative (NC): (SW, R_ene_tot, C_gen_tot, C_sq_tot, C_peak_tot)
+- For Cooperative (CO): (SW, R_ene_tot, C_gen_tot, C_sq_tot, C_peak_tot, R_rew_agg_tot)
+
+## Example
+```julia
+values = extract_economic_values(ECModel)  # Works for both NC and CO
+```
+"""
+function extract_economic_values(ECModel::AbstractEC)
+    sub_scen = Char(0x02080+1)
+
+    res = results(ECModel)
+    gt = group_type(ECModel)
+
+    # Common values for both NC and CO
+    SW = res["SW"*sub_scen]
+    R_ene_tot = sum(res["R_Energy_tot_us"*sub_scen])
+    C_gen_tot = sum(res["C_gen_tot_us"*sub_scen])
+    C_peak_tot = sum(res["C_Peak_tot_us"*sub_scen])
+
+    # Type-specific values
+    if gt isa AbstractGroupNC
+        # NC: C_sq from users
+        C_sq_tot = sum(res["C_sq_tot_us"*sub_scen])
+        return (SW, R_ene_tot, C_gen_tot, C_sq_tot, C_peak_tot)
+
+    elseif gt isa AbstractGroupCO
+        # CO: C_sq from aggregator + reward
+        C_sq_tot = res["C_sq_tot_agg"*sub_scen]
+        R_rew_agg_tot = res["R_Reward_agg_tot"*sub_scen]
+        return (SW, R_ene_tot, C_gen_tot, C_sq_tot, C_peak_tot, R_rew_agg_tot)
+
+    else
+        throw(ArgumentError("Unsupported group type: $(typeof(gt))"))
+    end
+end
+
+
+"""
+    extract_dispatch_values(ECModel::AbstractEC)
+
+Extract dispatch values based on the model's group type (determined at runtime).
+Uses accessor functions for compatibility with both ModelEC and StochasticEC.
+
+===============================================================================
+## Returns
+- For Non-Cooperative (NC): 9 values (without P_Shared_tot)
+- For Cooperative (CO): 10 values (includes P_Shared_tot)
+
+## Example
+```julia
+values = extract_dispatch_values(ECModel)  # Works for both NC and CO
+```
+"""
+function extract_dispatch_values(ECModel::AbstractEC)
+    sub_scen = Char(0x02080+1)
+
+    mkt_data = market_data(ECModel)
+    res = results(ECModel)
+    gt = group_type(ECModel)
+
+    # Common setup
+    energy_weight = profile(mkt_data, "energy_weight")[1]
+    time_res = profile(mkt_data, "time_res")[1]
+
+    # Common values for both NC and CO
+    load_demand_tot = sum(calculate_demand(ECModel)[1][u] for u in user_set)
+    P_P_tot = sum(res["P_P_us" * sub_scen]) * time_res * energy_weight
+    P_N_tot = sum(res["P_N_us" * sub_scen]) * time_res * energy_weight
+    P_ren_tot = sum(res["P_ren_us" * sub_scen]) * time_res * energy_weight
+    P_gen_tot = sum(res["P_gen_us" * sub_scen]) * time_res * energy_weight
+    P_conv_P_tot = sum(res["P_conv_P_us" * sub_scen]) * time_res * energy_weight
+    P_conv_N_tot = sum(res["P_conv_N_us" * sub_scen]) * time_res * energy_weight
+
+    # Type-specific values
+    if gt isa AbstractGroupNC
+        # NC: P_sq from users
+        P_sq_P_tot = sum(res["P_sq_P_us" * sub_scen]) * time_res * energy_weight
+        P_sq_N_tot = sum(res["P_sq_N_us" * sub_scen]) * time_res * energy_weight
+
+        return (load_demand_tot, P_P_tot, P_N_tot, P_sq_P_tot, P_sq_N_tot,
+                P_ren_tot, P_gen_tot, P_conv_P_tot, P_conv_N_tot)
+
+    elseif gt isa AbstractGroupCO
+        # CO: P_sq from aggregator + shared energy
+        P_sq_P_tot = sum(res["P_sq_P_agg" * sub_scen]) * time_res * energy_weight
+        P_sq_N_tot = sum(res["P_sq_N_agg" * sub_scen]) * time_res * energy_weight
+        P_Shared_tot = sum(res["P_shared_agg" * sub_scen]) * time_res * energy_weight
+
+        return (load_demand_tot, P_P_tot, P_N_tot, P_sq_P_tot, P_sq_N_tot,
+                P_ren_tot, P_gen_tot, P_conv_P_tot, P_conv_N_tot, P_Shared_tot)
+
+    else
+        throw(ArgumentError("Unsupported group type: $(typeof(gt))"))
+    end
+end
+
+
+"""
+    extract_declared_values(ECModel::AbstractEC)
+
+Extract declared dispatch values based on the model's group type (determined at runtime).
+Uses accessor functions for compatibility with both ModelEC and StochasticEC.
+
+## Returns
+- For Non-Cooperative (NC): (P_dec_P, P_dec_N) with user-level data
+- For Cooperative (CO): (P_dec_P, P_dec_N) with aggregator-level data
+
+## Example
+```julia
+(P_dec_P, P_dec_N) = extract_declared_values(ECModel)  # Works for both NC and CO
+```
+"""
+function extract_declared_values(ECModel::AbstractEC) sub_scen = Char(0x02080+1)
+    res = results(ECModel)
+    gt = group_type(ECModel)
+
+    if gt isa AbstractGroupNC
+        # NC: declared values from users
+        P_dec_P = res["P_us_dec_P"*sub_scen].data
+        P_dec_N = res["P_us_dec_N"*sub_scen].data
+        return (P_dec_P, P_dec_N)
+
+    elseif gt isa AbstractGroupCO
+        # CO: declared values from aggregator
+        P_dec_P = res["P_agg_dec_P"*sub_scen].data
+        P_dec_N = res["P_agg_dec_N"*sub_scen].data
+        return (P_dec_P, P_dec_N)
+        
+    else
+        throw(ArgumentError("Unsupported group type: $(typeof(gt))"))
+    end
+end

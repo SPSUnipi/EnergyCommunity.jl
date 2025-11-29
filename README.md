@@ -57,3 +57,80 @@ optimize!(ECModel)
 # create some plots
 plot(ECModel, output_plot_combined)
 ```
+
+
+# Folder structure
+```
+├── docs
+│   └── ...
+├── examples
+│   └── ...
+├── LICENSE
+├── Project.toml
+├── README.md
+├── run_cloud
+│   └── ...
+├── src
+│   ├── aggregated_non_cooperative.jl
+│   ├── base_model.jl
+│   ├── cooperative.jl
+│   ├── data
+│   │   └── default
+│   │       ├── energy_community_model_flexibility.yml
+│   │       ├── energy_community_model_heat.yml
+│   │       ├── energy_community_model_thermal.yml
+│   │       ├── energy_community_model.yml
+│   │       ├── flexibility_resource.csv
+│   │       ├── input_heating_cooling.csv
+│   │       ├── input_resource.csv
+│   │       └── market_data.csv
+│   ├── ECModel_definitions.jl <---- OK (?)
+```
+Confrontare `ECModel_definitions.jl` con `ECModel_definitions_old.jl`; è più generica e ha funzioni `get` e `set`.
+
+```
+│   ├── ECModel.jl
+│   ├── EnergyCommunity.jl
+│   ├── Games_jl_interface.jl
+│   ├── non_cooperative.jl
+│   └── utils.jl
+├── StochFile
+│   ├── base_model.jl
+│   ├── cooperative.jl
+│   ├── ECModel_definitions(DONE).jl
+│   ├── ECModel(TBD).jl <------ NEWS
+```
+Qui sopra ho inserito funzioni polimorfiche che risolvono a runtime il tipodi EC e gestiscono l'estrazione dei dati automaticamente. In particolare, ora lo stesso codice funziona su EC di tipo diverso grazie al dynamyc dispatch a runtime e non a "tempo di compilazione" (ammesso in julia si possa parlare di tempo di compilazione).
+
+Ho aggiunto anche `extract_declared_values` con la logica preesistente: io uso una logica diversa nel mio codice, potrebbe non funzionare.
+
+Da gestire il dispatch tra stocastico e deterministico, ma vediamo quale delle due versioni ci piace.
+```
+│   ├── energy_community_model.yml
+│   ├── input_resource.csv
+│   ├── main.jl
+│   ├── market_data.csv
+│   ├── market_data_no_penalties.csv
+```
+Ho spostato tutti i `.csv` e `.yaml` in `src/data/stochastic` per chiarezza e semplicità.
+```
+│   ├── pem_extraction.jl <---- OK
+│   ├── point_Scen_eps_sampler.jl <---- OK
+```
+Le condizioni dentro l'if `second_stage == true` e il ramo `else` sono identici. Secondo me si può collassare a un if first stage - else.
+
+Nel mio codice la logica è totalmente cambiata, per ora lascerei la tua versione per semplicità (la mia è più complicata e non ne vale la pena).
+
+Propongo di inserire dentro `src` una cartella `scenarios` per chiarezza.
+```
+│   ├── print_functions.jl
+│   ├── README.txt
+│   ├── scenario_definition.jl
+```
+Ristrutturato in `scenario_definition_FS.jl` dimmi che ne pensi. È più pronto alle estensioni con facilità.
+```
+│   └── utils(DONE).jl
+└── test
+    ├── ...
+    └── ...
+    ```

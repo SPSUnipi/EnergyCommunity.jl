@@ -127,19 +127,207 @@ Concrete type for an EnergyCommunity stochastic model.
 
 ## Attributes
 
-* `base::ModelEC`: data from the deterministic structure
-* `model::StochasticProgram`: stochastic model. Note: the determinstic equivalent is stored in ModelEC.model
+* `data::Dict`: All data
+* `gen_data::Dict`: general data
+* `market_data::Dict`: market data
+* `users_data::Dict`: users data
+* `group_type`: aggregation type of model
+* `user_set::Vector`: desired user set
+* `model::StochasticProgram`: stochastic model
+* `optimizer`: optimizer of the JuMP model
+* `results::Dict`: results of the model in Dictionary format
 * `scenarios::Vector{Scenario_Load_Renewable}`: scenarios used to optimize the model
 * `n_scen_s::Int`: number of long-term scenarios
 * `n_scen_eps::Int`: number of short-term scenarios
 """
 mutable struct StochasticEC <: AbstractEC
-    base::ModelEC                                   # <— include everything from the deterministic struct
-    model::StochasticProgram                        # stochastic model
-    scenarios::Vector{Scenario_Load_Renewable}      # scenarios used to optimize the model
-    n_scen_s::Int                                   # number of long-term scenarios
-    n_scen_eps::Int                                 # number of short-term scenarios
+    data::Dict  # All data
+    gen_data::Dict  # general data
+    market_data::Dict  # market data
+    users_data::Dict  # users data
+
+    group_type  # aggregation type of model
+    user_set::Vector  # desired user set
+
+    model::StochasticProgram  # stochastic model
+    optimizer  # optimizer of the JuMP model
+
+    results::Dict  # results of the model in Dictionary format
+    scenarios::Vector{Scenario_Load_Renewable}  # scenarios used to optimize the model
+    n_scen_s::Int  # number of long-term scenarios
+    n_scen_eps::Int  # number of short-term scenarios
 end
+
+
+#==============================================================================
+# ACCESSOR FUNCTIONS - Dynamic dispatch for AbstractEC
+# Provide uniform access to fields regardless of concrete type (ModelEC vs StochasticEC)
+# NOTE: With the new flat structure, both types have identical field access patterns
+==============================================================================#
+
+# --- GETTERS ---
+
+"""
+    data(m::AbstractEC)
+
+Get the data dictionary from the model.
+"""
+data(m::AbstractEC) = m.data
+
+"""
+    gen_data(m::AbstractEC)
+
+Get the general data dictionary from the model.
+"""
+gen_data(m::AbstractEC) = m.gen_data
+
+"""
+    market_data(m::AbstractEC)
+
+Get the market data dictionary from the model.
+"""
+market_data(m::AbstractEC) = m.market_data
+
+"""
+    users_data(m::AbstractEC)
+
+Get the users data dictionary from the model.
+"""
+users_data(m::AbstractEC) = m.users_data
+
+"""
+    group_type(m::AbstractEC)
+
+Get the group type (CO/NC/ANC) from the model.
+"""
+group_type(m::AbstractEC) = m.group_type
+
+"""
+    user_set(m::AbstractEC)
+
+Get the user set vector from the model.
+"""
+user_set(m::AbstractEC) = m.user_set
+
+"""
+    jump_model(m::AbstractEC)
+
+Get the JuMP/StochasticProgram model from the model.
+For ModelEC, returns a JuMP Model.
+For StochasticEC, returns a StochasticProgram.
+"""
+jump_model(m::AbstractEC) = m.model
+
+"""
+    optimizer(m::AbstractEC)
+
+Get the optimizer from the model.
+"""
+optimizer(m::AbstractEC) = m.optimizer
+
+"""
+    results(m::AbstractEC)
+
+Get the results dictionary from the model.
+"""
+results(m::AbstractEC) = m.results
+
+# Stochastic-specific getters
+"""
+    stoch_model(m::StochasticEC)
+
+Alias for jump_model(m) for StochasticEC (returns the StochasticProgram).
+"""
+stoch_model(m::StochasticEC) = m.model
+
+"""
+    scenarios(m::StochasticEC)
+
+Get the scenarios vector (only for StochasticEC).
+"""
+scenarios(m::StochasticEC) = m.scenarios
+
+"""
+    n_scen_s(m::StochasticEC)
+
+Get the number of long-term scenarios (only for StochasticEC).
+"""
+n_scen_s(m::StochasticEC) = m.n_scen_s
+
+"""
+    n_scen_eps(m::StochasticEC)
+
+Get the number of short-term scenarios (only for StochasticEC).
+"""
+n_scen_eps(m::StochasticEC) = m.n_scen_eps
+
+# --- SETTERS ---
+
+"""
+    set_group_type!(m::AbstractEC, gt::AbstractGroup)
+
+Set the group type for the model.
+"""
+set_group_type!(m::AbstractEC, gt::AbstractGroup) = (m.group_type = gt)
+
+"""
+    set_user_set!(m::AbstractEC, us::Vector)
+
+Set the user set for the model.
+"""
+set_user_set!(m::AbstractEC, us::Vector) = (m.user_set = us)
+
+"""
+    set_optimizer!(m::AbstractEC, opt)
+
+Set the optimizer for the model.
+"""
+set_optimizer!(m::AbstractEC, opt) = (m.optimizer = opt)
+
+"""
+    set_results!(m::AbstractEC, res::Dict)
+
+Set the results dictionary for the model.
+"""
+set_results!(m::AbstractEC, res::Dict) = (m.results = res)
+
+"""
+    set_jump_model!(m::AbstractEC, jm)
+
+Set the JuMP/StochasticProgram model.
+"""
+set_jump_model!(m::AbstractEC, jm) = (m.model = jm)
+
+# Stochastic-specific setters
+"""
+    set_stoch_model!(m::StochasticEC, sm::StochasticProgram)
+
+Alias for set_jump_model! for StochasticEC.
+"""
+set_stoch_model!(m::StochasticEC, sm::StochasticProgram) = (m.model = sm)
+
+"""
+    set_scenarios!(m::StochasticEC, scen::Vector{Scenario_Load_Renewable})
+
+Set the scenarios vector (only for StochasticEC).
+"""
+set_scenarios!(m::StochasticEC, scen::Vector{Scenario_Load_Renewable}) = (m.scenarios = scen)
+
+"""
+    set_n_scen_s!(m::StochasticEC, n::Int)
+
+Set the number of long-term scenarios (only for StochasticEC).
+"""
+set_n_scen_s!(m::StochasticEC, n::Int) = (m.n_scen_s = n)
+
+"""
+    set_n_scen_eps!(m::StochasticEC, n::Int)
+
+Set the number of short-term scenarios (only for StochasticEC).
+"""
+set_n_scen_eps!(m::StochasticEC, n::Int) = (m.n_scen_eps = n)
+
+
 
 
 """
@@ -193,29 +381,31 @@ function StochasticEC(
     n_scen_s::Int=1,
     n_scen_eps::Int=1,
 )
-    # 1. Build deterministic base struct
-    base = ModelEC(data, group_type, optimizer, user_set)
+    check_valid_data_dict(data)
+    gen_data, users_data, market_data = explode_data(data)
 
-    # 2. Build stochastic program
-    stoch_model = StochasticProgram(scenarios, Deterministic())
-
-    # 3. If optimizer is not provided, set base.model using direct_model()
-    if isnothing(optimizer)
-        println("WARNING: Optimizer not specified; assigning default direct_model().")
-        base.model = direct_model()
-    else
-        # otherwise use the provided optimizer to build the deterministic equivalent
-        base.model = direct_model(optimizer())
+    if isempty(user_set)
+        user_set = user_names(gen_data, users_data)
     end
-    
-    # 4. Package everything in a StochasticEC
-    return StochasticEC(base, stoch_model, scenarios, n_scen_s, n_scen_eps)
+
+    model = StochasticProgram(scenarios, Deterministic())
+    results = Dict()
+
+    if isnothing(optimizer)
+        println("WARNING: Optimizer of the EnergyCommunity model not specified")
+    end
+
+    return StochasticEC(
+        data, gen_data, market_data, users_data,
+        group_type, user_set,
+        model, optimizer,
+        results, scenarios, n_scen_s, n_scen_eps
+    )
 end
 
 """
-    StochasticEC(data::Dict=ZERO_DD, group_type=GroupNC(),
-                 optimizer=nothing, user_set::Vector=Vector(),
-                 scenarios=[zero(Scenario_Load_Renewable)],
+    StochasticEC(base::ModelEC,
+                 scenarios::Vector{Scenario_Load_Renewable}=[zero(Scenario_Load_Renewable)],
                  n_scen_s::Int=1, n_scen_eps::Int=1)
 
 Constructor for the stochastic EnergyCommunity model given an already defined base model.
@@ -226,12 +416,16 @@ function StochasticEC(
     n_scen_s::Int=1,
     n_scen_eps::Int=1,
 )
-
     # Build stochastic program
     stoch_model = StochasticProgram(scenarios, Deterministic())
-    
-    # Package everything in a StochasticEC
-    return StochasticEC(base, stoch_model, scenarios, n_scen_s, n_scen_eps)
+
+    # Costruisci la nuova struct passando tutti i campi di base + quelli stocastici
+    return StochasticEC(
+        base.data, base.gen_data, base.market_data, base.users_data,
+        base.group_type, base.user_set,
+        stoch_model, base.optimizer,
+        base.results, scenarios, n_scen_s, n_scen_eps
+    )
 end
 
 """
@@ -286,9 +480,10 @@ function StochasticEC(file_name::AbstractString,
 end
 
 """
-    ModelEC(model_copy::ModelEC, group_type=nothing, optimizer=nothing, user_set=nothing)
+    ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, user_set=nothing)
 
 Copy constructor; it copies the data from `model_copy` and changes the group type, optimizer, and user set if specified.
+Uses accessor functions for dynamic dispatch compatibility.
 
 ## Arguments
 
@@ -297,174 +492,178 @@ Copy constructor; it copies the data from `model_copy` and changes the group typ
 * `optimizer=nothing`: optimizer of the JuMP model; default is the same as `model_copy`
 * `user_set=nothing`: desired user set; default is the same as `model_copy`
 """
-function ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, user_set=nothing)
-    if isnothing(group_type)
-        group_type = model_copy.group_type
-    end
-    if isnothing(optimizer)
-        optimizer = deepcopy(model_copy.optimizer)
-    end
-    if isnothing(user_set)
-        user_set = model_copy.user_set
-    end
-    ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(user_set))
+function ModelEC(model_copy::ModelEC, new_group_type=nothing; optimizer=nothing, user_set=nothing)
+    gt = isnothing(new_group_type) ? group_type(model_copy) : new_group_type
+    opt = isnothing(optimizer) ? deepcopy(optimizer(model_copy)) : optimizer
+    us = isnothing(user_set) ? user_set(model_copy) : user_set
+
+    ModelEC(deepcopy(data(model_copy)), gt, opt, deepcopy(us))
 end
 
 """
-    StochasticEC(model_copy::StochasticEC, group_type=nothing; optimizer=nothing, user_set=nothing, 
-                scenarios=nothing, n_scen_s=nothing, n_scen_eps=nothing)
+    StochasticEC(model_copy::StochasticEC, group_type=nothing; optimizer=nothing, user_set=nothing,
+                scenarios=nothing, n_scen_s_val=nothing, n_scen_eps_val=nothing)
 
 Copy constructor of stochastic model.
 
 ## Arguments
 
-* `model_copy::ModelEC`: model to copy
+* `model_copy::StochasticEC`: model to copy
 * `group_type=nothing`: aggregation type of model; default is the same as `model_copy`
 * `optimizer=nothing`: optimizer of the JuMP model; default is the same as `model_copy`
 * `user_set=nothing`: desired user set; default is the same as `model_copy`
 * `scenarios=nothing`: desired scenarios set; default is the same as `model_copy`
-* `n_scen_s::Int`: desired number of long-term scenarios; default is the same as `model_copy`
-* `n_scen_eps::Int`: desired number of short-term scenarios; default is the same as `model_copy`
+* `n_scen_s_val::Int`: desired number of long-term scenarios; default is the same as `model_copy`
+* `n_scen_eps_val::Int`: desired number of short-term scenarios; default is the same as `model_copy`
 """
-function StochasticEC(model_copy::StochasticEC, group_type=nothing; optimizer=nothing, user_set=nothing, scenarios=nothing, n_scen_s=nothing, n_scen_eps=nothing)
-    
-    # Deep copy of base elements
-    if isnothing(group_type)
-        group_type = model_copy.group_type
-    end
-    if isnothing(optimizer)
-        optimizer = deepcopy(model_copy.optimizer)
-    end
-    if isnothing(user_set)
-        user_set = model_copy.user_set
-    end
+function StochasticEC(model_copy::StochasticEC, new_group_type=nothing; optimizer=nothing, user_set=nothing, scenarios=nothing, n_scen_s_val=nothing, n_scen_eps_val=nothing)
 
-    # Deep copy the remaining elements
-    if isnothing(scenarios)
-        scenarios = model_copy.scenarios
-    end
-    if isnothing(n_scen_s)
-        n_scen_s = model.n_scen_s
-    end
-    if isnothing(n_scen_eps)
-        n_scen_eps = model.n_scen_eps
-    end
-    StochasticEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(user_set),scenarios,n_scen_s,n_scen_eps)
+    # Use accessor functions for all fields
+    gt = isnothing(new_group_type) ? group_type(model_copy) : new_group_type
+    opt = isnothing(optimizer) ? deepcopy(optimizer(model_copy)) : optimizer
+    us = isnothing(user_set) ? user_set(model_copy) : user_set
+    scen = isnothing(scenarios) ? scenarios(model_copy) : scenarios
+    ns = isnothing(n_scen_s_val) ? n_scen_s(model_copy) : n_scen_s_val
+    neps = isnothing(n_scen_eps_val) ? n_scen_eps(model_copy) : n_scen_eps_val
+
+    StochasticEC(
+        deepcopy(data(model_copy)), deepcopy(gen_data(model_copy)), deepcopy(market_data(model_copy)), deepcopy(users_data(model_copy)),
+        gt, deepcopy(us),
+        jump_model(model_copy), opt,
+        deepcopy(results(model_copy)), scen, ns, neps
+    )
+end
+
+#==============================================================================
+# COPY WITH MODIFICATIONS - Generic function for both types
+==============================================================================#
+
+"""
+    copy_with(model::AbstractEC; group_type=nothing, optimizer=nothing,
+              user_set=nothing, scenarios=nothing, n_scen_s_val=nothing, n_scen_eps_val=nothing)
+
+Create a copy of the model with optional field modifications.
+Dynamic dispatch handles ModelEC vs StochasticEC automatically.
+Note: For StochasticEC, the additional parameters are available; for ModelEC they are ignored.
+
+## Examples
+```julia
+# For ModelEC
+new_model = copy_with(model, group_type=GroupCO())
+
+# For StochasticEC
+new_model = copy_with(stoch_model, group_type=GroupCO(), n_scen_s_val=10)
+```
+"""
+function copy_with(model::ModelEC; group_type=nothing, optimizer=nothing, user_set=nothing, kwargs...)
+    new_group_type = isnothing(group_type) ? group_type(model) : group_type
+    new_optimizer = isnothing(optimizer) ? deepcopy(optimizer(model)) : optimizer
+    new_user_set = isnothing(user_set) ? user_set(model) : user_set
+
+    ModelEC(deepcopy(data(model)), new_group_type, new_optimizer, deepcopy(new_user_set))
+end
+
+function copy_with(model::StochasticEC;
+                   group_type=nothing, optimizer=nothing, user_set=nothing,
+                   scenarios=nothing, n_scen_s_val=nothing, n_scen_eps_val=nothing)
+    new_group_type = isnothing(group_type) ? group_type(model) : group_type
+    new_optimizer = isnothing(optimizer) ? deepcopy(optimizer(model)) : optimizer
+    new_user_set = isnothing(user_set) ? user_set(model) : user_set
+    new_scenarios = isnothing(scenarios) ? scenarios(model) : scenarios
+    new_n_scen_s = isnothing(n_scen_s_val) ? n_scen_s(model) : n_scen_s_val
+    new_n_scen_eps = isnothing(n_scen_eps_val) ? n_scen_eps(model) : n_scen_eps_val
+
+    StochasticEC(
+        deepcopy(data(model)), deepcopy(gen_data(model)), deepcopy(market_data(model)), deepcopy(users_data(model)),
+        new_group_type, deepcopy(new_user_set),
+        jump_model(model), new_optimizer,
+        deepcopy(results(model)), new_scenarios, new_n_scen_s, new_n_scen_eps
+    )
+end
+
+
+#==============================================================================
+# BASE INTERFACE FUNCTIONS - copy, deepcopy, zero
+==============================================================================#
+
+"""
+    Base.copy(model::AbstractEC)
+
+Create a shallow copy of the model (dynamic dispatch).
+"""
+function Base.copy(model::ModelEC)
+    ModelEC(data(model), group_type(model), optimizer(model), deepcopy(user_set(model)))
+end
+
+function Base.copy(model::StochasticEC)
+    StochasticEC(
+        data(model), gen_data(model), market_data(model), users_data(model),
+        group_type(model), user_set(model),
+        jump_model(model), optimizer(model),
+        results(model), scenarios(model), n_scen_s(model), n_scen_eps(model)
+    )
 end
 
 """
-    Base.copy(model_copy::ModelEC)
+    Base.deepcopy(model::AbstractEC)
 
-Create a copy of a ModelEC object
-
-## Arguments
-
-* `model_copy::ModelEC`: model to copy
+Create a deep copy of the model (dynamic dispatch).
 """
-function Base.copy(model_copy::ModelEC)
-    ModelEC(model_copy.data, model_copy.group_type, model_copy.optimizer, deepcopy(model_copy.user_set))
+function Base.deepcopy(model::ModelEC)
+    ModelEC(deepcopy(data(model)), group_type(model), optimizer(model), deepcopy(user_set(model)))
+end
+
+function Base.deepcopy(model::StochasticEC)
+    StochasticEC(
+        deepcopy(data(model)), deepcopy(gen_data(model)), deepcopy(market_data(model)), deepcopy(users_data(model)),
+        group_type(model), deepcopy(user_set(model)),
+        jump_model(model), optimizer(model),
+        deepcopy(results(model)), scenarios(model), n_scen_s(model), n_scen_eps(model)
+    )
 end
 
 """
-    Base.copy(model_copy::StochasticEC)
+    Base.zero(::Type{<:AbstractEC})
+    Base.zero(::AbstractEC)
 
-Create a copy of a StochasticEC object
-
-## Arguments
-
-* `model_copy::StochasticEC`: model to copy
+Return an empty model of the specified type (dynamic dispatch).
 """
-function Base.copy(model_copy::StochasticEC)
-    StochasticEC(model_copy.base, model_copy.scenarios, model_copy.n_scen_s, model_copy.n_scen_eps)
-end
-
-"""
-    Base.deepcopy(model_copy::ModelEC)
-
-Create a deepcopy of a ModelEC object
-
-## Arguments
-
-* `model_copy::ModelEC`: model to copy
-"""
-function Base.deepcopy(model_copy::ModelEC)
-    ModelEC(deepcopy(model_copy.data), model_copy.group_type, model_copy.optimizer, deepcopy(model_copy.user_set))
-end
-
-"""
-    Base.deepcopy(model_copy::StochasticEC)
-
-Create a deepcopy of a StochasticEC object
-
-## Arguments
-
-* `model_copy::StochasticEC`: model to copy
-"""
-function Base.deepcopy(model_copy::ModelEC)
-    StochasticEC(deepcopy(model_copy.base), model_copy.scenarios, model_copy.n_scen_s, model_copy.n_scen_eps)
-end
-
-"""
-    Base.zero(::ModelEC)
-
-Function zero to represent the empty ModelEC
-"""
-function Base.zero(::ModelEC)
-    return ModelEC()
-end
-
-"""
-    Base.zero(::StochasticEC)
-
-Function zero to represent the empty StochasticEC
-"""
-function Base.zero(::StochasticEC)
-    return StochasticEC()
-end
+Base.zero(::Type{ModelEC}) = ModelEC()
+Base.zero(::Type{StochasticEC}) = StochasticEC()
+Base.zero(::ModelEC) = ModelEC()
+Base.zero(::StochasticEC) = StochasticEC()
 
 
 """
     name(model::AbstractEC)
 
-Return the name of the model.
+Return the name/description of the model type (dynamic dispatch).
 """
-name(model::AbstractEC) = "An Abstract Energy Community Model"
-
-
-"""
-    name(model::ModelEC)
-
-Return the name of the model.
-"""
-name(model::ModelEC) = "An Energy Community Model"
-
-"""
-    name(model::StochasticEC)
-
-Return the name of the model.
-"""
-name(model::StochasticEC) = "An Energy Community Stochastic Model"
+name(::Type{AbstractEC}) = "An Abstract Energy Community Model"
+name(::Type{ModelEC}) = "An Energy Community Model"
+name(::Type{StochasticEC}) = "An Energy Community Stochastic Model"
+name(model::AbstractEC) = name(typeof(model))
 
 
 """
     _print_summary(io::IO, model::AbstractEC)
 
-Print a plain-text summary of `model` to `io`.
+Print a plain-text summary of `model` to `io` using accessor functions (dynamic dispatch).
 """
 function _print_summary(io::IO, model::AbstractEC)
     println(io, name(model))
     println(io, "Energy Community problem for a " * name(get_group_type(model)))
-    println(io, "User set: " * string(model.user_set))
+    println(io, "User set: " * string(user_set(model)))
 
     if model isa StochasticEC
-        println(io, "Number of scenarios s: " * string(model.n_scen_s))
-        println(io, "Number of scenarios epsilon: " * string(model.n_scen_eps))
+        println(io, "Number of scenarios s: " * string(n_scen_s(model)))
+        println(io, "Number of scenarios epsilon: " * string(n_scen_eps(model)))
     end
 
-    if isempty(model.results)
-        println("Model not optimized")
+    if isempty(results(model))
+        println(io, "Model not optimized")
     else
-        println("Solved model")
+        println(io, "Solved model")
     end
     return
 end

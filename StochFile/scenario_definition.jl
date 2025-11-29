@@ -94,3 +94,5 @@
 		return Scenario_Load_Renewable(1,1,p_t,b_V,b_F,s_p,p_p,p,q)
 	end
 end
+
+
