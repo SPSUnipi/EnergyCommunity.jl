@@ -6,7 +6,7 @@ EnergyCommunity is a package for the optimal design and dispatch of Energy Commu
 
 EnergyCommunity.jl automatically builds a Mixed-Integer Linear Programming model that represents the optimal dispatch and design of an Energy Community composed by an arbitrary number of users, as shown in the image.
 
-![Scheme of the Energy Community](./images/energy_community.png)
+![Scheme of the Energy Community](./images/schematic.png)
 
 ## Features
 
