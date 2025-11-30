@@ -84,11 +84,8 @@ plot(ECModel, output_plot_combined)
 │   │       ├── input_heating_cooling.csv
 │   │       ├── input_resource.csv
 │   │       └── market_data.csv
-│   ├── ECModel_definitions.jl <---- OK (?)
-```
-Confrontare `ECModel_definitions.jl` con `ECModel_definitions_old.jl`; è più generica e ha funzioni `get` e `set`.
-
-```
+│   ├── ECModel_definitions.jl
+|   |── ECModel_utils.jl <---- NEW
 │   ├── ECModel.jl
 │   ├── EnergyCommunity.jl
 │   ├── Games_jl_interface.jl
@@ -111,9 +108,6 @@ Da gestire il dispatch tra stocastico e deterministico, ma vediamo quale delle d
 │   ├── main.jl
 │   ├── market_data.csv
 │   ├── market_data_no_penalties.csv
-```
-Ho spostato tutti i `.csv` e `.yaml` in `src/data/stochastic` per chiarezza e semplicità.
-```
 │   ├── pem_extraction.jl <---- OK
 │   ├── point_Scen_eps_sampler.jl <---- OK
 ```
