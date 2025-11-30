@@ -72,7 +72,7 @@ makedocs(
     authors  = "Davide Fioriti",
     pages   = [
         "Introduction" => [
-            "introduction.md",
+            "index.md",
             "installation.md",
         ],
         "Configuration" => [
