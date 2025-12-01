@@ -75,12 +75,12 @@ makedocs(
             "index.md",
             "installation.md",
         ],
-        "Configuration" => [
-            "configuration.md",
-        ],
         "Examples" => [
             joinpath("examples", f * ".md")
             for f in examples
+        ],
+        "Configuration" => [
+            "configuration.md",
         ],
         "API reference" => "API reference.md",
     ]
