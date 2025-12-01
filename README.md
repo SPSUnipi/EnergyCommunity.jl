@@ -84,6 +84,9 @@ plot(ECModel, output_plot_combined)
 │   │       ├── input_heating_cooling.csv
 │   │       ├── input_resource.csv
 │   │       └── market_data.csv
+│   ├── stochastic
+│   │       ├── base_model.jl < ---- new
+│   │       └── cooperative.jl <.--- new
 │   ├── ECModel_definitions.jl
 |   |── ECModel_utils.jl <---- NEW
 │   ├── ECModel.jl
