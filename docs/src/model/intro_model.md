@@ -1,4 +1,6 @@
-## Model Introduction
+# Architecture of the model
+
+## Introduction
 
 The optimization model implemented in EnergyCommunity.jl is based on a Mixed-Integer Linear Programming (MILP) model implemented in [JuMP.jl](https://jump.dev/JuMP.jl), accounting for:
 
@@ -9,15 +11,17 @@ The optimization model implemented in EnergyCommunity.jl is based on a Mixed-Int
 
 In the following, we provide a general description of the mathematical model, starting from the techno-economic model that is valid for all EC configurations, and then describing the specific models suited for the specific configurations.
 
+## Techno-economic model
+
 The techno-economic model of the Energy Community (EC) is based on the model depicted in the figure below, which highlights the general structure of components available by each user ``j \in I``, where ``I`` is the set of community members, and energy flows. In the following, we first describe the user's expenses and then the main constraints of the model.
 
 ![Scheme of the Energy Community](../images/energy_model.png)
 
-# Energy Community configurations
+## Energy Community configurations
 
 The mathematical model implemented in EnergyCommunity.jl can be configured to represent different types of Energy Communities (ECs), namely:
 
-- **Non-cooperative EC**: In this configuration, each user ``j \in I`` optimizes its own energy system independently, without considering energy sharing with other community members. The objective function for each user is to maximize its own Net Present Value (NPV) based on individual energy consumption, generation, and costs. Let ``{SW}^{NC}(J) = \sum{j \in J} \mathrm{NPV}_j`` be the sum of the Net Present Value for all users, then the optimization problem for the Non-Cooperative formulation is formulated as follows:
+- **Non-cooperative EC**: In this configuration, each user ``j \in I`` optimizes its own energy system independently, without considering energy sharing with other community members. The objective function for each user is to maximize its own Net Present Value (NPV) based on individual energy consumption, generation, and costs. Let ``{SW}^{NC}(J) = \sum_{j \in J} \mathrm{NPV}_j`` be the sum of the Net Present Value for all users, then the optimization problem for the Non-Cooperative formulation is formulated as follows:
 
   ```math
   \begin{array}{ll}

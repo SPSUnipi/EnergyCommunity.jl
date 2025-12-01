@@ -66,6 +66,7 @@ makedocs(
     clean    = true,
     format   = Documenter.HTML(
         mathengine = Documenter.MathJax2(),
+        collapselevel = 1,
         prettyurls = get(ENV, "CI", nothing) == "true",
         size_threshold_ignore = [
             "API reference.md",
