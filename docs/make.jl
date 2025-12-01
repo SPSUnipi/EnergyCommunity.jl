@@ -86,6 +86,7 @@ makedocs(
         "Optimization Model" => [
             "model/intro_model.md",
             "model/power_model.md",
+            "model/energy_model.md",
             "model/community_model.md",
         ],
         "Configuration" => [
