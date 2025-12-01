@@ -71,21 +71,21 @@ makedocs(
     sitename = "EnergyCommunity.jl",
     authors  = "Davide Fioriti",
     pages   = [
-        # "Introduction" => [
-        #     "index.md",
-        #     "installation.md",
-        # ],
-        # "Examples" => [
-        #     joinpath("examples", f * ".md")
-        #     for f in examples
-        # ],
+        "Introduction" => [
+            "index.md",
+            "installation.md",
+        ],
+        "Examples" => [
+            joinpath("examples", f * ".md")
+            for f in examples
+        ],
         "Model" => [
             "model.md",
         ],
-        # "Configuration" => [
-        #     "configuration.md",
-        # ],
-        # "API reference" => "API reference.md",
+        "Configuration" => [
+            "configuration.md",
+        ],
+        "API reference" => "API reference.md",
     ]
 )
 
