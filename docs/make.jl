@@ -67,6 +67,9 @@ makedocs(
     format   = Documenter.HTML(
         mathengine = Documenter.MathJax2(),
         prettyurls = get(ENV, "CI", nothing) == "true",
+        size_threshold_ignore = [
+            "API reference.md",
+        ]
     ),
     sitename = "EnergyCommunity.jl",
     authors  = "Davide Fioriti",
@@ -79,8 +82,10 @@ makedocs(
             joinpath("examples", f * ".md")
             for f in examples
         ],
-        "Model" => [
-            "model.md",
+        "Optimization Model" => [
+            "model/intro_model.md",
+            "model/power_model.md",
+            "model/community_model.md",
         ],
         "Configuration" => [
             "configuration.md",
