@@ -51,16 +51,32 @@ where:
 
 ## Thermal Storage (TES)
 
-Each thermal energy storage ``s \in A^{TES}_j`` with capacity ``x_{j,s}`` that constrains the stored thermal energy ``E^{TES}_{j,s,t}`` at time step ``t``:
+Each thermal energy storage ``s \in A^{TES}_j`` has volumetric capacity ``x_{j,s}`` and supports storing heat and/or cool depending on the input parameters and operation ``mode``. The thermal energy ``E^{TES}_{j,s,t}`` stored in the storage ``s`` at time step ``t`` is modelled depending on the specific heat capacity of the fluid ``{cp}_{j,s}``, the reference temperature of the fluid in the storage in heating/cooling mode ``T^{ref,heat/cool}_{j,s,t}``, and the input temperature of the fluid ``T^{in,heat/cool}_{j,s,t}``:
+
+When in heating mode (`mode` ≥ +0.5):
 
 ```math
-0 \le E^{TES}_{j,s,t} \le x_{j,s}
+0 \le E^{TES}_{j,s,t} \le {cp}_{j,s} x_{j,s} \left(T^{ref,heat}_{j,s,t} - T^{in,heat}_{j,s,t} \right)
 ```
 
-TES loses heat proportionally by factor ``k_{j,s}`` to stored energy  and to the temperature difference between the reference temperature of the fluid ``T^{ref}_{j,s,t}`` in the storage and the unheated-zone temperature ``T^U_{j,s,t}``:
+When in cooling mode (`mode` ≤ –0.5):
 
 ```math
-L^{TES}_{j,s,t} = k_{j,s} E^{TES}_{j,s,t-1} \left(T^{ref}_{j,s,t} - T^U_{j,s,t}\right)
+{cp}_{j,s} x_{j,s} \left(T^{in,cool}_{j,s,t} - T^{ref,cool}_{j,s,t} \right) \le E^{TES}_{j,s,t} \le 0
+```
+
+TES loses heat proportionally by factor ``k_{j,s}`` to stored energy and to the temperature difference between the reference heating or cooling temperature of the fluid ``T^{ref,heat/cool}_{j,s,t}``, in the storage and the unheated-zone temperature ``T^U_{j,s,t}``:
+
+When in heating mode (`mode` ≥ +0.5):
+
+```math
+L^{TES}_{j,s,t} = k_{j,s} E^{TES}_{j,s,t-1} \left(T^{ref,heat}_{j,s,t} - T^U_{j,s,t}\right)
+```
+
+When in cooling mode (`mode` ≤ –0.5):
+
+```math
+L^{TES}_{j,s,t} = k_{j,s} E^{TES}_{j,s,t-1} \left(T^U_{j,s,t} - T^{ref,cool}_{j,s,t}\right)
 ```
 
 The effective temperature ``T^U_{j,s,t}`` is modelled as a fraction of the indoor–outdoor temperature gradient:
