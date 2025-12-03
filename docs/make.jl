@@ -89,6 +89,10 @@ makedocs(
             "model/energy_model.md",
             "model/community_model.md",
         ],
+        "Fair reward allocations" => [
+            "fair_allocation.md",
+            "supported_allocations.md",
+        ],
         "Configuration" => [
             "configuration.md",
         ],
