@@ -14,7 +14,7 @@ All allocation methods supported by TheoryOfGames.jl are available in EnergyComm
 The Shapley Value is one of the most widely used methods for fair allocation in cooperative game theory. It provides a way to distribute the total benefit of a coalition among its members based on their individual contributions. The Shapley Value for each participant ``j`` is calculated as follows:
 
 ```math
-\phi_j = \sum_{J \subseteq I \setminus \{j\}} \dfrac{|J|! (|I| - |J| - 1)!}{|I|!} \left( v(J \cup \{j\}) - v(J) \right)
+\phi_j = \dfrac{1}{|I|} \sum{J \subseteq I}{\binom{|I|-1}{|J|}}^{-1} \left[ v(J) - v(J \setminus \{j\}) \right]
 ```
 
 Where:
@@ -22,6 +22,7 @@ Where:
 - ``v(J)`` is the characteristic function representing the benefit of coalition ``J``.
 - ``|J|`` is the number of participants in coalition ``J``.
 - ``|I|`` is the total number of participants in the grand coalition ``I``.
+- ``\binom{|I|-1}{|J|}`` is the binomial coefficient representing the number of ways to choose ``|J|`` participants from ``|I|-1`` participants.
 
 The Shapley Value ensures that each participant is rewarded fairly based on their contributions to all possible coalitions, making it a robust method for fair allocation in energy communities. However, it requires the evaluation of the characteristic function for all possible coalitions, which can be computationally intensive for large communities, unless efficient algorithms or approximations are employed.
 
@@ -69,7 +70,7 @@ The Variance Least Core is a variation of the Variance Core that allows for a mi
 
 ```math
 \begin{array}{ll}
-\min & \sum_{j \in I} \left( \sum_{j \in J} \dfrac{\phi_j - v(I) \ |I|}{|I|} \right)^2 \\
+\min & \sum_{j \in I} \left( \sum_{j \in J} \dfrac{\phi_j - \dfrac{v(I)}{|I|}}{|I|} \right)^2 \\
 \text{s.t.} & \sum_{j \in J} \phi_j - v(J) \ge \bar{\theta} \quad \forall J \subseteq I \\
             & \sum_{j \in I} \phi_j = v(I)
 \end{array}
