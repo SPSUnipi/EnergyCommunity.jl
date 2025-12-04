@@ -90,8 +90,8 @@ makedocs(
             "model/community_model.md",
         ],
         "Fair reward allocations" => [
-            "fair_allocation.md",
-            "supported_allocations.md",
+            "theory_of_games/fair_allocation.md",
+            "theory_of_games/supported_allocations.md",
         ],
         "Configuration" => [
             "configuration.md",
