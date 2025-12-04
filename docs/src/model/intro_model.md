@@ -11,6 +11,10 @@ The optimization model implemented in EnergyCommunity.jl is based on a Mixed-Int
 
 In the following, we provide a general description of the mathematical model, starting from the techno-economic model that is valid for all EC configurations, and then describing the specific models suited for the specific configurations.
 
+Please refer to the following references for more details:
+- D. Fioriti, G. Bigi, A. Frangioni, M. Passacantando and D. Poli, "Fair Least Core: Efficient, Stable and Unique Game-Theoretic Reward Allocation in Energy Communities by Row-Generation," in IEEE Transactions on Energy Markets, Policy and Regulation, vol. 3, no. 2, pp. 170-181, June 2025, [doi: 10.1109/TEMPR.2024.3495237](https://doi.org/10.1109/TEMPR.2024.3495237).
+- D. Fioriti, A. Frangioni, D. Poli, "Optimal sizing of energy communities with fair revenue sharing and exit clauses: Value, role and business model of aggregators and users," in Applied Energy, vol. 299, 2021, 117328,[doi: 10.1016/j.apenergy.2021.117328](https://doi.org/10.1016/j.apenergy.2021.117328)
+
 ## Techno-economic model
 
 The techno-economic model of the Energy Community (EC) is based on the model depicted in the figure below, which highlights the general structure of components available by each user ``j \in I``, where ``I`` is the set of community members, and energy flows. In the following, we first describe the user's expenses and then the main constraints of the model.

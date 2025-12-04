@@ -44,6 +44,46 @@ Where:
 
 The Nucleolus ensures that the allocation is stable and acceptable to all members by minimizing the maximum dissatisfaction among participants. It is unique, however , it can be computationally intensive to compute, especially for large communities, as it requires solving multiple linear programming problems iteratively and calculate the function v(J) for all coalitions.
 
-## Fair Core and Fair Least Core
+## Variance Core and Variance Least Core
 
-The Fair Core and Fair Least Core are methods that ensure stability and fairness in the allocation of benefits among participants in a cooperative game. The Fair Core guarantees that no participant receives less than what they would get by acting alone, while the Fair Least Core allows for some level of dissatisfaction but aims to find an allocation that is as fair as possible while still being feasible.
+The Variance Core and Variance Least Core are methods that ensure stability and fairness in the allocation of benefits among participants in a cooperative game.
+
+The Variance Core distributes benefits to minimize the variance of redistribution, provided that that each participant and group of participats receive no less than the benefits they provide. In mathematical terms, Variance Core identifies the allocation that minimizes the variance of the allocations while satisfying the core constraints.
+
+Let ``\phi`` be the allocation vector for all participants, Variance Core allocation is determined by solving the following optimization problem:
+
+```math
+\begin{array}{ll}
+\min & \sum_{j \in I} \left( \phi_j - \dfrac{v(I)}{|I|} \right)^2 \\
+\text{s.t.} & \sum_{j \in J} \phi_j - v(J) \ge 0 \quad \forall J \subseteq I \\ 
+            & \sum_{j \in I} \phi_j = v(I)
+\end{array}
+```
+
+Where:
+- The objective function minimizes the variance of the allocations among participants, promoting fairness.
+- The first constraint ensures that no coalition ``J`` receives less than its value.
+- The second constraint ensures that the total allocation equals the total value of the grand coalition.
+
+The Variance Least Core is a variation of the Variance Core that allows for a minimum satisfaction level ``\bar{\theta}`` for each coalition, where ``\bar{\theta}`` represents the minimum additional benefit that each coalition should receive beyond its standalone value. Its value is computed by executing the first iteration of the Nucleolus algorithm. The Variance Least Core allocation is determined by solving the following optimization problem:
+
+```math
+\begin{array}{ll}
+\min & \sum_{j \in I} \left( \sum_{j \in J} \dfrac{\phi_j - v(I) \ |I|}{|I|} \right)^2 \\
+\text{s.t.} & \sum_{j \in J} \phi_j - v(J) \ge \bar{\theta} \quad \forall J \subseteq I \\
+            & \sum_{j \in I} \phi_j = v(I)
+\end{array}
+```
+
+Where:
+- The objective function minimizes the variance of the allocations among participants, promoting fairness.
+- The first constraint ensures that no coalition ``J`` receives less than its value plus the minimum satisfaction level ``\bar{\theta}``.
+- The second constraint ensures that the total allocation equals the total value of the grand coalition.
+
+Both the Variance Core and Variance Least Core aim to provide fair and stable allocations among participants, with the latter allowing for a degree of dissatisfaction to ensure feasibility in cases where the core may be empty.
+
+In its form, the Variance Least Core is simpler than the Nucleolus, however, it still requires the evaluation of the characteristic function for all possible coalitions, which can be computationally intensive for large communities, unless efficient algorithms or approximations are employed. Alternative techniques adopting row-generation techniques are available in TheoryOfGames.jl to efficiently compute these allocations for larger games.
+
+See more details about these allocation methods in the [TheoryOfGames.jl documentation](https://energycommunity-jl.org/TheoryOfGames.jl/stable/) and the original references:
+
+- D. Fioriti, G. Bigi, A. Frangioni, M. Passacantando and D. Poli, "Fair Least Core: Efficient, Stable and Unique Game-Theoretic Reward Allocation in Energy Communities by Row-Generation," in IEEE Transactions on Energy Markets, Policy and Regulation, vol. 3, no. 2, pp. 170-181, June 2025, [doi: 10.1109/TEMPR.2024.3495237](https://doi.org/10.1109/TEMPR.2024.3495237).
