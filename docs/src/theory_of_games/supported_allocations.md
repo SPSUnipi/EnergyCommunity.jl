@@ -33,8 +33,8 @@ The Nucleolus is another important method for fair allocation in cooperative gam
 ```math
 \begin{array}{ll}
 \max & \theta \\
-\text{s.t.} & \sum_{j \in J} \phi_j - v(J) \ge \theta \quad \forall j \notin \Gamma \\
-            & \sum_{j \in J} \phi_j - v(J) \ge \bar{\theta}_j \quad \forall j \in \Gamma \\
+\text{s.t.} & \sum_{j \in J} \phi_j - v(J) \ge \theta \quad \forall J \notin \Gamma \\
+            & \sum_{j \in J} \phi_j - v(J) \ge \bar{\theta}_j \quad \forall J \in \Gamma \\
 \end{array}
 ```
 
