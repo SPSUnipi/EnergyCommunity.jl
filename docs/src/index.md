@@ -57,3 +57,8 @@ Please, check out the examples in the example section and the files available in
 To learn more about the Julia framework, please check out [this simple introduction](https://jump.dev/JuMP.jl/latest/tutorials/getting_started/getting_started_with_julia/#Getting-started-with-Julia) or more material in [julialang](https://docs.julialang.org/en/v1/).
 
 For more material on the backbone optimization framework, please refer to documentation of [JuMP.jl](https://jump.dev/JuMP.jl/latest/tutorials/getting_started/introduction/). JuMP is a domain-specific modeling language that allows mathematical optimization embedded in Julia.
+
+## Scientific references
+
+> - D. Fioriti, G. Bigi, A. Frangioni, M. Passacantando and D. Poli, "Fair Least Core: Efficient, Stable and Unique Game-Theoretic Reward Allocation in Energy Communities by Row-Generation," in IEEE Transactions on Energy Markets, Policy and Regulation, vol. 3, no. 2, pp. 170-181, June 2025, [doi: 10.1109/TEMPR.2024.3495237](https://doi.org/10.1109/TEMPR.2024.3495237).
+> - D. Fioriti, A. Frangioni, D. Poli, "Optimal sizing of energy communities with fair revenue sharing and exit clauses: Value, role and business model of aggregators and users," in Applied Energy, vol. 299, 2021, 117328,[doi: 10.1016/j.apenergy.2021.117328](https://doi.org/10.1016/j.apenergy.2021.117328)

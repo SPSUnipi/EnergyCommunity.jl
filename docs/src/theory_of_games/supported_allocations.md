@@ -14,7 +14,7 @@ All allocation methods supported by TheoryOfGames.jl are available in EnergyComm
 The Shapley Value is one of the most widely used methods for fair allocation in cooperative game theory. It provides a way to distribute the total benefit of a coalition among its members based on their individual contributions. The Shapley Value for each participant ``j`` is calculated as follows:
 
 ```math
-\phi_j = \dfrac{1}{|I|} \sum{J \subseteq I}{\binom{|I|-1}{|J|}}^{-1} \left[ v(J) - v(J \setminus \{j\}) \right]
+\phi_j = \dfrac{1}{|I|} \sum_{J \subseteq I}{\binom{|I|-1}{|J|}}^{-1} \left[ v(J) - v(J \setminus \{j\}) \right]
 ```
 
 Where:
@@ -87,4 +87,4 @@ In its form, the Variance Least Core is simpler than the Nucleolus, however, it 
 
 See more details about these allocation methods in the [TheoryOfGames.jl documentation](https://energycommunity-jl.org/TheoryOfGames.jl/stable/) and the original references:
 
-- D. Fioriti, G. Bigi, A. Frangioni, M. Passacantando and D. Poli, "Fair Least Core: Efficient, Stable and Unique Game-Theoretic Reward Allocation in Energy Communities by Row-Generation," in IEEE Transactions on Energy Markets, Policy and Regulation, vol. 3, no. 2, pp. 170-181, June 2025, [doi: 10.1109/TEMPR.2024.3495237](https://doi.org/10.1109/TEMPR.2024.3495237).
+> D. Fioriti, G. Bigi, A. Frangioni, M. Passacantando and D. Poli, "Fair Least Core: Efficient, Stable and Unique Game-Theoretic Reward Allocation in Energy Communities by Row-Generation," in IEEE Transactions on Energy Markets, Policy and Regulation, vol. 3, no. 2, pp. 170-181, June 2025, [doi: 10.1109/TEMPR.2024.3495237](https://doi.org/10.1109/TEMPR.2024.3495237).
