@@ -1,0 +1,14 @@
+,Unit,Example,Description
+type,-,thermal,Category fuel-fired electricity generator
+CAPEX_lin,€/kW,3000,Specific investment cost per unit of nominal generator capacity
+OEM_lin,€/kW/y,0.0,Specific fixed annual O&M cost linked to installed capacity
+OEM_com,€/kWh/y,0.02,Variable O&M cost proportional to dispatched energy (commitment-related)
+fuel_price,€/unit,0.2,Cost of fuel per unit consumed
+lifetime_y,years,10,Component lifetime
+inter_map,unit/kWh,0.54,Intercept of the linear fuel consumption map
+slope_map,unit/kWh,3.7,Slope of the linear fuel consumption map
+min_technical,-,0.2,Minimum technical operating point (fraction of nominal capacity)
+max_technical,-,1.0,Maximum technical operating point (fraction of nominal capacity)
+max_capacity,kW,30,Maximum total installable generator capacity
+modularity,-,true,Whether the generator must be installed in integer modules
+nom_capacity,kW,10,Nominal capacity of one generator module
