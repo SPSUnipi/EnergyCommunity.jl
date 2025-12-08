@@ -32,7 +32,7 @@ optimizer = optimizer_with_attributes(HiGHS.Optimizer, "ipm_optimality_tolerance
 
 # ### Create, build and optimize the model
 
-# Define the Non Cooperative model
+# Define the Cooperative model
 CO_Model = ModelEC(input_file, EnergyCommunity.GroupCO(), optimizer)
 
 # Build the mathematical model
