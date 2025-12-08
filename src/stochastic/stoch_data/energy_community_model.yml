@@ -6,7 +6,7 @@ general:  # general input parameters
   user_set: [user1, user2, user3, user4, user5, user6, user7, user8, user9, user10]  # list of users for the simulation
   n_s: 2 # number of scenarios s
   n_eps: 2 # number of scenarios epsilon
-  uncertain_var: LPV # variable on which we would like to test uncertainty: L for load demand, P for PV and W for wind 
+  uncertain_var: L # variable on which we would like to test uncertainty: L for load demand, P for PV and W for wind 
 
   optional_datasets:  # optional csv files storing data
     - input_resource.csv

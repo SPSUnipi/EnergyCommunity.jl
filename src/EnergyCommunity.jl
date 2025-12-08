@@ -65,6 +65,5 @@ module EnergyCommunity
     include("stochastic/cooperativeStoch.jl")
     include("stochastic/print_functions.jl")
 
-
     @exportAll()
 end # module

@@ -24,6 +24,7 @@ import CPLEX
 
 #Random.seed!(123) # Setting the seed
 include("src/EnergyCommunity.jl")
+using .EnergyCommunity
 # additional usefull functions i.e. main type definitions and read data
 # include("utils.jl") 
 
