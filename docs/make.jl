@@ -100,7 +100,11 @@ makedocs(
             "theory_of_games/supported_allocations.md",
         ],
         "Configuration" => [
-            "configuration.md",
+            "configuration/configuration.md",
+            "configuration/profile.md",
+            "configuration/general.md",
+            "configuration/market.md",
+            "configuration/users.md",
         ],
         "API reference" => "API reference.md",
     ]
