@@ -42,7 +42,7 @@ Function to plot the results of the Aggregated non cooperative configuration
 """
 function Plots.plot(::AbstractGroupANC, ECModel::AbstractEC, output_plot_file::AbstractString;
     user_set::AbstractVector = Vector(), line_width = 2.0)
-    Plots.plot(GroupCO(), ECModel, output_plot_file, user_set=user_set, line_width=line_width)
+    return Plots.plot(GroupCO(), ECModel, output_plot_file, user_set=user_set, line_width=line_width)
 end
 
 

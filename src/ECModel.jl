@@ -316,7 +316,7 @@ end
 Function to plot the EC model
 """
 function Plots.plot(ECModel::ModelEC, output_plot_file::AbstractString="")
-    Plots.plot(ECModel.group_type, ECModel, output_plot_file)
+    return Plots.plot(ECModel.group_type, ECModel, output_plot_file)
 end
 
 
