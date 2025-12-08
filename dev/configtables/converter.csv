@@ -1,0 +1,10 @@
+,Unit,Example,Description
+type,-,converter,Category inverter for batteries
+CAPEX_lin,€/kW,200,Specific investment cost per unit of converter power capacity
+OEM_lin,€/kW/y,2,Specific annual O&M cost linked to installed converter capacity
+lifetime_y,years,10,Component lifetime
+eta,-,1.0,Round-trip efficiency of the converter
+max_dch,-,1.0,Maximum discharge rate relative to converter capacity
+min_ch,-,0.1,Minimum charge rate relative to converter capacity
+max_capacity,kW,60,Maximum converter power capacity
+corr_asset,str,batt,Name of the corresponding battery asset
