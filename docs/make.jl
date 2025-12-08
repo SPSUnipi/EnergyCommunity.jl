@@ -58,6 +58,8 @@ examples = [
     "configurations",
     "plotting",
     "io",
+    "electric_vehicle",
+    "heating_cooling",
     "theory_of_games"
     # "non_cooperative",
     # "aggregated_non_cooperative",
