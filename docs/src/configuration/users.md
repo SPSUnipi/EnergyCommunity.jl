@@ -1,4 +1,4 @@
-# 3. `users` Section
+# `users` Section
 
 The `users` section defines all participating users and their asset portfolios, as shown below:
 
