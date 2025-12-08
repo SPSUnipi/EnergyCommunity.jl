@@ -101,10 +101,10 @@ makedocs(
         ],
         "Configuration" => [
             "configuration/configuration.md",
-            "configuration/profile.md",
             "configuration/general.md",
             "configuration/market.md",
             "configuration/users.md",
+            "configuration/assets.md",
         ],
         "API reference" => "API reference.md",
     ]

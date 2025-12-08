@@ -1,6 +1,6 @@
 # `market` Section
 
-## Scope and overview of `market` Section
+## Scope and overview
 
 The `market` block defines tariff rules for different user tariff types.
 
@@ -26,8 +26,11 @@ market:
 
 ## Parameters in `general` Section
 
+A tariff is defined by its buying price, selling price, consumption price, peak categories, peak tariff, and peak weight. The `profile` section within each tariff type specifies the relevant parameters. The `peak_tariff` and `peak_weight` fields utilize a function called `parse_peak_quantity_by_time_vectors`, which processes the input vectors based on the defined peak categories.
+
 ```@eval
 using CSV, DataFrames, Latexify
-df = CSV.read("configtables/general.csv", DataFrame)
+println(pwd())
+df = CSV.read("../../src/configtables/general.csv", DataFrame)
 mdtable(df, latex=false)
 ```
