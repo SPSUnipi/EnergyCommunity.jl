@@ -77,7 +77,7 @@ RV_{j,|Y|} = \sum_{a\in A_j} x_{a,j} c^I_{a,j} \frac{ N^Y_{a,j} - \mathrm{mod}(|
 The energy balance of the energy system at each user ``j`` and time ``t`` is guaranted by the following equation:
 
 ```math
-P^{U+}_{j,t} - P^{U-}_{j,t} + \sum_{c\in A^C_j}(P^{c-}_{j,t} - P^{c+}_{j,t}) - P^R_{j,t} + \sum_{g \in A^G_j}P^g_{j,t} + \sum_{d \in A^D_j}P^{\text{adj}}_{j,d,t} + \sum_{h \in A^{HP}_j}P^{el,HP}_{j,h,t} = - \sum_{f \in A^F_j} P^L_{j,f,t}
+P^{U+}_{j,t} - P^{U-}_{j,t} + \sum_{c\in A^C_j}(P^{c-}_{j,t} - P^{c+}_{j,t}) - P^R_{j,t} + \sum_{g \in A^G_j}P^g_{j,t} + \sum_{d \in A^D_j}P^{\text{adj}}_{j,d,t} + \sum_{h \in A^{HP}_j}P^{HP,el}_{j,h,t} = - \sum_{f \in A^F_j} P^L_{j,f,t}
 ```
 
 where:
@@ -183,7 +183,7 @@ The energy trajectory is regulated by the exogenous energy inflow ``{\xi}_{j,d,t
 Maximum and minimum energy limits also apply:
 
 ```math
-  \underline{E}_{j,d,t} \le E^{\text{adj}}_{j,d,t} \le \overline{E}_{j,d,t}
+  \underline{E}^{\text{adj}}_{j,d,t} \le E^{\text{adj}}_{j,d,t} \le \overline{E}^{\text{adj}}_{j,d,t}
 ```
 
 This component can be used to model both energy storage systems (e.g., EV batteries) and flexible loads with specific energy requirements. For example, a charging station for Electric Vehicles can be modelled as an adjustable load where power and energy limits are non-zero when vehicles are connected to the recharging station, and the energy trajectory ``{\xi}_{j,d,t}`` corresponds to the required state of charge by a specific time (e.g., departure time). In particular, when an EV with a given state of charge connects to the station, ``{\xi}_{j,d,t}`` in that time step can be positive and match that value, signaling the additional state of charge that is being connected. Conversely, when an EV leaves the station, the station is deprived of energy and thus ``{\xi}_{j,d,t}`` becomes negative. Energy limits are adapted accordingly to model the total minimum and maximum state of charge of all EVs connected to the station at each time ``t``.

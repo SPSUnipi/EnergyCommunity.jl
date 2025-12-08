@@ -9,10 +9,10 @@ This section describes the mathematical model used to represent the energy syste
 
 ## Heat Pumps
 
-Each heat pump ``h \in A^{HP}_j`` operated by user ``j`` consumes electricity ``P^{el,h}_{j,t}`` to provide thermal power ``P^{HP}_{j,h,t}``, where ``x_{j,h}`` is the variable of the nominal electrical capacity of the heat pump.
+Each heat pump ``h \in A^{HP}_j`` operated by user ``j`` consumes electricity ``P^{HP,el}_{j,h,t}`` to provide thermal power ``P^{HP}_{j,h,t}``, where ``x_{j,h}`` is the variable of the nominal electrical capacity of the heat pump.
 
 ```math
-0 \le P^{el,h}_{j,t} \le x_{j,h}
+0 \le P^{HP,el}_{j,h,t} \le x_{j,h}
 ```
 
 The heat pump can operate in either heating or cooling mode, determined by the variable `mode`: when `mode` is greater than or equal to +0.5, the heat pump operates in heating mode; when `mode` is less than or equal to –0.5, it operates in cooling mode.
@@ -25,8 +25,8 @@ Accordingly, the thermal output ``P^{HP}_{j,h,t}`` of the heat pump is defined b
 ```math
 P^{HP}_{j,h,t} =
 \begin{cases}
-\;\; P^{el,h}_{j,t} \cdot COP_{j,h,t}, & \text{(heating mode)}\\
--\, P^{el,h}_{j,t} \cdot EER_{j,h,t}, & \text{(cooling mode)}
+\;\; P^{HP,el}_{j,h,t} \cdot COP_{j,h,t}, & \text{(heating mode)}\\
+-\, P^{HP,el}_{j,h,t} \cdot EER_{j,h,t}, & \text{(cooling mode)}
 \end{cases}
 ```
 
@@ -34,18 +34,18 @@ The performances of heat pump are modelled using a **second-law efficiency** mul
 
 ```math
 COP_{j,h,t}
-= \eta^{heat}_{II,j,h,t}
+= \eta^{II,heat}_{j,h,t}
 \cdot
 \frac{T_{sink}}{T_{sink} - T_{source}(t)}
 ```
 ```math
 EER_{j,h,t}
-= \eta^{cool}_{II,j,h,t}
+= \eta^{II,cool}_{j,h,t}
 \cdot
 \frac{T_{source}(t)}{T_{sink} - T_{source}(t)}
 ```
 where:
-- ``\eta^{heat}_{II,j,h,t}`` and ``\eta^{cool}_{II,j,h,t}`` are the second-law efficiencies for heating and cooling, respectively.
+- ``\eta^{II,heat}_{j,h,t}`` and ``\eta^{II,cool}_{j,h,t}`` are the second-law efficiencies for heating and cooling, respectively.
 - ``T_{sink}`` is the temperature of the heat sink (e.g., indoor temperature for heating, outdoor temperature for cooling).
 - ``T_{source}(t)`` is the time-varying temperature of the heat source (e.g., outdoor temperature).
 
