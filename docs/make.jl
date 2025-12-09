@@ -55,9 +55,15 @@ end
 literate_directory(_EXAMPLE_DIR)
 
 examples = [
-    "non_cooperative",
-    "aggregated_non_cooperative",
-    "cooperative",
+    "configurations",
+    "plotting",
+    "io",
+    "electric_vehicle",
+    "heating_cooling",
+    "theory_of_games"
+    # "non_cooperative",
+    # "aggregated_non_cooperative",
+    # "cooperative",
 ]
 
 makedocs(
@@ -66,7 +72,11 @@ makedocs(
     clean    = true,
     format   = Documenter.HTML(
         mathengine = Documenter.MathJax2(),
+        collapselevel = 1,
         prettyurls = get(ENV, "CI", nothing) == "true",
+        size_threshold_ignore = [
+            "API reference.md",
+        ]
     ),
     sitename = "EnergyCommunity.jl",
     authors  = "Davide Fioriti",
@@ -75,12 +85,26 @@ makedocs(
             "index.md",
             "installation.md",
         ],
-        "Configuration" => [
-            "configuration.md",
-        ],
         "Examples" => [
             joinpath("examples", f * ".md")
             for f in examples
+        ],
+        "Optimization Model" => [
+            "model/intro_model.md",
+            "model/power_model.md",
+            "model/energy_model.md",
+            "model/community_model.md",
+        ],
+        "Fair reward allocations" => [
+            "theory_of_games/fair_allocation.md",
+            "theory_of_games/supported_allocations.md",
+        ],
+        "Configuration" => [
+            "configuration/configuration.md",
+            "configuration/general.md",
+            "configuration/market.md",
+            "configuration/users.md",
+            "configuration/assets.md",
         ],
         "API reference" => "API reference.md",
     ]

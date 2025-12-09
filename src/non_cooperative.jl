@@ -258,6 +258,7 @@ function Plots.plot(::AbstractGroupNC, ECModel::AbstractEC, output_plot_file::Ab
             png(pt[u_i, 3], file_path)
         end
     end
+    return pt
 end
 
 

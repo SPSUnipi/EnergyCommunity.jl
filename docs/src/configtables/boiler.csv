@@ -1,0 +1,9 @@
+,Unit,Example,Description
+type,-,boiler,Category boiler for heating
+CAPEX_lin,€/kW,250,Specific investment cost per unit of thermal power capacity
+OEM_lin,€/kW/y,10,Specific annual O&M cost linked to capacity
+lifetime_y,years,20,Component lifetime
+eta,-,0.94,Thermal efficiency of fuel-to-heat conversion
+PCI,kWh/unit,9.97,Lower heating value of fuel (r.g. natural gas)
+fuel_price,€/unit,0.2,Fuel cost
+max_capacity,kWth,60,Maximum thermal output power

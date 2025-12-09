@@ -132,10 +132,6 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
         profile_component(users_data[u], e, "min_energy")[t] <= 
             E_adj_us[u=user_set, e=asset_names(users_data[u], LOAD_ADJ), t=time_set]
             <= profile_component(users_data[u], e, "max_energy")[t])
-    # Volume of the thermal storage [dm3]
-    @variable(model_user,
-        0 <= V_tes_us[u=user_set, s=asset_names(users_data[u], TES), t=time_set] 
-            <= field_component(users_data[u], s, "max_capacity"))
     # Energy stored in the thermal storage [kWh]
     @variable(model_user,
         field_component(users_data[u], s, "max_capacity") * field_component(users_data[u], s, "cp") * delta_t_tes_lb(users_data, u, s, t) <= 

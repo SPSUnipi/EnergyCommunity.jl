@@ -1,0 +1,6 @@
+,Unit,Example,Description
+type,-,t_load,Category Thermal demand for heating/cooling
+corr_asset,list,"[hp,boil,tes]",List of assets serving this thermal load
+profile,,,
+--t_load,-,t_load_u1_heat_cool,Thermal load profile code
+--mode,-,mode,Operating mode: +1 heating, -1 cooling (or time series)
