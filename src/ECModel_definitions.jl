@@ -506,7 +506,7 @@ function _print_summary(io::IO, model::AbstractEC)
         println(io, "Number of scenarios epsilon: " * string(get_n_scen_eps(model)))
     end
 
-    if isempty(results(model))
+    if isempty(get_results(model))
         println(io, "Model not optimized")
     else
         println(io, "Solved model")
