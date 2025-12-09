@@ -381,7 +381,7 @@ function build_base_model!(ECModel::StochasticEC, optimizer;
 end
 
 """
-    calculate_demand(ECModel::AbstractEC,scenarios::Array{Scenario_Load_Renewable, 1},control_stoch::Bool)
+    calculate_demand(ECModel::StochasticEC,scenarios::Array{Scenario_Load_Renewable, 1},control_stoch::Bool)
 Function to calculate the demand by user in each scenario
 Outputs
 -------
@@ -389,7 +389,7 @@ demand_us_EC : Array{DenseAxisArray}
     DenseAxisArray representing the demand by the EC and each user in each scenario
 """
 
-function calculate_demand(ECModel::AbstractEC)
+function calculate_demand(ECModel::StochasticEC)
 
     # get user set
     user_set = ECModel.user_set
