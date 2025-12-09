@@ -133,7 +133,7 @@ set_group_type!(m::AbstractEC, gt::AbstractGroup) = (m.group_type = gt)
 
 Set the user set for the model.
 """
-set_user_set!(m::AbstractEC, us::Vector) = (m.user_set = us)
+set_user_set!(m::AbstractEC, us) = (m.user_set = us)
 
 """
     set_optimizer!(m::AbstractEC, opt)
