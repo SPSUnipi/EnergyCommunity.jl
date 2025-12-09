@@ -129,11 +129,17 @@ Set the group type for the model.
 set_group_type!(m::AbstractEC, gt::AbstractGroup) = (m.group_type = gt)
 
 """
-    set_user_set!(m::AbstractEC, us::Vector)
+    set_user_set(ECModel::AbstractEC)
 
-Set the user set for the model.
+Sets the EC user set
 """
-set_user_set!(m::AbstractEC, us) = (m.user_set = us)
+function set_user_set!(ECModel::AbstractEC, user_set)
+    if EC_CODE in user_set
+        println("Aggregator code '$EC_CODE' removed from the list of users")
+        user_set = setdiff(user_set, [EC_CODE])
+    end
+    ECModel.user_set = collect(user_set)
+end
 
 """
     set_optimizer!(m::AbstractEC, opt)
