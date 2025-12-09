@@ -326,12 +326,17 @@ Uses accessor functions for dynamic dispatch compatibility.
 * `optimizer=nothing`: optimizer of the JuMP model; default is the same as `model_copy`
 * `user_set=nothing`: desired user set; default is the same as `model_copy`
 """
-function ModelEC(model_copy::ModelEC, new_group_type=nothing; optimizer=nothing, user_set=nothing)
-    gt = isnothing(new_group_type) ? group_type(model_copy) : new_group_type
-    opt = isnothing(optimizer) ? deepcopy(optimizer(model_copy)) : optimizer
-    us = isnothing(user_set) ? user_set(model_copy) : user_set
-
-    ModelEC(deepcopy(data(model_copy)), gt, opt, deepcopy(us))
+function ModelEC(model_copy::ModelEC, group_type=nothing; optimizer=nothing, user_set=nothing)
+    if isnothing(group_type)
+        group_type = model_copy.group_type
+    end
+    if isnothing(optimizer)
+        optimizer = deepcopy(model_copy.optimizer)
+    end
+    if isnothing(user_set)
+        user_set = model_copy.user_set
+    end
+    ModelEC(deepcopy(model_copy.data), group_type, optimizer, deepcopy(user_set))
 end
 
 """
@@ -353,18 +358,25 @@ Copy constructor of stochastic model.
 function StochasticEC(model_copy::StochasticEC, new_group_type=nothing; optimizer=nothing, user_set=nothing, scenarios=nothing, n_scen_s_val=nothing, n_scen_eps_val=nothing)
 
     # Use accessor functions for all fields
-    gt = isnothing(new_group_type) ? group_type(model_copy) : new_group_type
-    opt = isnothing(optimizer) ? deepcopy(optimizer(model_copy)) : optimizer
-    us = isnothing(user_set) ? user_set(model_copy) : user_set
-    scen = isnothing(scenarios) ? scenarios(model_copy) : scenarios
-    ns = isnothing(n_scen_s_val) ? n_scen_s(model_copy) : n_scen_s_val
-    neps = isnothing(n_scen_eps_val) ? n_scen_eps(model_copy) : n_scen_eps_val
+    if isnothing(group_type)
+        group_type = model_copy.group_type
+    end
+    if isnothing(optimizer)
+        optimizer = deepcopy(model_copy.optimizer)
+    end
+    if isnothing(user_set)
+        user_set = model_copy.user_set
+    end
+
+    scen = isnothing(scenarios) ? get_scenarios(model_copy) : scenarios
+    ns = isnothing(n_scen_s_val) ? get_n_scen_s(model_copy) : n_scen_s_val
+    neps = isnothing(n_scen_eps_val) ? get_n_scen_eps(model_copy) : n_scen_eps_val
 
     StochasticEC(
-        deepcopy(data(model_copy)), deepcopy(gen_data(model_copy)), deepcopy(market_data(model_copy)), deepcopy(users_data(model_copy)),
-        gt, deepcopy(us),
-        jump_model(model_copy), opt,
-        deepcopy(results(model_copy)), scen, ns, neps
+        deepcopy(get_data(model_copy)), deepcopy(get_gen_data(model_copy)), deepcopy(get_market_data(model_copy)), deepcopy(get_users_data(model_copy)),
+        group_type, user_set,
+        get_jump_model(model_copy), optimizer,
+        deepcopy(get_results(model_copy)), scen, ns, neps
     )
 end
 
@@ -390,27 +402,27 @@ new_model = copy_with(stoch_model, group_type=GroupCO(), n_scen_s_val=10)
 ```
 """
 function copy_with(model::ModelEC; group_type=nothing, optimizer=nothing, user_set=nothing, kwargs...)
-    new_group_type = isnothing(group_type) ? group_type(model) : group_type
-    new_optimizer = isnothing(optimizer) ? deepcopy(optimizer(model)) : optimizer
-    new_user_set = isnothing(user_set) ? user_set(model) : user_set
+    new_group_type = isnothing(group_type) ? get_group_type(model) : group_type
+    new_optimizer = isnothing(optimizer) ? deepcopy(get_optimizer(model)) : optimizer
+    new_user_set = isnothing(user_set) ? get_user_set(model) : user_set
 
-    ModelEC(deepcopy(data(model)), new_group_type, new_optimizer, deepcopy(new_user_set))
+    ModelEC(deepcopy(get_data(model)), new_group_type, new_optimizer, deepcopy(new_user_set))
 end
 
 function copy_with(model::StochasticEC;
                    group_type=nothing, optimizer=nothing, user_set=nothing,
                    scenarios=nothing, n_scen_s_val=nothing, n_scen_eps_val=nothing)
-    new_group_type = isnothing(group_type) ? group_type(model) : group_type
-    new_optimizer = isnothing(optimizer) ? deepcopy(optimizer(model)) : optimizer
-    new_user_set = isnothing(user_set) ? user_set(model) : user_set
-    new_scenarios = isnothing(scenarios) ? scenarios(model) : scenarios
-    new_n_scen_s = isnothing(n_scen_s_val) ? n_scen_s(model) : n_scen_s_val
-    new_n_scen_eps = isnothing(n_scen_eps_val) ? n_scen_eps(model) : n_scen_eps_val
+    new_group_type = isnothing(group_type) ? get_group_type(model) : group_type
+    new_optimizer = isnothing(optimizer) ? deepcopy(get_optimizer(model)) : optimizer
+    new_user_set = isnothing(user_set) ? get_user_set(model) : user_set
+    new_scenarios = isnothing(scenarios) ? get_scenarios(model) : scenarios
+    new_n_scen_s = isnothing(n_scen_s_val) ? get_n_scen_s(model) : n_scen_s_val
+    new_n_scen_eps = isnothing(n_scen_eps_val) ? get_n_scen_eps(model) : n_scen_eps_val
 
     StochasticEC(
-        deepcopy(data(model)), deepcopy(gen_data(model)), deepcopy(market_data(model)), deepcopy(users_data(model)),
+        deepcopy(get_data(model)), deepcopy(get_gen_data(model)), deepcopy(get_market_data(model)), deepcopy(get_users_data(model)),
         new_group_type, deepcopy(new_user_set),
-        jump_model(model), new_optimizer,
+        get_jump_model(model), new_optimizer,
         deepcopy(results(model)), new_scenarios, new_n_scen_s, new_n_scen_eps
     )
 end
@@ -426,15 +438,15 @@ end
 Create a shallow copy of the model (dynamic dispatch).
 """
 function Base.copy(model::ModelEC)
-    ModelEC(data(model), group_type(model), optimizer(model), deepcopy(user_set(model)))
+    ModelEC(get_data(model), get_group_type(model), get_optimizer(model), deepcopy(get_user_set(model)))
 end
 
 function Base.copy(model::StochasticEC)
     StochasticEC(
-        data(model), gen_data(model), market_data(model), users_data(model),
-        group_type(model), user_set(model),
-        jump_model(model), optimizer(model),
-        results(model), scenarios(model), n_scen_s(model), n_scen_eps(model)
+        data(model), get_gen_data(model), get_market_data(model), get_users_data(model),
+        get_group_type(model), get_user_set(model),
+        get_jump_model(model), get_optimizer(model),
+        get_results(model), get_scenarios(model), get_n_scen_s(model), get_n_scen_eps(model)
     )
 end
 
@@ -444,15 +456,15 @@ end
 Create a deep copy of the model (dynamic dispatch).
 """
 function Base.deepcopy(model::ModelEC)
-    ModelEC(deepcopy(data(model)), group_type(model), optimizer(model), deepcopy(user_set(model)))
+    ModelEC(deepcopy(get_data(model)), get_group_type(model), get_optimizer(model), deepcopy(get_user_set(model)))
 end
 
 function Base.deepcopy(model::StochasticEC)
     StochasticEC(
-        deepcopy(data(model)), deepcopy(gen_data(model)), deepcopy(market_data(model)), deepcopy(users_data(model)),
-        group_type(model), deepcopy(user_set(model)),
-        jump_model(model), optimizer(model),
-        deepcopy(results(model)), scenarios(model), n_scen_s(model), n_scen_eps(model)
+        deepcopy(get_data(model)), deepcopy(get_gen_data(model)), deepcopy(get_market_data(model)), deepcopy(get_users_data(model)),
+        get_group_type(model), deepcopy(get_user_set(model)),
+        get_jump_model(model), get_optimizer(model),
+        deepcopy(get_results(model)), get_scenarios(model), get_n_scen_s(model), get_n_scen_eps(model)
     )
 end
 
@@ -487,11 +499,11 @@ Print a plain-text summary of `model` to `io` using accessor functions (dynamic 
 function _print_summary(io::IO, model::AbstractEC)
     println(io, name(model))
     println(io, "Energy Community problem for a " * name(get_group_type(model)))
-    println(io, "User set: " * string(user_set(model)))
+    println(io, "User set: " * string(get_user_set(model)))
 
     if model isa StochasticEC
-        println(io, "Number of scenarios s: " * string(n_scen_s(model)))
-        println(io, "Number of scenarios epsilon: " * string(n_scen_eps(model)))
+        println(io, "Number of scenarios s: " * string(get_n_scen_s(model)))
+        println(io, "Number of scenarios epsilon: " * string(get_n_scen_eps(model)))
     end
 
     if isempty(results(model))
