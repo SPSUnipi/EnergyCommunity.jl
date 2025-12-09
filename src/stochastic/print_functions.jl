@@ -421,7 +421,7 @@ function plot_resource(
     max_installed_us = max(max_installed_us_CO,max_installed_us_NC)
 
     # Create the grid for the plot
-    f = CairoMakie.Figure(resolution = (1500, 400))
+    f = CairoMakie.Figure(size = (1500, 400))
 
     gEC = f[1,1] = GridLayout()
     gusers = f[1,2:n_users+1] = GridLayout()
@@ -509,7 +509,7 @@ function plot_declared_dispatch(
 
     # Create the grid for the plot
 
-    f = Figure(resolution = (1000, 1000))
+    f = Figure(size = (1000, 1000))
 
     gscen = f[1:2,1] = GridLayout()
     glegend = f[1:2,1] = GridLayout()
@@ -573,7 +573,7 @@ function plot_log_cost_third_stage(
     )
 
     colors = Makie.wong_colors()
-    f = Figure(resolution = (1800, 800))
+    f = Figure(size = (1800, 800))
 
     gmain = f[1:2,1] = GridLayout()
     gscen = f[1:2,2:Int(n_scen_s/2)+1] = GridLayout()
@@ -732,7 +732,7 @@ function  histogram_all_SC(
 
     colors = colorschemes[:tab10]
     
-    f = Figure(resolution = (1800, 500))
+    f = Figure(size = (1800, 500))
 
     axfig = Axis(f[1,1:10], title = "Distribution of social cost in risimulations",
         xlabel = "SC [M€]",
@@ -764,7 +764,7 @@ function plot_log_energy_flows_third_stage(
     )
 
     colors = Makie.wong_colors()
-    f = CairoMakie.Figure(resolution = (1800, 800))
+    f = CairoMakie.Figure(size = (1800, 800))
 
     gscen = f[1:2,1:Int(n_scen_s/2)] = GridLayout()
     glegend = f[1:2,Int(n_scen_s/2)+1] = GridLayout()
@@ -870,7 +870,7 @@ function print_load_demand(
 
     # Create the grid for the plot
 
-    f = Figure(resolution = (1800, 800))
+    f = Figure(size = (1800, 800))
 
     gscen = f[1:2,1:Int(length(user_set))] = GridLayout()
 
@@ -915,7 +915,7 @@ function print_renewable_production(
 
     # Create the grid for the plot
 
-    f = Figure(resolution = (1800, 800))
+    f = Figure(size = (1800, 800))
 
     gscen = f[1:2,1:Int(length(user_set))] = GridLayout()
 
