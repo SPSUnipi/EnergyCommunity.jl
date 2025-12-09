@@ -1,6 +1,3 @@
-using Makie
-using CairoMakie
-
 """
 PRINT FILE, containin all the functions to store results in the first,second and third stage
 """ 
@@ -421,7 +418,7 @@ function plot_resource(
     max_installed_us = max(max_installed_us_CO,max_installed_us_NC)
 
     # Create the grid for the plot
-    f = CairoMakie.Figure(size = (1500, 400))
+    f = Figure(size = (1500, 400))
 
     gEC = f[1,1] = GridLayout()
     gusers = f[1,2:n_users+1] = GridLayout()
@@ -443,7 +440,7 @@ function plot_resource(
 
     hidexdecorations!(axEC, ticks=false, ticklabels=false)
 
-    CairoMakie.ylims!(axEC, low = 0)
+    ylims!(axEC, low = 0)
 
     # adding barplot for users
 
@@ -453,13 +450,13 @@ function plot_resource(
             axUs = Axis(gusers[1,i],
                 ylabel = "Capacity [kW]",
                 xticks = (1:2, ["CO","NC"]))
-            CairoMakie.ylims!(axUs, ylimus)
+            ylims!(axUs, ylimus)
         else
             axUs = Axis(gusers[1,i],
                 xticks = (1:2, ["CO","NC"]),
                 yticklabelsvisible = false,
                 yticksvisible = false)
-            CairoMakie.ylims!(axUs, ylimus)
+            ylims!(axUs, ylimus)
         end
         user = user_set[i]
 
@@ -572,7 +569,7 @@ function plot_log_cost_third_stage(
     Reward_agg = Array{Array}(undef,0)
     )
 
-    colors = Makie.wong_colors()
+    colors = wong_colors()
     f = Figure(size = (1800, 800))
 
     gmain = f[1:2,1] = GridLayout()
@@ -619,14 +616,14 @@ function plot_log_cost_third_stage(
 
             if col == 1
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = pers_y_ticks,
                     ylabel = "Yearly cost [k€] (log10 scale)",
                     xticks = (1:6),
                     xticksvisible = false)
             else
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = pers_y_ticks,
                     yticklabelsvisible = false,
                     yticksvisible = false,
@@ -656,14 +653,14 @@ function plot_log_cost_third_stage(
 
             if col == 1
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = pers_y_ticks,
                     ylabel = "Yearly cost [k€] (log10 scale)",
                     xticks = (1:5),
                     xticksvisible = false)
             else
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = pers_y_ticks,
                     yticklabelsvisible = false,
                     yticksvisible = false,
@@ -682,7 +679,7 @@ function plot_log_cost_third_stage(
 
         hidexdecorations!(axscenario)
 
-        CairoMakie.ylims!(axscenario, (0,pers_y_ticks[length(pers_y_ticks)]))
+        ylims!(axscenario, (0,pers_y_ticks[length(pers_y_ticks)]))
         
         Label(gscen[row,col,Top()], "Scenario $s", valign = :bottom, font = :bold, padding = (0, 0, 5, 0))
 
@@ -713,7 +710,7 @@ function plot_log_cost_third_stage(
 
     hidexdecorations!(axmain)
 
-    CairoMakie.ylims!(axmain, low = 0)
+    ylims!(axmain, low = 0)
 
     Label(gmain[1,1,Top()], "Final costs", valign = :bottom, font = :bold, padding = (0, 0, 5, 0))
 
@@ -763,8 +760,8 @@ function plot_log_energy_flows_third_stage(
     P_shared = Array{Array}(undef,0)
     )
 
-    colors = Makie.wong_colors()
-    f = CairoMakie.Figure(size = (1800, 800))
+    colors = wong_colors()
+    f = Figure(size = (1800, 800))
 
     gscen = f[1:2,1:Int(n_scen_s/2)] = GridLayout()
     glegend = f[1:2,Int(n_scen_s/2)+1] = GridLayout()
@@ -789,14 +786,14 @@ function plot_log_energy_flows_third_stage(
 
             if col == 1
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = [50,200,500,1000,2000,4000],
                     ylabel = "Energy Flows [MW] (log10 scale)",
                     xticks = (1:7),
                     xticksvisible = false)
             else
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = [50,200,500,1000,2000,4000],
                     yticklabelsvisible = false,
                     yticksvisible = false,
@@ -821,14 +818,14 @@ function plot_log_energy_flows_third_stage(
             
             if col == 1
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = [50,200,500,1000,2000,4000],
                     ylabel = "Energy Flows [MW] (log10 scale)",
                     xticks = (1:6),
                     xticksvisible = false)
             else
                 axscenario = Axis(gscen[row,col],
-                    yscale = Makie.pseudolog10,
+                    yscale = pseudolog10,
                     yticks = [50,200,500,1000,2000,4000],
                     yticklabelsvisible = false,
                     yticksvisible = false,
@@ -846,7 +843,7 @@ function plot_log_energy_flows_third_stage(
         end
         hidexdecorations!(axscenario)
 
-        CairoMakie.ylims!(axscenario, (0,4000))
+        ylims!(axscenario, (0,4000))
         
         Label(gscen[row,col,Top()], "Scenario $s", valign = :bottom, font = :bold, padding = (0, 0, 5, 0))
 
