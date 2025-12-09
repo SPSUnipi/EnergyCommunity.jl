@@ -1,3 +1,4 @@
+using Distributions
 # Function used to sample the load and renewable distributions for long period uncertainty using the Point Estimate Method
 
 # scen_s_sample = number of scenarios s

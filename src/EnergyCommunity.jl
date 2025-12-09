@@ -9,6 +9,9 @@ module EnergyCommunity
     using Base.Iterators
     using TheoryOfGames
     using StatsPlots
+    using Distributions
+    using PointEstimateMethod
+
     # import ECharts
     import SankeyPlots
     import CSV
@@ -59,6 +62,7 @@ module EnergyCommunity
 
     # include the callbacks to be used in the TheoryOfGames package
     include("Games_jl_interface.jl")
+    include("ECModel_utils.jl")
 
 
     include("stochastic/nonCooperativeStoch.jl")

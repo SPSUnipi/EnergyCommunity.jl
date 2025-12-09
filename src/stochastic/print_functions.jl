@@ -1,14 +1,17 @@
+using Makie
+using CairoMakie
+
 """
 PRINT FILE, containin all the functions to store results in the first,second and third stage
 """ 
 
 """
-    print_first_stage(output_file::String, ECModel::ModelEC)
+    print_first_stage(output_file::String, ECModel::StochasticEC)
 
     Print all the information of the first stochastic optimization
 """
 function print_first_stage(output_file::String,
-        ECModel::ModelEC)
+        ECModel::StochasticEC)
 
     users_data = ECModel.users_data
     gen_data = ECModel.gen_data
@@ -67,7 +70,7 @@ function print_first_stage(output_file::String,
                         primal_gap = gap,
                         n_scen_s = _n_scen_s,
                         n_scen_eps = _n_scen_eps,
-                        obj_value = sum(ECModel.results["SW"*num_sub[scen]] * probability(scenarios[scen]) for scen = 1:_n_scen))
+                        obj_value = sum(ECModel.results[Symbol("SW"*num_sub[scen])] * probability(scenarios[scen]) for scen = 1:_n_scen))
     
     design_users = DataFrames.DataFrame(
         vcat(
@@ -85,10 +88,10 @@ function print_first_stage(output_file::String,
             [[convert_scen(_n_scen_s,_n_scen_eps,scen)[1] for scen = 1:_n_scen]],
             [[convert_scen(_n_scen_s,_n_scen_eps,scen)[2] for scen = 1:_n_scen]],
             [[probability(scenarios[scen]) for scen = 1:_n_scen]],
-            [[ECModel.results["SW"*num_sub[scen]] for scen = 1:_n_scen]],
-            [[(get_group_type(ECModel) == GroupCO()) ? sum(ECModel.results["P_shared_agg"*num_sub[scen]]) * time_res * energy_weight : missing for scen = 1:_n_scen]],
-            [[(get_group_type(ECModel) == GroupCO()) ? sum(ECModel.results["P_sq_P_agg"*num_sub[scen]]) * time_res * energy_weight : missing for scen = 1:_n_scen]],
-            [[(get_group_type(ECModel) == GroupCO()) ? sum(ECModel.results["P_sq_N_agg"*num_sub[scen]]) * time_res * energy_weight : missing for scen = 1:_n_scen]]
+            [[ECModel.results[Symbol("SW"*num_sub[scen])] for scen = 1:_n_scen]],
+            [[(get_group_type(ECModel) == GroupCO()) ? sum(ECModel.results[Symbol("P_shared_agg"*num_sub[scen])]) * time_res * energy_weight : missing for scen = 1:_n_scen]],
+            [[(get_group_type(ECModel) == GroupCO()) ? sum(ECModel.results[Symbol("P_sq_P_agg"*num_sub[scen])]) * time_res * energy_weight : missing for scen = 1:_n_scen]],
+            [[(get_group_type(ECModel) == GroupCO()) ? sum(ECModel.results[Symbol("P_sq_N_agg"*num_sub[scen])]) * time_res * energy_weight : missing for scen = 1:_n_scen]]
         ),
         map(Symbol, vcat("Scenario s","Scenario epsilon", "Scenario probability", "SW Scenario", "tot_P_shared", "tot_sq_P_agg","tot_sq_N_agg"))
     )
@@ -96,17 +99,17 @@ function print_first_stage(output_file::String,
     economic_data = DataFrames.DataFrame(
         vcat(
             [[u for u in user_set]],
-            [[ECModel.results["CAPEX_tot_us"][u] for u in user_set]],
-            [[ECModel.results["C_OEM_tot_us"][u] for u in user_set]],
-            [[ECModel.results["C_REP_tot_us"][y,u] for u in user_set] for y in year_set],
-            [[ECModel.results["R_RV_tot_us"][y,u] for u in user_set] for y in year_set],
-            [[ECModel.results["R_Energy_tot_us" * num_sub[scen]].data[u] for u = 1:n_users] for scen = 1:_n_scen],
-            [[ECModel.results["C_gen_tot_us" * num_sub[scen]].data[u] for u = 1:n_users] for scen = 1:_n_scen],
-            [[(get_group_type(ECModel) == GroupCO()) ? ECModel.results["C_sq_tot_agg" * num_sub[scen]]/n_users :
-                ECModel.results["C_sq_tot_us" * num_sub[scen]].data[u] for u = 1:n_users] 
+            [[ECModel.results[:CAPEX_tot_us][u] for u in user_set]],
+            [[ECModel.results[:C_OEM_tot_us][u] for u in user_set]],
+            [[ECModel.results[:C_REP_tot_us][y,u] for u in user_set] for y in year_set],
+            [[ECModel.results[:R_RV_tot_us][y,u] for u in user_set] for y in year_set],
+            [[ECModel.results[Symbol("R_Energy_tot_us" * num_sub[scen])].data[u] for u = 1:n_users] for scen = 1:_n_scen],
+            [[ECModel.results[Symbol("C_gen_tot_us" * num_sub[scen])].data[u] for u = 1:n_users] for scen = 1:_n_scen],
+            [[(get_group_type(ECModel) == GroupCO()) ? ECModel.results[Symbol("C_sq_tot_agg" * num_sub[scen])]/n_users :
+                ECModel.results[Symbol("C_sq_tot_us" * num_sub[scen])].data[u] for u = 1:n_users] 
                     for scen = 1:_n_scen],
-            [[(get_group_type(ECModel) == GroupCO()) ? ECModel.results["R_Reward_agg_NPV" * num_sub[scen]]/n_users : missing for u = 1:n_users] for scen = 1:_n_scen],
-            [[ECModel.results["C_Peak_tot_us" * num_sub[scen]].data[u] for u = 1:n_users] for scen = 1:_n_scen]
+            [[(get_group_type(ECModel) == GroupCO()) ? ECModel.results[Symbol("R_Reward_agg_NPV" * num_sub[scen])]/n_users : missing for u = 1:n_users] for scen = 1:_n_scen],
+            [[ECModel.results[Symbol("C_Peak_tot_us" * num_sub[scen])].data[u] for u = 1:n_users] for scen = 1:_n_scen]
         ),
         map(Symbol, vcat("User id",
                 "CAPEX_tot_us",
@@ -126,8 +129,8 @@ function print_first_stage(output_file::String,
         forecast_dispatch = DataFrames.DataFrame(
             vcat(
                 [[u for u in user_set]],
-                [[sum(ECModel.results["P_us_dec_P"].data,dims=3)[u,scen] * time_res * energy_weight for u = 1:n_users] for scen = 1:_n_scen_s],
-                [[sum(ECModel.results["P_us_dec_N"].data,dims=3)[u,scen] * time_res * energy_weight for u = 1:n_users] for scen = 1:_n_scen_s]
+                [[sum(ECModel.results[:P_us_dec_P].data,dims=3)[u,scen] * time_res * energy_weight for u = 1:n_users] for scen = 1:_n_scen_s],
+                [[sum(ECModel.results[:P_us_dec_N].data,dims=3)[u,scen] * time_res * energy_weight for u = 1:n_users] for scen = 1:_n_scen_s]
             ),
             map(Symbol, vcat("User id",
                     ["P_dec_P_($(convert_scen(_n_scen_s,_n_scen_eps,scen)[1]),$(convert_scen(_n_scen_s,_n_scen_eps,scen)[2]))" for scen = 1:_n_scen_s],
@@ -139,8 +142,8 @@ function print_first_stage(output_file::String,
         forecast_dispatch = DataFrames.DataFrame(
             vcat(
                 [[s for s = 1:_n_scen_s]],
-                [[sum(ECModel.results["P_agg_dec_P"].data,dims=2)[scen] * time_res * energy_weight for scen = 1:_n_scen_s]],
-                [[sum(ECModel.results["P_agg_dec_N"].data,dims=2)[scen] * time_res * energy_weight for scen = 1:_n_scen_s]]
+                [[sum(ECModel.results[Symbol("P_agg_dec_P")].data,dims=2)[scen] * time_res * energy_weight for scen = 1:_n_scen_s]],
+                [[sum(ECModel.results[Symbol("P_agg_dec_N")].data,dims=2)[scen] * time_res * energy_weight for scen = 1:_n_scen_s]]
             ),
             map(Symbol, vcat("Scenario s","P_dec_P","P_dec_N"
                 )
@@ -152,18 +155,18 @@ function print_first_stage(output_file::String,
         vcat(
             [[u for u in user_set]],
             [[load_demand[scen][u] for u in user_set] for scen = 1:_n_scen],
-            [[sum(ECModel.results["P_P_us" * num_sub[scen]][u,t] for t in time_set) * time_res * energy_weight for u in user_set] for scen = 1:_n_scen],
-            [[sum(ECModel.results["P_N_us" * num_sub[scen]][u,t] for t in time_set) * time_res * energy_weight for u in user_set] for scen = 1:_n_scen],
-            [[(get_group_type(ECModel) == GroupNC()) ? sum(ECModel.results["P_sq_P_us" * num_sub[scen]][u,t] for t in time_set) * time_res * energy_weight : missing for u in user_set] for scen = 1:_n_scen],
-            [[(get_group_type(ECModel) == GroupNC()) ? sum(ECModel.results["P_sq_N_us" * num_sub[scen]][u,t] for t in time_set) * time_res * energy_weight : missing for u in user_set] for scen = 1:_n_scen],
-            [[sum(ECModel.results["P_ren_us" * num_sub[scen]][u,t] for t in time_set) * time_res * energy_weight for u in user_set] for scen = 1:_n_scen],
-            [[(has_asset(users_data[u], THER)) ?  sum(ECModel.results["P_gen_us" * num_sub[scen]][u,g,t] for t in time_set for g in asset_names(users_data[u],THER)) * time_res * energy_weight : missing
+            [[sum(ECModel.results[Symbol("P_P_us" * num_sub[scen])][u,t] for t in time_set) * time_res * energy_weight for u in user_set] for scen = 1:_n_scen],
+            [[sum(ECModel.results[Symbol("P_N_us" * num_sub[scen])][u,t] for t in time_set) * time_res * energy_weight for u in user_set] for scen = 1:_n_scen],
+            [[(get_group_type(ECModel) == GroupNC()) ? sum(ECModel.results[Symbol("P_sq_P_us" * num_sub[scen])][u,t] for t in time_set) * time_res * energy_weight : missing for u in user_set] for scen = 1:_n_scen],
+            [[(get_group_type(ECModel) == GroupNC()) ? sum(ECModel.results[Symbol("P_sq_N_us" * num_sub[scen])][u,t] for t in time_set) * time_res * energy_weight : missing for u in user_set] for scen = 1:_n_scen],
+            [[sum(ECModel.results[Symbol("P_ren_us" * num_sub[scen])][u,t] for t in time_set) * time_res * energy_weight for u in user_set] for scen = 1:_n_scen],
+            [[(has_asset(users_data[u], THER)) ?  sum(ECModel.results[Symbol("P_gen_us" * num_sub[scen])][u,g,t] for t in time_set for g in asset_names(users_data[u],THER)) * time_res * energy_weight : missing
                 for u in user_set] 
                     for scen = 1:_n_scen],
-            [[(has_asset(users_data[u], CONV)) ?  sum(ECModel.results["P_conv_P_us" * num_sub[scen]][u,c,t] for t in time_set for c in asset_names(users_data[u],CONV)) * time_res * energy_weight : missing
+            [[(has_asset(users_data[u], CONV)) ?  sum(ECModel.results[Symbol("P_conv_P_us" * num_sub[scen])][u,c,t] for t in time_set for c in asset_names(users_data[u],CONV)) * time_res * energy_weight : missing
                     for u in user_set] 
                         for scen = 1:_n_scen],
-            [[(has_asset(users_data[u], CONV)) ?  sum(ECModel.results["P_conv_N_us" * num_sub[scen]][u,c,t] for t in time_set for c in asset_names(users_data[u],CONV)) * time_res * energy_weight : missing
+            [[(has_asset(users_data[u], CONV)) ?  sum(ECModel.results[Symbol("P_conv_N_us" * num_sub[scen])][u,c,t] for t in time_set for c in asset_names(users_data[u],CONV)) * time_res * energy_weight : missing
                     for u in user_set] 
                         for scen = 1:_n_scen]
             
@@ -212,11 +215,10 @@ function print_first_stage(output_file::String,
 end
 
 """
-    print_second_stage(output_file::String, ECModel::ModelEC, declared_P, declared_N)
+    print_second_stage(output_file::String, ECModel::StochasticEC, declared_P, declared_N)
 
     Print the forecast dispatch found in the second stage in each scenario s
 """
-
 function print_second_stage(output_file::String,
     data,
     declared_P, 
@@ -376,12 +378,13 @@ end
 function plot_resource(
     output_file::String,
     asset::Array{String},
-    user_set,
+    users_data,
     x_CO,
     x_NC,
     colors
     )
 
+    user_set = collect(keys(users_data))
     n_users = length(user_set)
     n_resource = length(asset)
 
@@ -390,8 +393,7 @@ function plot_resource(
     max_installed_us = max(max_installed_us_CO,max_installed_us_NC)
 
     # Create the grid for the plot
-
-    f = Figure(resolution = (1500, 400))
+    f = CairoMakie.Figure(resolution = (1500, 400))
 
     gEC = f[1,1] = GridLayout()
     gusers = f[1,2:n_users+1] = GridLayout()
@@ -413,7 +415,7 @@ function plot_resource(
 
     hidexdecorations!(axEC, ticks=false, ticklabels=false)
 
-    ylims!(axEC, low = 0)
+    CairoMakie.ylims!(axEC, low = 0)
 
     # adding barplot for users
 
@@ -423,13 +425,13 @@ function plot_resource(
             axUs = Axis(gusers[1,i],
                 ylabel = "Capacity [kW]",
                 xticks = (1:2, ["CO","NC"]))
-            ylims!(axUs, ylimus)
+            CairoMakie.ylims!(axUs, ylimus)
         else
             axUs = Axis(gusers[1,i],
                 xticks = (1:2, ["CO","NC"]),
                 yticklabelsvisible = false,
                 yticksvisible = false)
-            ylims!(axUs, ylimus)
+            CairoMakie.ylims!(axUs, ylimus)
         end
         user = user_set[i]
 
@@ -652,7 +654,7 @@ function plot_log_cost_third_stage(
 
         hidexdecorations!(axscenario)
 
-        ylims!(axscenario, (0,pers_y_ticks[length(pers_y_ticks)]))
+        CairoMakie.ylims!(axscenario, (0,pers_y_ticks[length(pers_y_ticks)]))
         
         Label(gscen[row,col,Top()], "Scenario $s", valign = :bottom, font = :bold, padding = (0, 0, 5, 0))
 
@@ -683,7 +685,7 @@ function plot_log_cost_third_stage(
 
     hidexdecorations!(axmain)
 
-    ylims!(axmain, low = 0)
+    CairoMakie.ylims!(axmain, low = 0)
 
     Label(gmain[1,1,Top()], "Final costs", valign = :bottom, font = :bold, padding = (0, 0, 5, 0))
 
@@ -734,7 +736,7 @@ function plot_log_energy_flows_third_stage(
     )
 
     colors = Makie.wong_colors()
-    f = Figure(resolution = (1800, 800))
+    f = CairoMakie.Figure(resolution = (1800, 800))
 
     gscen = f[1:2,1:Int(n_scen_s/2)] = GridLayout()
     glegend = f[1:2,Int(n_scen_s/2)+1] = GridLayout()
@@ -816,7 +818,7 @@ function plot_log_energy_flows_third_stage(
         end
         hidexdecorations!(axscenario)
 
-        ylims!(axscenario, (0,4000))
+        CairoMakie.ylims!(axscenario, (0,4000))
         
         Label(gscen[row,col,Top()], "Scenario $s", valign = :bottom, font = :bold, padding = (0, 0, 5, 0))
 

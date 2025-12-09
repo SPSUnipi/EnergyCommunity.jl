@@ -249,6 +249,7 @@ function read_input(file_name::AbstractString)
             # get absolute path of f_name
             abs_file_name = (isabspath(f_name) ? f_name : joinpath(dirname(file_name), f_name))
             # read dataset and join to the original dataset
+            print(abs_file_name)
             d = CSV.read(abs_file_name, DataFrame)
             if isempty(opt_data)
                 opt_data = d
@@ -271,10 +272,14 @@ function read_input(file_name::AbstractString)
         end
     end
 
+    # TODO manage this discrepancy between stochastic and deterministic yaml
     change_profile!(gen_data,opt_data)
-
-    for c_name in keys(market_data)
-        change_profile!(market_data[c_name], opt_data)
+    if !haskey(market_data, "profile")
+        for c_name in keys(market_data)
+            change_profile!(market_data[c_name], opt_data)
+        end
+    else
+        change_profile!(market_data, opt_data)
     end
 
     for u_name in keys(users_data)
@@ -340,7 +345,7 @@ function _jump_to_dict(model::Model, stoch_flag = 0)
         for key_model in keys(model.obj_dict)
             if (findfirst("con_",String(key_model)) == nothing) # constraint value are not relevant
                 try
-                    push!(results, String(key_model)=>value.(model[key_model]))
+                    push!(results, key_model=>value.(model[key_model]))
                 catch
                     if findfirst("tot",String(key_model)) != nothing || findfirst("NPV",String(key_model)) != nothing  || findfirst("SW",String(key_model)) != nothing  # all total cost and NPV user are relevant
                         if (typeof(model[key_model]) == DecisionAffExpr{Float64})
@@ -348,7 +353,7 @@ function _jump_to_dict(model::Model, stoch_flag = 0)
                         else
                             val = extract_value_DecisionAffExpr(model[key_model])
                         end
-                        push!(results, String(key_model)=>val)
+                        push!(results, key_model=>val)
                     end
                 end
             end
@@ -365,7 +370,7 @@ function extract_value_DecisionAffExpr(exp::JuMP.Containers.DenseAxisArray)
     keys_exp = keys(exp)
     values = map(keys_exp) do k
         v = exp[k]
-        if v isa JuMP.DecisionAffExpr{Float64}
+        if v isa StochasticPrograms.DecisionAffExpr{Float64}
             return value.(v.decisions)
         else
             return 0

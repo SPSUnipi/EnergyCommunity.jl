@@ -763,7 +763,7 @@ function calculate_self_consumption(ECModel::AbstractEC,scenarios::Array{Scenari
         _P_us = JuMP.Containers.DenseAxisArray(
                 _P_P_us.data - _P_N_us.data,
                 user_set, time_set)
-        
+        calculate_demand
         # self consumption by user only
         shared_cons_us = JuMP.Containers.DenseAxisArray(
             Float64[sum(time_res[t] * energy_weight[t] * 
@@ -826,7 +826,7 @@ x_us_EC :
 """
 function calculate_x_tot(ECModel::AbstractEC)
     
-    x_us_EC = ECModel.results["x_us"]
+    x_us_EC = ECModel.results[:x_us]
 
     users_data = ECModel.users_data
 

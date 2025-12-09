@@ -14,6 +14,8 @@ function Scenario_eps_Point_Sampler(data_user, uncertain_var; deterministic::Boo
     point_ren_production = Dict{String,Dict{String,Array{Float64}}}() # extracted point for each user and asset
 
     n_step = length(profile_component(data_user["user1"], "load", "load") )
+    user_set = keys(data_user)
+    time_set = 1:n_step
 
     for u in user_set
 
@@ -36,7 +38,7 @@ function Scenario_eps_Point_Sampler(data_user, uncertain_var; deterministic::Boo
                 std_st_load = std_n_load
 
                 # Define load distribution for short period uncertainty
-                load_distribution = MvNormal(ones(n_steps), std_st_load)
+                load_distribution = MvNormal(ones(n_step), std_st_load)
                 
                 # Load extraction
                 array_n_load = broadcast(abs, rand(load_distribution))
@@ -73,7 +75,7 @@ function Scenario_eps_Point_Sampler(data_user, uncertain_var; deterministic::Boo
                         std_st_ren = profile_component(data_user[u], name, "std")
 
                         # Define load distribution for short period uncertainty
-                        ren_distribution = MvNormal(ones(n_steps), std_st_ren)
+                        ren_distribution = MvNormal(ones(n_step), std_st_ren)
 
                         # Renewable extraction
                         point_ren = broadcast(abs, rand(ren_distribution))
@@ -121,12 +123,14 @@ function scenarios_generator(
 	first_stage::Bool = false, # boolean value to know if we are in the first stage
     second_stage::Bool = false, # boolean value to know if we are in the second stage
     deterministic::Bool = false
-	)
+)
 
     ## In this implementation, we consider uncertanties only on the uncertain_var under analyses.
 
     data_user = users(data)
 	data_market = market(data)
+    user_set = keys(data_user)
+
 
 	if first_stage == true # we are in the first stage, thus we need to normally extract scenarios
 		

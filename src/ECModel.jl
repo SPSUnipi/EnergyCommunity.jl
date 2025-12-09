@@ -1177,3 +1177,116 @@ function create_example_data(folder; config_name::String = "default")
         throw(ArgumentError("Configuration name $config_name not supported."))
     end
 end
+
+# TODO add docstring
+function set_parameters_ECmodel!(ECModel::AbstractEC,
+        tol::Float64=1e-3, # default gap set to 0.1
+        time_limit::Int=60*60, # default time limit set to one hour
+        threads::Int=1,
+        verbosity::Int=0)
+
+    model = ECModel.model
+    deterministic_model = ECModel.deterministic_model
+
+    set_optimizer_attribute(model, "CPX_PARAM_EPGAP", tol)
+    set_optimizer_attribute(model, "CPX_PARAM_TILIM", time_limit)
+    set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
+    set_optimizer_attribute(model, "CPX_PARAM_SCRIND", verbosity)
+
+    set_optimizer_attribute(deterministic_model, "CPX_PARAM_EPGAP", tol)
+    set_optimizer_attribute(deterministic_model, "CPX_PARAM_TILIM", time_limit)
+    set_optimizer_attribute(deterministic_model, "CPX_PARAM_THREADS", threads)
+    set_optimizer_attribute(deterministic_model, "CPX_PARAM_SCRIND", verbosity)
+
+    return ECModel
+end
+
+
+"""
+    optimize_deterministic_ECmodel(ECModel::AbstractEC)
+Function used to optimize the deterministic equivalent of the model contained in the AbstractEC
+"""
+function optimize_deterministic_ECmodel(ECModel::AbstractEC)
+
+    model = ECModel.deterministic_model
+
+    optimize!(model)
+
+    ECModel.results = _jump_to_dict(model, 1)
+    
+    return ECModel
+end
+
+
+
+function extract_economic_values_NC(ECModel::ModelEC)
+
+    sub_scen = Char(0x02080+1)
+
+    SW = ECModel.results["SW"*sub_scen]
+    R_ene_tot = sum(ECModel.results["R_Energy_tot_us"*sub_scen])
+    C_gen_tot = sum(ECModel.results["C_gen_tot_us"*sub_scen])
+    C_sq_tot = sum(ECModel.results["C_sq_tot_us"*sub_scen])
+    C_peak_tot = sum(ECModel.results["C_Peak_tot_us"*sub_scen])
+
+    return (SW,R_ene_tot,C_gen_tot,C_sq_tot,C_peak_tot)
+end
+
+function extract_economic_values_CO(ECModel::ModelEC)
+
+    sub_scen = Char(0x02080+1)
+
+    SW = ECModel.results["SW"*sub_scen]
+    R_ene_tot = sum(ECModel.results["R_Energy_tot_us"*sub_scen])
+    C_gen_tot = sum(ECModel.results["C_gen_tot_us"*sub_scen])
+    C_sq_tot = ECModel.results["C_sq_tot_agg"*sub_scen]
+    C_peak_tot = sum(ECModel.results["C_Peak_tot_us"*sub_scen])
+    R_rew_agg_tot = ECModel.results["R_Reward_agg_tot"*sub_scen]
+
+    return (SW,R_ene_tot,C_gen_tot,C_sq_tot,C_peak_tot,R_rew_agg_tot)
+end
+
+function extract_dispatch_values_NC(ECModel::ModelEC)
+
+    sub_scen = Char(0x02080+1)
+
+    market_data = ECModel.market_data
+
+    energy_weight = profile(market_data, "energy_weight")[1]
+    time_res = profile(market_data, "time_res")[1]
+
+    load_demand_tot = sum(calculate_demand(ECModel)[1][u] for u in useextract_dispatch_values_COr_set)
+    P_P_tot = sum(ECModel.results["P_P_us" * sub_scen]) * time_res * energy_weight
+    P_N_tot = sum(ECModel.results["P_N_us" * sub_scen]) * time_res * energy_weight
+    P_sq_P_tot = sum(ECModel.results["P_sq_P_us" * sub_scen]) * time_res * energy_weight
+    P_sq_N_tot = sum(ECModel.results["P_sq_N_us" * sub_scen]) * time_res * energy_weight
+    P_ren_tot = sum(ECModel.results["P_ren_us" * sub_scen]) * time_res * energy_weight
+    P_gen_tot = sum(ECModel.results["P_gen_us" * sub_scen]) * time_res * energy_weight
+    P_conv_P_tot = sum(ECModel.results["P_conv_P_us" * sub_scen]) * time_res * energy_weight
+    P_conv_N_tot = sum(ECModel.results["P_conv_N_us" * sub_scen]) * time_res * energy_weight
+
+    return (load_demand_tot,P_P_tot,P_N_tot,P_sq_P_tot,P_sq_N_tot,P_ren_tot,P_gen_tot,P_conv_P_tot,P_conv_N_tot)
+end
+
+function extract_dispatch_values_CO(ECModel::ModelEC)
+
+    sub_scen = Char(0x02080+1)
+
+    market_data = ECModel.market_data
+
+    energy_weight = profile(market_data, "energy_weight")[1]
+    time_res = profile(market_data, "time_res")[1]
+
+    load_demand_tot = sum(calculate_demand(ECModel)[1][u] for u in user_set)
+    P_P_tot = sum(ECModel.results["P_P_us" * sub_scen]) * time_res * energy_weight
+    P_N_tot = sum(ECModel.results["P_N_us" * sub_enscen]) * time_res * energy_weight
+    P_sq_P_tot = sum(ECModel.results["P_sq_P_agg" * sub_scen]) * time_res * energy_weight
+    P_sq_N_tot = sum(ECModel.results["P_sq_N_agg" * sub_scen]) * time_res * energy_weight
+    P_ren_tot = sum(ECModel.results["P_ren_us" * sub_scen]) * time_res * energy_weight
+    P_gen_tot = sum(ECModel.results["P_gen_us" * sub_scen]) * time_res * energy_weight
+    P_conv_P_tot = sum(ECModel.results["P_conv_P_us" * sub_scen]) * time_res * energy_weight
+    P_conv_N_tot = sum(ECModel.results["P_conv_N_us" * sub_scen]) * time_res * energy_weight
+    P_Shared_tot = sum(ECModel.results["P_shared_agg" * sub_scen]) * time_res * energy_weight
+
+    return (load_demand_tot,P_P_tot,P_N_tot,P_sq_P_tot,P_sq_N_tot,P_ren_tot,P_gen_tot,P_conv_P_tot,P_conv_N_tot,P_Shared_tot)
+end

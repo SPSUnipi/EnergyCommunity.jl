@@ -4,6 +4,12 @@ general:  # general input parameters
   d_rate: 0.04  # discount rate
   project_lifetime: 20  # [y] project lifetime
   user_set: [user1, user2, user3, user4, user5, user6, user7, user8, user9, user10]  # list of users for the simulation
+  # profile: #base profiles
+  # time_res: time_res  # time resolution column
+  # energy_weight: energy_weight #weight of time step over the year
+  # reward_price: reward_price  # name of the column describing the reward value
+  # peak_categories: peak_categories #different peak time group
+  
   n_s: 2 # number of scenarios s
   n_eps: 2 # number of scenarios epsilon
   uncertain_var: L # variable on which we would like to test uncertainty: L for load demand, P for PV and W for wind 
@@ -16,7 +22,7 @@ market:  # market characteristics
   profile:
     buy_price: buy_price  # name of the column for the buying electricity price
     sell_price: sell_price  # name of the column for the selling electricity price
-    consumption_price: consumption_price  # name of the column for the consumption price
+    consumption_price: consumption_price  # naread_inputme of the column for the consumption price
     reward_price: reward_price  # name of the column describing the reward value
     penalty_price: penalty_price # name of the column describing the penalty price for energy squilibrium
     peak_categories: peak_categories  # name of the column describing the code peak tariff per each timestep

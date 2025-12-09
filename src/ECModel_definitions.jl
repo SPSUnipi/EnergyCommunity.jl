@@ -150,6 +150,7 @@ mutable struct StochasticEC <: AbstractEC
     user_set::Vector  # desired user set
 
     model::StochasticProgram  # stochastic model
+    deterministic_model :: Model # deterministic equivalent model (JuMP)
     optimizer  # optimizer of the JuMP model
 
     results::Dict  # results of the model in Dictionary format
@@ -217,6 +218,8 @@ function StochasticEC(
     end
 
     model = StochasticProgram(scenarios, Deterministic())
+    deterministic_model = Model() # TODO fix function calls in order to manage deterministic equivalent
+
     results = Dict()
 
     if isnothing(optimizer)
@@ -226,7 +229,9 @@ function StochasticEC(
     return StochasticEC(
         data, gen_data, market_data, users_data,
         group_type, user_set,
-        model, optimizer,
+        model,
+        deterministic_model,
+        optimizer,
         results, scenarios, n_scen_s, n_scen_eps
     )
 end
