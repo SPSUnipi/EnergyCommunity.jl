@@ -456,3 +456,11 @@ dict2array(A::Dict{Int,T}, n::Int) where {T} = [A[i] for i in 1:n]
 
 # Convert AbstractVector{T} → Dict{Int, T}
 array2dict(p::AbstractVector{T}) where {T} = Dict(i => p[i] for i in eachindex(p))
+
+# Workaround for an ambiguity between MathOptInterface and StochasticPrograms
+# when subtracting two ScalarAffineFunction{T}. We explicitly route this case
+# to MOI's Utilities.operate, which is what MOI expects.
+function Base.:-(f::MOI.ScalarAffineFunction{T},
+                 g::MOI.ScalarAffineFunction{T}) where {T}
+    return MOIU.operate(-, T, f, g)
+end
