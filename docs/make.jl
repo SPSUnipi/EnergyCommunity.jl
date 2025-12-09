@@ -78,7 +78,7 @@ makedocs(
             "API reference.md",
         ]
     ),
-    sitename = "StochEnergyCommunity.jl",
+    sitename = "EnergyCommunity.jl",
     authors  = "Davide Fioriti",
     pages   = [
         "Introduction" => [
@@ -111,6 +111,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/enri07/StochEnergyCommunity.jl",
+    repo = "github.com/SPSUnipi/EnergyCommunity.jl.git",
     push_preview = true,
 )

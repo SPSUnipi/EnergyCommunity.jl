@@ -40,7 +40,7 @@ OF_{j,y} = \sum_{a\in A_j} x_{a,j} c^M_{a,j} \quad \forall a \in A_j / A^G_j
 Variable operating costs ``OV_{j,y}`` account for the fuel costs and maintenance charges related to the operation of fuel-fired generators ``A^G_j`` and fuel-fired boilers ``A^{boil}_j`` owned by user ``j``. The fuel consumption ``F_{j,g,t}`` of each generator ``g \in A^G_j`` at time ``t`` is multiplied by the fuel cost ``{\pi}^F_{j,g}`` and scaled by the weighting factor ``m^T_t`` of each period to account for the use of representative days. The maintenance costs of generators are proportional to the number of hours the units have been dispatched and the per-unit maintenance cost ``c^M_{g,j}``. The fuel costs of boilers ``o \in A^{boil}_j`` are proportional to the thermal power output ``P^{boil}_{j,o,t}``, the fuel price ``{\pi}^F_{j,o}``, and inversely proportional to the product of the lower heating value ``{PCI}_{j,o}`` and efficiency ``{\eta}_{j,o}`` of the boiler:
 
 ```math
-OV_{j,y} = \sum_{t\in T} m^T_t \left[\sum_{g \in A^G_j} ( \pi^F_{j,g} F_{j,g,t} + \Delta_t c^M_{g,j} s_{j,g,t}) + \sum_{o \in A^{boil}_j} \Delta_t {\pi}^F_{j,o} \dfrac{P^{boil}_{j,o,t}}{PCI_{j,o} {\eta}_{j,o}}  \right]
+OV_{j,y} = \sum_{t\in T} m^T_t \left[\sum_{g \in A^G_j} ( \pi^F_{j,g} F_{j,g,t} + \Delta_t c^M_{g,j} s_{j,g,t}) + \sum_{o \in A^{boil}_j} \Delta_t {\pi}^F_{j,o} \dfrac{P^{boil}_{j,o,t}}{{PCI}_{j,o} {\eta}_{j,o}}  \right]
 ```
 
 ### Peak Power Charges

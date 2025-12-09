@@ -11,12 +11,12 @@ Let ``j \in I`` be the set of participants (also known as "grand coalition") in 
 
 ## Benefit function
 
-The benefit ``v(J)`` is typically calculated as the difference between the objective function ``{SW}^{group_{agg}}(J)`` obtained by a cooperative configuration (usually `CO`) and the value ``{SW}^{group_{base}}(J)`` obtained by a base configuration (typically `NC`). To account for the role of the aggregator, the behavior of the function depends on whether the aggregator ``A`` is part of the coalition ``J`` or not: when the aggregator is not included in the coalition, the benefit is calculated with respect to an alternative group ``{SW}^{group_{no-agg}}(J)`` (e.g., `NC` or `ANC`). Formally, the characteristic function ``v(J)`` is defined as follows:
+The benefit ``v(J)`` is typically calculated as the difference between the objective function ``{SW}^{{group}_{agg}}(J)`` obtained by a cooperative configuration (usually `CO`) and the value ``{SW}^{{group}_{base}}(J)`` obtained by a base configuration (typically `NC`). To account for the role of the aggregator, the behavior of the function depends on whether the aggregator ``A`` is part of the coalition ``J`` or not: when the aggregator is not included in the coalition, the benefit is calculated with respect to an alternative group ``{SW}^{{group}_{no-agg}}(J)`` (e.g., `NC` or `ANC`). Formally, the characteristic function ``v(J)`` is defined as follows:
 
 ```math
 v(J) = \begin{cases}
-    {SW}^{group_{agg}}(J) - {SW}^{group_{base}}(J) & "A" \in J \\
-    {SW}^{group_{no-agg}}(J) - {SW}^{group_{base}}(J) & "A" \notin J
+    {SW}^{{group}_{agg}}(J) - {SW}^{{group}_{base}}(J) & "A" \in J \\
+    {SW}^{{group}_{no-agg}}(J) - {SW}^{{group}_{base}}(J) & "A" \notin J
 \end{cases}
 ```
 
