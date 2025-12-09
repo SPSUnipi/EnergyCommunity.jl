@@ -8,7 +8,35 @@ PRINT FILE, containin all the functions to store results in the first,second and
 """
     print_first_stage(output_file::String, ECModel::StochasticEC)
 
-    Print all the information of the first stochastic optimization
+Export the results of the first-stage stochastic optimization to an Excel file.
+
+# Arguments
+- `output_file::String`: Path to the output Excel file where results will be saved
+- `ECModel::StochasticEC`: The stochastic energy community model containing optimization results
+
+# Excel Sheets Created
+The function creates an Excel file with the following sheets:
+1. **info solution**: General solution information (configuration, computation time, exit flag, gap, number of scenarios, objective value)
+2. **design users**: Installed capacity design for each user and the EC aggregator
+3. **info scenarios**: Scenario-specific information (scenario indices, probabilities, social welfare, shared power)
+4. **economic data**: Economic metrics (CAPEX, O&M costs, replacement costs, revenues, generation costs, grid costs, rewards, peak costs)
+5. **forecast dispatch**: Forecasted power declarations (P_dec_P and P_dec_N) for each scenario
+6. **energy dispatch**: Detailed energy flows (load demand, grid exchanges, renewable production, generator output, converter power) for each scenario
+
+# Notes
+- Results are organized by user and scenario
+- For GroupCO configuration, aggregator-level results are included
+- For GroupNC configuration, individual user grid exchanges are reported
+- All energy values are converted to appropriate units (kWh) using time resolution and energy weight
+- Subscript notation is used for scenario indexing in column names
+
+# Example
+```julia
+ECModel = StochasticEC(data, GroupCO(), optimizer)
+build_model!(ECModel)
+optimize!(ECModel)
+print_first_stage("results/first_stage.xlsx", ECModel)
+```
 """
 function print_first_stage(output_file::String,
         ECModel::StochasticEC)

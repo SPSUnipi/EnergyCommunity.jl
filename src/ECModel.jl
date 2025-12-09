@@ -1178,7 +1178,49 @@ function create_example_data(folder; config_name::String = "default")
     end
 end
 
-# TODO add docstring
+"""
+    set_parameters_ECmodel!(ECModel::AbstractEC, tol=1e-3, time_limit=3600, threads=1, verbosity=0)
+
+Configure solver parameters for both stochastic and deterministic optimization models.
+
+This function sets CPLEX solver attributes for the Energy Community model, including optimality gap tolerance,
+time limits, thread count, and output verbosity. The parameters are applied to both the main stochastic model
+and its deterministic equivalent.
+
+# Arguments
+- `ECModel::AbstractEC`: Energy Community model to configure
+- `tol::Float64=1e-3`: Relative optimality gap tolerance (default: 0.1%)
+- `time_limit::Int=3600`: Maximum solver time in seconds (default: 1 hour)
+- `threads::Int=1`: Number of threads for parallel computation (default: 1)
+- `verbosity::Int=0`: Console output verbosity level (0=off, 1=on)
+
+# CPLEX Parameters Set
+- `CPX_PARAM_EPGAP`: Relative MIP gap tolerance
+- `CPX_PARAM_TILIM`: Time limit in seconds
+- `CPX_PARAM_THREADS`: Number of parallel threads
+- `CPX_PARAM_SCRIND`: Screen indicator for log output
+
+# Returns
+- `ECModel`: The modified Energy Community model with updated solver parameters
+
+# Example
+```julia
+# Use default parameters (gap=0.1%, 1 hour limit, 1 thread, no output)
+set_parameters_ECmodel!(ECModel)
+
+# Set tighter gap with longer time limit and verbose output
+set_parameters_ECmodel!(ECModel, 1e-4, 7200, 4, 1)
+
+# Use keyword arguments
+set_parameters_ECmodel!(ECModel, tol=1e-5, threads=8, verbosity=1)
+```
+
+# Notes
+
+- Parameters are applied to both ECModel.model and ECModel.deterministic_model
+- The function modifies the model in-place and returns it for convenience
+- CPLEX-specific: for other solvers, parameter names may differ
+"""
 function set_parameters_ECmodel!(ECModel::AbstractEC,
         tol::Float64=1e-3, # default gap set to 0.1
         time_limit::Int=60*60, # default time limit set to one hour
@@ -1218,7 +1260,16 @@ function optimize_deterministic_ECmodel(ECModel::AbstractEC)
 end
 
 
+"""
+    extract_economic_values_NC(ECModel::ModelEC)
 
+    extract_economic_values_CO(ECModel::ModelEC)
+
+    extract_dispatch_values_NC(ECModel::ModelEC)
+
+    extract_dispatch_values_CO(ECModel::ModelEC)
+Functions to extract economic and dispatch values from the optimization results
+"""
 function extract_economic_values_NC(ECModel::ModelEC)
 
     sub_scen = Char(0x02080+1)

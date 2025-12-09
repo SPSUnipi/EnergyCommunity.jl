@@ -49,7 +49,6 @@ function build_base_model!(ECModel::StochasticEC, optimizer;
     ## Model definition
 
     # Definition of JuMP model
-    #ECModel.model = (use_notations ? direct_model(optimizer) : Model(optimizer))
     model_user = ECModel.model
 
     @first_stage model_user = begin
@@ -120,12 +119,6 @@ function build_base_model!(ECModel::StochasticEC, optimizer;
         end
 
         if control_MC == true # if we are in the risimulation of scenarios eps, we have to fix the declared dispatch of the user
-            #@constraint(model_user, con_fixed_P_dec_P[u=user_set, s=scen_s_set, t=time_set],
-            #    P_us_dec_P[u,s,t] == P_dec_P_fixed[u,s,t])
-
-            #@constraint(model_user, con_fixed_P_dec_N[u=user_set, s=scen_s_set, t=time_set],
-            #    P_us_dec_N[u,s,t] == P_dec_N_fixed[u,s,t])
-
             for u in user_set
                 for s in scen_s_set
                     for t in time_set
@@ -266,11 +259,6 @@ function build_base_model!(ECModel::StochasticEC, optimizer;
             sum(C_sq_us[u,t] for t in time_set)
         )
 
-        # Yearly revenue of the user
-        #@expression(model_user, yearly_rev[u=user_set],
-        #    R_Energy_tot_us[u] - C_OEM_tot_us[u]
-        #)
-
         # Cash flow
         @expression(model_user, Cash_flow_us[y in year_set_0, u in user_set],
             (y == 0) ? 0 - CAPEX_tot_us[u] : 
@@ -288,26 +276,7 @@ function build_base_model!(ECModel::StochasticEC, optimizer;
             sum(
                 Cash_flow_us[y, u] / ((1 + field(gen_data, "d_rate"))^y)
             for y in year_set_0)
-        # sum(
-        #     (R_Energy_tot_us[u] # Costs related to the energy trading with the market
-        #     - C_Peak_tot_us[u]  # Peak cost
-        #     - C_OEM_tot_us[u]  # Maintenance cost
-        #     - C_REP_tot_us[y, u]  # Replacement costs
-        #     + R_RV_tot_us[y, u]  # Residual value
-        #     ) / ((1 + field(gen_data, "d_rate"))^y)
-        #     for y in year_set)
-        # - CAPEX_tot_us[u]  # Investment costs
         )
-        
-        # Power flow by user POD
-        #@expression(model_user, P_us[u = user_set, t = time_set],
-        #    P_P_us[u, t] - P_N_us[u, t]
-        #)
-
-        # Total converter dispatch: positive when supplying to AC
-        #@expression(model_user, P_conv_us[u=user_set, c=asset_names(users_data[u], CONV), t=time_set],
-        #    P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
-        #)
 
         # Social welfare of the entire aggregation
         @expression(model_user, SW,

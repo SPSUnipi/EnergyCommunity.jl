@@ -15,8 +15,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
     control_MC=false,
     P_dec_P_fixed=JuMP.Containers.DenseAxisArray([],[]),
     P_dec_N_fixed=JuMP.Containers.DenseAxisArray([],[]))
-
-    #is_optimized(ECModel_NC) # control for the NCmodel to be optimized
     
     TOL_BOUNDS = 1.05
 
@@ -47,17 +45,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
     user_set = ECModel.user_set
 
     sigma = 1.0
-
-    # get NC data
-
-    #s = "NPV_us" # variable name in NC model for users profits
-    #NPV_NC = get_scenario_data_model(ECModelNC,s)
-    #NPV_NC_user_set = Array{Any}(undef,n_scen)
-    #SW_NC = Array{Float64}(undef,n_scen)
-    #for scen = 1:n_scen
-    #    NPV_NC_user_set[scen] = JuMP.Containers.DenseAxisArray([NPV_NC[scen].data[i] for i = 1:length(user_set)],user_set)
-    #    SW_NC[scen] = sum(NPV_NC[scen])
-    #end
 
     ## Model definition
 
@@ -123,9 +110,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
         )
 
         if control_first_risimulation == true # if we are in the risimulation of scenarios s, we have to fix the number of installed plants
-            #@constraint(model, con_fixed_x_us[u=user_set, a=device_names(users_data[u])],
-            #    x_us[u,a] == x_fixed[u,a])
-
             for u in user_set
                 for a in device_names(users_data[u])
                     fix( x_us[u,a] , x_fixed[u,a] )
@@ -134,13 +118,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
         end
 
         if control_MC == true # if we are in the risimulation of scenarios eps, we have to fix the declared dispatch of the user
-            #@constraint(model, con_fixed_P_dec_P[s=scen_s_set, t=time_set],
-            #    P_agg_dec_P[s,t] == P_dec_P_fixed[s,t])
-
-            #@constraint(model, con_fixed_P_dec_N[s=scen_s_set, t=time_set],
-            #    P_agg_dec_N[s,t] == P_dec_N_fixed[s,t])
-
-            
             for s in scen_s_set
                 for t in time_set
                     fix( P_agg_dec_P[s,t] , P_dec_P_fixed[s,t] )
@@ -246,8 +223,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
         # Virtual shared energy by user
         @recourse(model, 0 <= P_shared_agg[t=time_set])
         @recourse(model, P_agg[t=time_set])  # Power supplied to the public market (positive when supplied, negative otherwise)
-        # annualized profits of the aggregator
-        #@recourse(model, NPV_agg >= 0)
 
         ## Expressions
 
@@ -317,16 +292,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
             C_sq_tot_agg * sum(1 / ((1 + field(gen_data, "d_rate"))^y) for y in year_set)
         )
 
-         # Cash flow ### ERROR with StochasticProgram in istantiation (BUG)
-        #@expression(model, Cash_flow_agg[y in year_set_0],
-        #    (y == 0) ? 0.0 : R_Reward_agg_tot
-        #)
-
-        # Yearly revenue of the user
-        #@expression(model, yearly_rev[u=user_set],
-        #    R_Energy_tot_us[u] - C_OEM_tot_us[u]
-        #)
-
         # Cash flow
         @expression(model, Cash_flow_us[y in year_set_0, u in user_set],
             (y == 0) ? 0 - CAPEX_tot_us[u] : 
@@ -350,15 +315,6 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
             sum(
                 Cash_flow_us[y, u] / ((1 + field(gen_data, "d_rate"))^y)
             for y in year_set_0)
-        # sum(
-        #     (R_Energy_tot_us[u] # Costs related to the energy trading with the market
-        #     - C_Peak_tot_us[u]  # Peak cost
-        #     - C_OEM_tot_us[u]  # Maintenance cost
-        #     - C_REP_tot_us[y, u]  # Replacement costs
-        #     + R_RV_tot_us[y, u]  # Residual value
-        #     ) / ((1 + field(gen_data, "d_rate"))^y)
-        #     for y in year_set)
-        # - CAPEX_tot_us[u]  # Investment costs
         )
 
         # Social welfare of the entire aggregation
@@ -366,27 +322,10 @@ function build_specific_model!(::AbstractGroupCO, ECModel::StochasticEC,optimize
             sum(NPV_us) - C_sq_tot_period + R_Reward_agg_NPV
         )
 
-        # Social welfare of the users
-        #@expression(model, SW_us,
-        #    SW - NPV_agg
-        #)
-
         # Power flow by user POD
         @expression(model, P_us[u = user_set, t = time_set],
             P_P_us[u, t] - P_N_us[u, t]
         )
-
-        # Total converter dispatch: positive when supplying to AC
-        #@expression(model, P_conv_us[u=user_set, c=asset_names(users_data[u], CONV), t=time_set],
-        #    P_conv_P_us[u, c, t] - P_conv_N_us[u, c, t]
-        #)
-
-        ## Inequality constraints
-
-        # Annual profits of the aggregator limited by a fraction of the surplus of the users
-        #@constraint(model, AP_agg_limit_sigma,
-        #    NPV_agg - 0.2 * (SW_us - SW_NC[Scenario]) <= 0
-        #)
 
         # Set that the hourly dispatch cannot go beyond the maximum dispatch of the corresponding peak power period
         @constraint(model, con_us_max_P_user[u = user_set, t = time_set],

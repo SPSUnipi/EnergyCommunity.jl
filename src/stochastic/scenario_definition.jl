@@ -1,3 +1,49 @@
+
+"""
+    @define_scenario Scenario_Load_Renewable
+
+Define a custom scenario type for stochastic energy community optimization.
+
+This macro from the `StochasticPrograms.jl` package creates a scenario structure that encapsulates
+all uncertain parameters in the stochastic optimization problem, including market prices, load demand,
+and renewable production profiles.
+
+# Scenario Fields
+- `scen_s::Int`: Long-term scenario index
+- `scen_eps::Int`: Short-term (epsilon) scenario index
+- `peak_tariff::Dict{String, Float64}`: Peak demand tariff for each peak period
+- `buy_price::Dict{Int, Float64}`: Energy purchase price from grid at each time step
+- `consumption_price::Dict{Int, Float64}`: Energy consumption price at each time step
+- `sell_price::Dict{Int, Float64}`: Energy selling price to grid at each time step
+- `penalty_price::Dict{Int, Float64}`: Penalty price for imbalances at each time step
+- `Load::Dict{String, Dict{Int, Float64}}`: Load demand for each user at each time step
+- `Ren::Dict{String, Dict{String, Dict{Int, Float64}}}`: Renewable production for each user, asset, and time step
+
+# Macro Methods
+
+## `@zero`
+Defines the zero scenario (default/empty scenario) used as initialization.
+
+Returns a `Scenario_Load_Renewable` with default values (scenario indices = 1, empty dictionaries).
+
+## `@expectation`
+Defines how to compute the expected scenario given a collection of scenarios with probabilities.
+
+Computes weighted averages of all scenario attributes based on their probabilities:
+- Market prices: ``E[price_t] = \\sum_s p_s \\cdot price_{s,t}``
+- Load demand: ``E[Load_{u,t}] = \\sum_s p_s \\cdot Load_{u,s,t}``
+- Renewable production: ``E[Ren_{u,a,t}] = \\sum_s p_s \\cdot Ren_{u,a,s,t}``
+
+where ``p_s`` is the probability of scenario ``s``.
+
+# Usage
+
+The macro automatically generates:
+- A constructor for creating scenario instances
+- Methods for computing expected scenarios
+- Integration with `StochasticPrograms.jl` framework
+
+"""
 # Scenario definition
 @define_scenario Scenario_Load_Renewable = begin
 	scen_s::Int

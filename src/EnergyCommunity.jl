@@ -36,10 +36,13 @@ module EnergyCommunity
     
     # additional usefull functions i.e. main type definitions and read data
     include("utils.jl")  
-    #### new include
+    
+    # scenario sampling for stochastic models
+    # sampler method
     include("stochastic/point_Scen_eps_sampler.jl")
-
-    include("stochastic/scenario_definition_FS.jl")
+    # scenario definition
+    include("stochastic/scenario_definition.jl")
+    # point estimation method functions
     include("stochastic/pem_extraction.jl")
 
     # EC model definition
@@ -64,9 +67,13 @@ module EnergyCommunity
     include("Games_jl_interface.jl")
     include("ECModel_utils.jl")
 
-
+    # include the stochastic versions of the models
+    # non cooperative
     include("stochastic/nonCooperativeStoch.jl")
+    # cooperative
     include("stochastic/cooperativeStoch.jl")
+ 
+    # print functions for stochastic models
     include("stochastic/print_functions.jl")
 
     @exportAll()

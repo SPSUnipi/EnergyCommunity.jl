@@ -134,6 +134,7 @@ Concrete type for an EnergyCommunity stochastic model.
 * `group_type`: aggregation type of model
 * `user_set::Vector`: desired user set
 * `model::StochasticProgram`: stochastic model
+* `deterministic_model::Model`: deterministic equivalent JuMP model
 * `optimizer`: optimizer of the JuMP model
 * `results::Dict`: results of the model in Dictionary format
 * `scenarios::Vector{Scenario_Load_Renewable}`: scenarios used to optimize the model

@@ -1,12 +1,34 @@
-""" Sampler for distribution associated to short period uncertainty
-	
-Sampler function
+"""
+    Scenario_eps_Point_Sampler(data_user, uncertain_var; deterministic::Bool = false)
 
-INPUT: users data: dictionary containing all the user data information
+Sample points from the distribution associated with short-term (epsilon scenario) uncertainty.
 
-OUTPUT: point_load_demand: sampled point from the normalized distribution associated with load demand
-        point_ren_production: sampled point from the normalized distribution associated with renewable production
+This function generates random samples for load demand and renewable production based on the 
+specified uncertainty variable. The samples are normalized multiplicative factors applied to 
+the base profiles.
 
+# Arguments
+- `data_user::Dict`: Dictionary containing user data with load and renewable generation profiles
+- `uncertain_var::String`: Type of uncertain variable to consider:
+  - `"L"`: Uncertainty on load demand only
+  - `"P"`: Uncertainty on PV production only
+  - `"W"`: Uncertainty on wind production only
+- `deterministic::Bool=false`: If `true`, returns deterministic samples (all ones) instead of random samples
+
+# Returns
+A tuple `(point_load_demand, point_ren_production)` where:
+- `point_load_demand::Dict{String, Array{Float64}}`: Normalized load demand multipliers for each user
+- `point_ren_production::Dict{String, Dict{String, Array{Float64}}}`: Normalized renewable production 
+  multipliers for each user and renewable asset
+
+# Sampling Details
+- Samples are drawn from a multivariate normal distribution with mean 1 and standard deviation 
+  derived from the profile data
+- Negative samples are set to zero
+- For renewable production, samples are set to zero when the base profile is zero
+- When `uncertain_var="L"`, renewable production is deterministic (ones)
+- When `uncertain_var` is `"P"` or `"W"`, load demand is deterministic and only the specified 
+  renewable source has uncertainty
 """
 function Scenario_eps_Point_Sampler(data_user, uncertain_var; deterministic::Bool = false)
 
@@ -98,17 +120,80 @@ function Scenario_eps_Point_Sampler(data_user, uncertain_var; deterministic::Boo
     return (point_load_demand,point_ren_production)
 end
 
-""" Scenarios generator function
+"""
+    scenarios_generator(data, point_s_load, point_s_pv, point_s_wind, n_scen_s, n_scen_eps, uncertain_var; 
+                       point_probability=Float64[], first_stage=false, second_stage=false, deterministic=false)
 
-INPUT: data: dictionary containing all the data information
-       point_s_load: extracted point for long period uncertainty distribution in load demand
-       point_s_ren: extracted point for long period uncertainty distribution in renewable production
-       n_scen_s: number of scenarios s to generate
-       n_scen_eps: number of scenarios eps to generate
-       first_stage: boolean value to know if we are in the first stage
-       second_stage: boolean value to know if we are in the second stage
+Generate scenarios combining long-term and short-term uncertainties for stochastic optimization.
 
-OUTPUT: sampled_scenarios: array with the generated scenarios
+This function creates a hierarchical scenario tree where each long-term scenario (s) branches into 
+multiple short-term scenarios (ε). The scenarios include load demand and renewable production profiles 
+affected by three levels of uncertainty: long-term, day-ahead, and short-term.
+
+# Arguments
+- `data::Dict{Any, Any}`: Dictionary containing all user, market, and general data
+- `point_s_load::Vector{Float64}`: Sampled points for long-term load demand uncertainty (one per scenario s)
+- `point_s_pv::Vector{Float64}`: Sampled points for long-term PV production uncertainty (one per scenario s)
+- `point_s_wind::Vector{Float64}`: Sampled points for long-term wind production uncertainty (one per scenario s)
+- `n_scen_s::Int`: Number of long-term scenarios (s) to generate
+- `n_scen_eps::Int`: Number of short-term scenarios (ε) per long-term scenario
+- `uncertain_var::String`: Type of uncertain variable to consider (`"L"`, `"P"`, or `"W"`)
+
+# Keyword Arguments
+- `point_probability::Vector{Float64}=Float64[]`: Probability of each long-term scenario s
+- `first_stage::Bool=false`: If `true`, generates scenarios for first-stage optimization
+- `second_stage::Bool=false`: If `true`, generates scenarios for second-stage (given a fixed s)
+- `deterministic::Bool=false`: If `true`, uses deterministic day-ahead and short-term uncertainties
+
+# Returns
+- `sampled_scenarios::Array{Scenario_Load_Renewable}`: Array of generated scenarios
+
+# Scenario Structure
+The function operates in three modes:
+
+1. **First Stage** (`first_stage=true`): 
+   - Generates `n_scen_s × n_scen_eps` scenarios
+   - Each scenario combines long-term, day-ahead, and short-term uncertainties
+   - Probability of scenario (s,ε) is `point_probability[s] / n_scen_eps`
+
+2. **Second Stage** (`second_stage=true`):
+   - Generates `n_scen_eps` scenarios for a fixed long-term scenario s (passed as `n_scen_s`)
+   - Day-ahead uncertainty is sampled once and shared across all ε scenarios
+   - Each ε scenario has independent short-term uncertainty
+   - Equal probability `1/n_scen_eps` for each scenario
+
+3. **Third Stage** (default):
+   - Similar to second stage but used for out-of-sample validation
+   - Generates `n_scen_eps` scenarios with independent short-term uncertainties
+
+# Uncertainty Levels
+For each user and time step, the realized value is computed as:
+```
+load_demand[u,t] = mean_load[u,t] × σ_LT[s] × σ_DA[u,t] × σ_ST[u,t,ε]
+ren_production[u,asset,t] = mean_ren[u,asset,t] × σ_LT[s] × σ_DA[u,asset,t] × σ_ST[u,asset,t,ε]
+```
+where:
+- `σ_LT`: Long-term uncertainty (scenario s)
+- `σ_DA`: Day-ahead uncertainty (common within scenario s)
+- `σ_ST`: Short-term uncertainty (specific to scenario ε)
+
+# Example
+```julia
+# First stage: generate complete scenario tree
+scenarios = scenarios_generator(
+    data, point_s_load, point_s_pv, point_s_wind, 
+    10, 5, "L", 
+    point_probability=probs, 
+    first_stage=true
+)
+
+# Second stage: generate scenarios for a specific s=3
+scenarios_eps = scenarios_generator(
+    data, point_s_load, point_s_pv, point_s_wind,
+    3, 100, "L",
+    second_stage=true
+)
+```
 """
 
 function scenarios_generator(
