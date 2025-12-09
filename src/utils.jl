@@ -249,7 +249,6 @@ function read_input(file_name::AbstractString)
             # get absolute path of f_name
             abs_file_name = (isabspath(f_name) ? f_name : joinpath(dirname(file_name), f_name))
             # read dataset and join to the original dataset
-            print(abs_file_name)
             d = CSV.read(abs_file_name, DataFrame)
             if isempty(opt_data)
                 opt_data = d
