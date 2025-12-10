@@ -6,7 +6,7 @@
 # - Saving and loading the model to/from jld2 files, so that any intermediate results can be stored and retrieved later on without the need to re-optimize the model.
 # In the example below, we consider a Cooperative (CO) energy community optimization problem and showcase the opportunities related to input/output operations; for plotting, see the other example.
 
-## Initialization of the model
+# ## Initialization of the model
 
 # Import the needed packages
 using EnergyCommunity, JuMP
