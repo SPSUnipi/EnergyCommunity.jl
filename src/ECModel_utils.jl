@@ -1,22 +1,3 @@
-"""
-    explode_data(ECModel::AbstractEC)
-
-Return main data elements of the dataset of the `ECModel`: general parameters, users data and market data, retrieved from the `data` dictionary of the `ECModel`.
-
-## Arguments
-
-* `ECModel::AbstractEC`: Energy Community model
-
-## Returns
-
-* `general_data::Dict`: General data of the ECModel
-* `users_data::Dict`: Users data of the ECModel
-* `market_data::Dict`: Market data of the ECModel
-"""
-function explode_data(ECModel::AbstractEC)
-    return general(ECModel.data), users(ECModel.data), market(ECModel.data)
-end
-
 #==============================================================================
 # ACCESSOR FUNCTIONS - Dynamic dispatch for AbstractEC
 # Provide uniform access to fields regardless of concrete type (ModelEC vs StochasticEC)
@@ -52,20 +33,6 @@ get_market_data(m::AbstractEC) = m.market_data
 Get the users data dictionary from the model.
 """
 get_users_data(m::AbstractEC) = m.users_data
-
-"""
-    group_type(m::AbstractEC)
-
-Get the group type (CO/NC/ANC) from the model.
-"""
-get_group_type(m::AbstractEC) = m.group_type
-
-"""
-    user_set(m::AbstractEC)
-
-Get the user set vector from the model.
-"""
-get_user_set(m::AbstractEC) = m.user_set
 
 """
     jump_model(m::AbstractEC)
@@ -122,26 +89,6 @@ get_n_scen_eps(m::StochasticEC) = m.n_scen_eps
 # --- SETTERS ---
 
 """
-    set_group_type!(m::AbstractEC, gt::AbstractGroup)
-
-Set the group type for the model.
-"""
-set_group_type!(m::AbstractEC, gt::AbstractGroup) = (m.group_type = gt)
-
-"""
-    set_user_set(ECModel::AbstractEC)
-
-Sets the EC user set
-"""
-function set_user_set!(ECModel::AbstractEC, user_set)
-    if EC_CODE in user_set
-        println("Aggregator code '$EC_CODE' removed from the list of users")
-        user_set = setdiff(user_set, [EC_CODE])
-    end
-    ECModel.user_set = collect(user_set)
-end
-
-"""
     set_optimizer!(m::AbstractEC, opt)
 
 Set the optimizer for the model.
@@ -190,12 +137,3 @@ set_n_scen_s!(m::StochasticEC, n::Int) = (m.n_scen_s = n)
 Set the number of short-term scenarios (only for StochasticEC).
 """
 set_n_scen_eps!(m::StochasticEC, n::Int) = (m.n_scen_eps = n)
-
-"""
-    reset_user_set!(ECModel::AbstractEC)
-
-Reset the EC user set to match the stored `user_set` of the `ECModel` data
-"""
-function reset_user_set!(ECModel::AbstractEC)
-    set_user_set!(ECModel::AbstractEC, collect(keys(ECModel.users_data)))
-end

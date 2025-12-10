@@ -1,4 +1,66 @@
 """
+    explode_data(ECModel::AbstractEC)
+Return main data elements of the dataset of the `ECModel`: general parameters, users data and market data, retrieved from the `data` dictionary of the `ECModel`.
+## Arguments
+* `ECModel::AbstractEC`: Energy Community model
+## Returns
+* `general_data::Dict`: General data of the ECModel
+* `users_data::Dict`: Users data of the ECModel
+* `market_data::Dict`: Market data of the ECModel
+"""
+function explode_data(ECModel::AbstractEC)
+    return general(ECModel.data), users(ECModel.data), market(ECModel.data)
+end
+
+
+"""
+    get_group_type(ECModel::AbstractEC)
+Returns the EC group type
+"""
+function get_group_type(ECModel::AbstractEC)
+    return ECModel.group_type
+end
+
+"""
+    set_group_type!(ECModel::AbstractEC)
+Sets the EC group type
+"""
+function set_group_type!(ECModel::AbstractEC, group::AbstractGroup)
+    ECModel.group_type = group
+end
+
+
+"""
+    get_user_set(ECModel::AbstractEC)
+Returns the EC user set
+"""
+function get_user_set(ECModel::AbstractEC)
+    return ECModel.user_set
+end
+
+
+"""
+    set_user_set(ECModel::AbstractEC)
+Sets the EC user set
+"""
+function set_user_set!(ECModel::AbstractEC, user_set)
+    if EC_CODE in user_set
+        println("Aggregator code '$EC_CODE' removed from the list of users")
+        user_set = setdiff(user_set, [EC_CODE])
+    end
+    ECModel.user_set = collect(user_set)
+end
+
+
+"""
+    reset_user_set!(ECModel::AbstractEC)
+Reset the EC user set to match the stored `user_set` of the `ECModel` data
+"""
+function reset_user_set!(ECModel::AbstractEC)
+    set_user_set!(ECModel::AbstractEC, collect(keys(ECModel.users_data)))
+end
+
+"""
     build_model!(ECModel::AbstractEC; kwargs...)
 
 Build the mathematical problem for the EC.
@@ -1194,32 +1256,13 @@ and its deterministic equivalent.
 - `threads::Int=1`: Number of threads for parallel computation (default: 1)
 - `verbosity::Int=0`: Console output verbosity level (0=off, 1=on)
 
-# CPLEX Parameters Set
-- `CPX_PARAM_EPGAP`: Relative MIP gap tolerance
-- `CPX_PARAM_TILIM`: Time limit in seconds
-- `CPX_PARAM_THREADS`: Number of parallel threads
-- `CPX_PARAM_SCRIND`: Screen indicator for log output
-
 # Returns
 - `ECModel`: The modified Energy Community model with updated solver parameters
-
-# Example
-```julia
-# Use default parameters (gap=0.1%, 1 hour limit, 1 thread, no output)
-set_parameters_ECmodel!(ECModel)
-
-# Set tighter gap with longer time limit and verbose output
-set_parameters_ECmodel!(ECModel, 1e-4, 7200, 4, 1)
-
-# Use keyword arguments
-set_parameters_ECmodel!(ECModel, tol=1e-5, threads=8, verbosity=1)
-```
 
 # Notes
 
 - Parameters are applied to both ECModel.model and ECModel.deterministic_model
 - The function modifies the model in-place and returns it for convenience
-- CPLEX-specific: for other solvers, parameter names may differ
 """
 function set_parameters_ECmodel!(ECModel::AbstractEC,
         tol::Float64=1e-3, # default gap set to 0.1
@@ -1230,15 +1273,42 @@ function set_parameters_ECmodel!(ECModel::AbstractEC,
     model = ECModel.model
     deterministic_model = ECModel.deterministic_model
 
-    set_optimizer_attribute(model, "CPX_PARAM_EPGAP", tol)
-    set_optimizer_attribute(model, "CPX_PARAM_TILIM", time_limit)
-    set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
-    set_optimizer_attribute(model, "CPX_PARAM_SCRIND", verbosity)
+    if occursin("CPLEX", ECModel.optimizer )
+        set_optimizer_attribute(model, "CPX_PARAM_EPGAP", tol)
+        set_optimizer_attribute(model, "CPX_PARAM_TILIM", time_limit)
+        set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
+        set_optimizer_attribute(model, "CPX_PARAM_SCRIND", verbosity)
 
-    set_optimizer_attribute(deterministic_model, "CPX_PARAM_EPGAP", tol)
-    set_optimizer_attribute(deterministic_model, "CPX_PARAM_TILIM", time_limit)
-    set_optimizer_attribute(deterministic_model, "CPX_PARAM_THREADS", threads)
-    set_optimizer_attribute(deterministic_model, "CPX_PARAM_SCRIND", verbosity)
+        set_optimizer_attribute(deterministic_model, "CPX_PARAM_EPGAP", tol)
+        set_optimizer_attribute(deterministic_model, "CPX_PARAM_TILIM", time_limit)
+        set_optimizer_attribute(deterministic_model, "CPX_PARAM_THREADS", threads)
+        set_optimizer_attribute(deterministic_model, "CPX_PARAM_SCRIND", verbosity)
+
+    elseif occursin("HiGHS", ECModel.optimizer)
+        set_optimizer_attribute(model, "mip_rel_gap", tol)
+        set_optimizer_attribute(model, "time_limit", time_limit)
+        set_optimizer_attribute(model, "threads", threads)
+        set_optimizer_attribute(model, "log_to_console", verbosity)
+
+        set_optimizer_attribute(deterministic_model, "mip_rel_gap", tol)
+        set_optimizer_attribute(deterministic_model, "time_limit", time_limit)
+        set_optimizer_attribute(deterministic_model, "threads", threads)
+        set_optimizer_attribute(deterministic_model, "log_to_console", verbosity)
+
+    elseif occursin("Gurobi", ECModel.optimizer)
+        set_optimizer_attribute(model, "MIPGap", tol)
+        set_optimizer_attribute(model, "TimeLimit", time_limit)
+        set_optimizer_attribute(model, "Threads", threads)
+        set_optimizer_attribute(model, "OutputFlag", verbosity)
+
+        set_optimizer_attribute(deterministic_model, "MIPGap", tol)
+        set_optimizer_attribute(deterministic_model, "TimeLimit", time_limit)
+        set_optimizer_attribute(deterministic_model, "Threads", threads)
+        set_optimizer_attribute(deterministic_model, "OutputFlag", verbosity)
+
+    else
+        @warn "Optimizer of the EC Model not found"
+    end
 
     return ECModel
 end
