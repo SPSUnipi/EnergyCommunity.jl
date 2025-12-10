@@ -89,7 +89,7 @@ optimize!(ANC_Model)
 
 # ### Results
 # get objective value in M€
-obj_ANC = objective_value(ANC_Model)
+obj_ANC = objective_value(ANC_Model)/1e6
 obj_ANC
 
 # ## Comparison of the results
@@ -105,7 +105,7 @@ bar(
     [obj_CO, obj_ANC, obj_NC],
     title="Comparison of Objective Values",
     ylabel="Objective Value [M€]",
-    ylims=[-1.4, -1.1],
+    ylims=[-1.3, -1.1],
     legend=false,
 )
 
