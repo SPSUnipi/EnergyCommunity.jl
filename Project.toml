@@ -1,3 +1,8 @@
+name = "EnergyCommunity"
+uuid = "2f2d8a28-e724-42c4-aa4e-51fe4e6b7a61"
+authors = ["davide-f <fioritidavidesubs@gmail.com>"]
+version = "0.2.2"
+
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
