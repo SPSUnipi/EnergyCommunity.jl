@@ -105,7 +105,7 @@ bar(
     [obj_CO, obj_ANC, obj_NC],
     title="Comparison of Objective Values",
     ylabel="Objective Value [M€]",
-    ylims=[-1.25, -1.],
+    ylims=[-1.4, -1.1],
     legend=false,
 )
 
