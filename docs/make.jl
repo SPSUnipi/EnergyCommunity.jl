@@ -2,6 +2,7 @@ using EnergyCommunity
 using Documenter
 using Literate
 using Test
+# using tectonic_jll: tectonic
 
 # Deactivate Plots display output on server
 ENV["GKSwstype"] = "100"
@@ -70,6 +71,7 @@ makedocs(
     modules = [EnergyCommunity],
     doctest  = false,
     clean    = true,
+    # format   = Documenter.LaTeX(platform="tectonic", tectonic=tectonic()),
     format   = Documenter.HTML(
         mathengine = Documenter.MathJax2(),
         collapselevel = 1,
