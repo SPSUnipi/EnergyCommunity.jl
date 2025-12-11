@@ -291,7 +291,7 @@ end
 Function to plot the results of the Cooperative EC
 """
 function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::AbstractString;
-    user_set::AbstractVector = Vector(), line_width = 2.0)
+    user_set::AbstractVector = Vector(), line_width = 2.0, dpi = 300)
  
      # Set definitions
 
@@ -321,12 +321,11 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
     pt = Array{Plots.Plot, 2}(undef, length(user_set), 3)
     lims_y_axis_dispatch = [(-20, 20),(-20, 20)]
     lims_y_axis_batteries = [(0, 120), (0, 120)]
-    dpi=3000
     for (u_i, u_name) in enumerate(user_set)
 
         # Power dispatch plot
         pt[u_i, 1] = plot(time_set_plot, -results[:P_L_tot_us][u_name, :].data,
-                            label="Load", width=line_width, legend=:outerright, dpi=3000)
+                            label="Load", width=line_width, legend=:outerright, dpi=dpi)
         # plot!(pt[u_i, 1], time_set_plot, _P_public_us[u_name, :].data, label="Public grid", w=line_width)
         # plot!(pt[u_i, 1], time_set_plot, _P_micro_us[u_name, :].data, label="Microgrid", w=line_width)
         plot!(pt[u_i, 1], time_set_plot, [
@@ -351,12 +350,13 @@ function Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::Ab
         pt[u_i, 2] = plot(time_set_plot, [
             sum(Float64[results[:E_batt_us][u_name, b, t] 
                 for b in asset_names(users_data[u_name], BATT)]) for t in time_set],
-                label="Battery Energy", w=line_width, legend=:outerright)
+                label="Battery Energy", w=line_width, legend=:outerright,
+                dpi=dpi)
         xaxis!("Time step [#]")
         yaxis!("Energy [kWh]")
         #ylims!(lims_y_axis_batteries[u])
 
-        pt[u_i, 3] = plot(pt[u_i, 1], pt[u_i, 2], layout=(2,1))
+        pt[u_i, 3] = plot(pt[u_i, 1], pt[u_i, 2], layout=(2,1),dpi=dpi)
 
         display(pt[u_i, 3])
 
