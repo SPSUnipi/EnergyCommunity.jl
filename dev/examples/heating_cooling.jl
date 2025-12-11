@@ -17,7 +17,7 @@ folder = joinpath(@__DIR__, "data")
 create_example_data(folder, config_name="default")
 
 # Input file to load the structure of the energy community based on a yaml file.
-input_file = joinpath(@__DIR__, "data/energy_community_model_thermal.yml");
+input_file = joinpath(@__DIR__, "data/energy_community_model_heat.yml");
 
 # Output path of the plots
 output_plot_isolated = joinpath(@__DIR__, "./results/Img/plot_user_{:s}_CO.png");
@@ -44,4 +44,6 @@ objective_value(TH_Model)
 # ## Plots of dispatch
 
 # Create plots of the dispatch of resources by user and save them to disk
-plot(TH_Model, output_plot_isolated)
+all_plots = plot(TH_Model, output_plot_isolated)
+user_to_plot = 3  # select user to plot
+plot(all_plots[user_to_plot, 3])  # show the plot of user 3 (top: power dispatch, bottom: battery storage)
