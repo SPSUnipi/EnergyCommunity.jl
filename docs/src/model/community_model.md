@@ -1,6 +1,6 @@
 
 
-# Community Shared Energy and benefits
+# Shared Energy and Benefits
 
 In cooperative and aggregated-non-cooperative ECs, users can share energy among each other, leading to potential cost savings and increased efficiency. The shared energy exchanged among users is modelled by introducing additional variables and constraints that regulate the energy flows within the community.
 

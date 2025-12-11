@@ -12,7 +12,7 @@
 # The example is based on a subset of users taken from the following article, yet for a subset of users.
 # > D. Fioriti, A. Frangioni, D. Poli, "Optimal sizing of energy communities with fair revenue sharing and exit clauses: Value, role and business model of aggregators and users," in Applied Energy, vol. 299, 2021, 117328,[doi: 10.1016/j.apenergy.2021.117328](https://doi.org/10.1016/j.apenergy.2021.117328)
 
-# ## Cooperative (CO) Energy Community
+# ## Cooperative (CO)
 
 # ### Initialization
 
@@ -53,7 +53,7 @@ print_summary(CO_Model)
 # moreover, obtain the business plan as DataFrame
 business_plan(CO_Model)
 
-# ## Non Cooperative (NC) Energy Community
+# ## Non Cooperative (NC)
 
 # ### Initialization
 # Given that the initialization is the same as for the CO model, we can reuse the input file and the optimizer defined above. So we can directly move to the model creation.
@@ -73,7 +73,7 @@ optimize!(NC_Model)
 obj_NC = objective_value(NC_Model)/1e6
 obj_NC
 
-# ## Aggregated Non Cooperative (ANC) Energy Community
+# ## Aggregated Non Cooperative (ANC)
 # ### Initialization
 # Given that the initialization is the same as for the CO model, we can reuse the input file and the optimizer defined above. So we can directly move to the model creation. In this case, we showcase a different approach to define the ANC model by passing directly the configuration name to the `ModelEC` constructor.
 

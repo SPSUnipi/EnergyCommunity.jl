@@ -188,8 +188,8 @@ Maximum and minimum energy limits also apply:
 
 This component can be used to model both energy storage systems (e.g., EV batteries) and flexible loads with specific energy requirements. For example, a charging station for Electric Vehicles can be modelled as an adjustable load where power and energy limits are non-zero when vehicles are connected to the recharging station, and the energy trajectory ``{\xi}_{j,d,t}`` corresponds to the required state of charge by a specific time (e.g., departure time). In particular, when an EV with a given state of charge connects to the station, ``{\xi}_{j,d,t}`` in that time step can be positive and match that value, signaling the additional state of charge that is being connected. Conversely, when an EV leaves the station, the station is deprived of energy and thus ``{\xi}_{j,d,t}`` becomes negative. Energy limits are adapted accordingly to model the total minimum and maximum state of charge of all EVs connected to the station at each time ``t``.
 
-## Deferrable loads (not implemented yet)
+## Deferrable loads (coming, help wanted)
 
 Deferrable loads represent loads that can be shifted in time within certain limits but must be fully served within a specified time window. Examples include certain industrial processes or household appliances like washing machines.
 
-> Not implemented yet.
+> Not implemented yet, help wanted.

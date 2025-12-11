@@ -1,7 +1,7 @@
 Parameter,Unit,Example,Description
 type,-,renewable,Category renewable electricity generator
-CAPEX_lin,€/kW,1700,Specific investment cost per unit of installed capacity
-OEM_lin,€/kW/y,30,Specific annual O&M cost linked to installed capacity
-lifetime_y,years,25,Lifetime of the component
-max_capacity,kW,300,Maximum installable capacity
-profile_ren_pu,-,pv,Per-unit renewable production profile code
+CAPEX\_lin,€/kW,1700,Specific investment cost per unit of installed capacity
+OEM\_lin,€/kW/y,30,Specific annual O&M cost linked to installed capacity
+lifetime\_y,years,25,Lifetime of the component
+max\_capacity,kW,300,Maximum installable capacity
+profile\_ren\_pu,-,pv,Per-unit renewable production profile code

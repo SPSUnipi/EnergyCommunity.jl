@@ -1,10 +1,10 @@
 Parameter,Unit,Example,Description
-type,-,load_adj,Category adjustable (flexible) electrical load
-eta_P,-,0.95,Efficiency when supplying energy (discharging to the grid)
-eta_N,-,0.95,Efficiency when absorbing energy (charging from the grid)
+type,-,load\_adj,Category adjustable (flexible) electrical load
+eta\_P,-,0.95,Efficiency when supplying energy (discharging to the grid)
+eta\_N,-,0.95,Efficiency when absorbing energy (charging from the grid)
 profile,,,
---energy_exchange,-,load_user1_adj,Profile for exogenous energy exchange (positive or negative)
---max_supply,-,max_supply_user1,Maximum power the adjustable load can supply at each timestep
---max_withdrawal,-,max_withdrawal_user1,Maximum power the adjustable load can withdraw at each timestep
---min_energy,-,min_energy_user1,Minimum allowed energy content over time
---max_energy,-,max_energy_user1,Maximum allowed energy content over time
+--energy\_exchange,-,load\_user1\_adj,Profile for exogenous energy exchange (positive or negative)
+--max\_supply,-,max\_supply\_user1,Maximum power the adjustable load can supply at each timestep
+--max\_withdrawal,-,max\_withdrawal\_user1,Maximum power the adjustable load can withdraw at each timestep
+--min\_energy,-,min\_energy\_user1,Minimum allowed energy content over time
+--max\_energy,-,max\_energy\_user1,Maximum allowed energy content over time

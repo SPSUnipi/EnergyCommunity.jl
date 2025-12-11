@@ -48,12 +48,12 @@ save_summary(CO_Model, output_file_isolated)
 # DataFrame of the business plan
 business_plan(CO_Model)
 
-# ## Save the EnergyCommunity.jl model to disk
+# ## Save the model to disk
 
 # save the model to a jld2 file, to store the whole object
 save("co_model.jld2", CO_Model)
 
-# ## Load the EnergyCommunity.jl model from disk
+# ## Load the model from disk
 
 # read the loaded model from the jld2 file
 CO_Model_loaded = load!("co_model.jld2", ModelEC())

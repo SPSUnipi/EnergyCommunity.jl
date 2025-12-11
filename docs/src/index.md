@@ -10,15 +10,16 @@ EnergyCommunity.jl automatically builds a Mixed-Integer Linear Programming model
 
 ## Features
 
-- Optimal dispatch and design of Energy Communities composed by an arbitrary number of users using Mixed-Integer Linear Programming;
-- Multiple types of users: prosumers, consumers, and producers;
-- Support for multiple configurations of Energy Communities:
-  - Non-Cooperative: no Energy Community is in place as each user optimizes its own costs independently from the others and no shared reward applies;
-  - Aggregated-Non-Cooperative (ANC): an Energy Community is in place but users do not cooperate, so each user optimizes its own costs independently from the others and the shared reward applies for the shared energy that naturally flows among users;
-  - COoperative (CO): an Energy Community is in place and users cooperate to minimize the overall costs and share the benefits;
-- Each user may own different technologies: batteries, electric vehicles, photovoltaic systems, combined heat and power units, thermal storage systems, heat pumps, boilers, and more;
-- Estimate fair reward distribution across users with [TheoryOfGames.jl](https://github.com/SPSUnipi/theoryofgames.jl);
-- Support to save and load the model to disk;
+- **Optimal dispatch and design of Energy Communities** composed by an arbitrary number of users using Mixed-Integer Linear Programming;
+- **Multiple types of users**: prosumers, consumers, and producers;
+- **Support for multiple configurations** of Energy Communities:
+  - *Non-Cooperative (NC)*: no Energy Community is in place as each user optimizes its own costs independently from the others and no shared reward applies;
+  - *Aggregated-Non-Cooperative (ANC)*: an Energy Community is in place but users do not cooperate, so each user optimizes its own costs independently from the others and the shared reward applies for the shared energy that naturally flows among users;
+  - *COoperative (CO)*: an Energy Community is in place and users cooperate to minimize the overall costs and share the benefits;
+- **Each user may own different technologies**: batteries, electric vehicles, photovoltaic systems, combined heat and power units, thermal storage systems, heat pumps, boilers, and more;
+- **Estimate fair reward distribution** across users with [TheoryOfGames.jl](https://github.com/SPSUnipi/theoryofgames.jl);
+- **Support to save and load the model to disk**;
+- **Automatic generation of plots** to visualize the results for each user and for the overall Energy Community.
 
 ## Quick start
 

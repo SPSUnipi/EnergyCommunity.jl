@@ -27,6 +27,7 @@ The overall structure has the following major characteristics:
 - Each user has a specified tariff type under the `tariff_name` field, which determines the pricing structure applicable to that user in agreement to the tariff types available in the `market` section
 - Each user can own multiple assets, each defined under its unique asset name (e.g., `asset1`, `asset2`), with each asset having a specified type (e.g., `renewable`, `storage`, `load`, etc.) and associated parameters relevant to that asset type
 - Each user may own different types and numbers of assets, also of the same type, allowing for diverse configurations within the Energy Community to investigate technology options
+- The list of supported assets is listed in the following section of the documentation.
 
 ### Example
 
