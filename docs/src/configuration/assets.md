@@ -43,7 +43,7 @@ The full list of parameters for fixed electrical load assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/load_fixed.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 
@@ -77,7 +77,7 @@ The full list of parameters for renewable assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/renewable.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 
@@ -113,7 +113,7 @@ The full list of parameters for battery assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/battery.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 ## Converter
@@ -143,7 +143,7 @@ The full list of parameters for converter assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/converter.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 ## Heat Pump
@@ -191,7 +191,7 @@ The full list of parameters for heat pump assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/heat_pump.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 ## Thermal Energy Storage (TES)
@@ -232,7 +232,7 @@ The full list of parameters for thermal storage assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/thermal_energy_storage.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 ## Boiler (Fuel-Fired Thermal Generator)
@@ -268,7 +268,7 @@ The full list of parameters for boiler assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/boiler.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 ## Thermal Loads
@@ -301,7 +301,7 @@ The full list of parameters for thermal load assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/load_thermal.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 
 ## Adjustable Electrical Loads
@@ -341,6 +341,6 @@ The full list of parameters for adjustable load assets is shown below:
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/load_adjustable.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
 

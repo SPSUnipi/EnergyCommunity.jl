@@ -32,5 +32,5 @@ A tariff is defined by its buying price, selling price, consumption price, peak 
 using CSV, DataFrames, Latexify
 println(pwd())
 df = CSV.read("../../src/configtables/general.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```

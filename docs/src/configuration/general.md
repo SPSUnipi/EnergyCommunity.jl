@@ -33,5 +33,5 @@ The example showcase the use of the tool for the simulation of 3 users (`user1`,
 ```@eval
 using CSV, DataFrames, Latexify
 df = CSV.read("../../src/configtables/general.csv", DataFrame)
-mdtable(df, latex=false)
+mdtable(coalesce.(df, ""), latex=false, adjustment=:l)
 ```
