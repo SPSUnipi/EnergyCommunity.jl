@@ -1,8 +1,8 @@
 Parameter,Unit,Example,Description
 profile,,,
---buy_price,str or float or list,buy_price,Buying electricity price
---sell_price,str or float or list,sell_price,Selling electricity price
---consumption_price,str or float or list,consumption_price,Consumption based price (excise)
---peak_categories,str or float or list,peak_categories,Peak category code per timestep
---peak_tariff,dict,,Peak tariff by peak category (derived from the peak categories and peak_tariff time series)
---peak_weight,dict,,Peak weight by time vectors (derived from the peak categories and peak_weight time series)
+--buy\_price,str or float or list,buy\_price,Buying electricity price
+--sell\_price,str or float or list,sell\_price,Selling electricity price
+--consumption\_price,str or float or list,consumption\_price,Consumption based price (excise)
+--peak\_categories,str or float or list,peak\_categories,Peak category code per timestep
+--peak\_tariff,dict,,Peak tariff by peak category (derived from the peak categories and peak\_tariff time series)
+--peak\_weight,dict,,Peak weight by time vectors (derived from the peak categories and peak\_weight time series)

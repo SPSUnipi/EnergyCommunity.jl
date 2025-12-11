@@ -1,12 +1,12 @@
 Parameter,Unit,Example,Description
 type,-,battery,Category electrical storage system
-CAPEX_lin,€/kWh,400,Specific investment cost per unit of storage energy capacity
-OEM_lin,€/kWh/y,5,Specific annual O&M cost linked to installed energy capacity
-lifetime_y,years,15,Component lifetime
+CAPEX\_lin,€/kWh,400,Specific investment cost per unit of storage energy capacity
+OEM\_lin,€/kWh/y,5,Specific annual O&M cost linked to installed energy capacity
+lifetime\_y,years,15,Component lifetime
 eta,-,0.92,Round-trip efficiency of the battery
-max_SOC,-,1.0,Maximum allowable state of charge
-min_SOC,-,0.2,Minimum allowable state of charge
-max_capacity,kW,60,Maximum charge/discharge power capacity
-max_C_dch,-,1.0,Maximum C-rate in discharge
-max_C_ch,-,1.0,Maximum C-rate in charge
-corr_asset,str,conv,Name of the corresponding converter asset
+max\_SOC,-,1.0,Maximum allowable state of charge
+min\_SOC,-,0.2,Minimum allowable state of charge
+max\_capacity,kW,60,Maximum charge/discharge power capacity
+max\_C\_dch,-,1.0,Maximum C-rate in discharge
+max\_C\_ch,-,1.0,Maximum C-rate in charge
+corr\_asset,str,conv,Name of the corresponding converter asset

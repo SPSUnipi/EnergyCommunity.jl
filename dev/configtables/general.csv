@@ -1,12 +1,12 @@
 Parameter,Unit,Example,Description
-init_step,-,1,Initial time step index
-final_step,-,1152,Final time step index
-d_rate,-,0.03,Discount rate applied to yearly cash flows
-project_lifetime,years,20,Total project lifetime
-user_set,list,"[user1, user2, user3]",List of users included in the simulation
+init\_step,-,1,Initial time step index
+final\_step,-,1152,Final time step index
+d\_rate,-,0.03,Discount rate applied to yearly cash flows
+project\_lifetime,years,20,Total project lifetime
+user\_set,list,"[user1, user2, user3]",List of users included in the simulation
 profile,,,
---time_res,str or float or list,time_res,"Time resolution of the simulation. When a string is provided, the time resolution profile is loaded from the optional_datasets; alternatively, a float or list of floats can be provided directly"
---energy_weight,str or float or list,energy_weight,Weight of each time step over the year
---reward_price,str or float or list,reward_price,Column containing the reward value for shared energy
---peak_categories,str or float or list,peak_categories,Peak-category label for each time step
-optional_datasets,list,"[input_resource.csv,...]",List of datasets from where to load the profile quantities when string entries values are provided
+--time\_res,str or float or list,time\_res,"Time resolution of the simulation. When a string is provided, the time resolution profile is loaded from the optional\_datasets; alternatively, a float or list of floats can be provided directly"
+--energy\_weight,str or float or list,energy\_weight,Weight of each time step over the year
+--reward\_price,str or float or list,reward\_price,Column containing the reward value for shared energy
+--peak\_categories,str or float or list,peak\_categories,Peak-category label for each time step
+optional\_datasets,list,"[input\_resource.csv,...]",List of datasets from where to load the profile quantities when string entries values are provided

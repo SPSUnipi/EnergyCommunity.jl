@@ -1,4 +1,4 @@
 Parameter,Unit,Example,Description
 type,-,load,Category electrical demand
 profile,,,
---load,-,load_user,Load profile code (user-specific)
+--load,-,load\_user,Load profile code (user-specific)
