@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,storage,Category "Thermal energy storage" (hot/cold water buffer tank)
 CAPEX_lin,€/l,1,Specific investment cost per unit of volume
 OEM_lin,€/l/y,0.005,Specific annual O&M cost linked to installed volume

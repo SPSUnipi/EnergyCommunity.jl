@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,renewable,Category renewable electricity generator
 CAPEX_lin,€/kW,1700,Specific investment cost per unit of installed capacity
 OEM_lin,€/kW/y,30,Specific annual O&M cost linked to installed capacity

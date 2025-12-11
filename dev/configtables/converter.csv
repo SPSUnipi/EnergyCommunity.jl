@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,converter,Category inverter for batteries
 CAPEX_lin,€/kW,200,Specific investment cost per unit of converter power capacity
 OEM_lin,€/kW/y,2,Specific annual O&M cost linked to installed converter capacity

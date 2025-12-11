@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,heat_pump,Category heat pump enabling heating and cooling
 CAPEX_lin,€/kW,1300,Specific investment cost per unit of electrical capacity
 OEM_lin,€/kW/y,15,Specific fixed annual O&M cost

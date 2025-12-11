@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,load_adj,Category adjustable (flexible) electrical load
 eta_P,-,0.95,Efficiency when supplying energy (discharging to the grid)
 eta_N,-,0.95,Efficiency when absorbing energy (charging from the grid)

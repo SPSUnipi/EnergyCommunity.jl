@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,thermal,Category fuel-fired electricity generator
 CAPEX_lin,€/kW,3000,Specific investment cost per unit of nominal generator capacity
 OEM_lin,€/kW/y,0.0,Specific fixed annual O&M cost linked to installed capacity

@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,boiler,Category boiler for heating
 CAPEX_lin,€/kW,250,Specific investment cost per unit of thermal power capacity
 OEM_lin,€/kW/y,10,Specific annual O&M cost linked to capacity
