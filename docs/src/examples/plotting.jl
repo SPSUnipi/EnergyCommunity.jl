@@ -35,7 +35,9 @@ objective_value(CO_Model)
 # ## Plots of dispatch
 
 # Create plots of the dispatch of resources by user and save them to disk
-plot(CO_Model, output_plot_isolated)
+all_plots = plot(CO_Model, output_plot_isolated)
+user_to_plot = 3  # select user to plot
+plot(all_plots[user_to_plot, 3])  # show the plot of user 3 (top: power dispatch, bottom: battery storage)
 
 # ## Sankey plots
 
