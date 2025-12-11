@@ -102,21 +102,22 @@ Boilers ``o \in A^{BOIL}_j`` are fuel-fired heating units producing thermal powe
 
 ## Thermal Energy Balance
 
-For each user ``j`` at every time step ``t``, the thermal balance equation ensures that thermal demand is met by thermal technologies:
+For each user ``j`` at every time step ``t``, the thermal balance equation ensures that thermal demand for each thermal load ``l`` is met by thermal technologies that feed to it:
 
 ```math
-\sum_{s \in A^{TES}_j} \left[ E^{TES}_{j,s,t} - E^{TES}_{j,s,t-1} + L^{TES}_{j,s,t} \right]
+\sum_{s \in A^{TES}_j(l)} \left[ E^{TES}_{j,s,t} - E^{TES}_{j,s,t-1} + L^{TES}_{j,s,t} \right]
 +
-\sum_{l \in A^{TL}_j}
 P^{th}_{j,l,t} \Delta_t
 =
-\sum_{h \in A^{HP}_j} P^{HP}_{j,h,t} \Delta t
+\sum_{h \in A^{HP}_j(l)} P^{HP}_{j,h,t} \Delta t
 +
-\sum_{o \in A^{BOIL}_j} P^{boil}_{j,o,t}\Delta t
+\sum_{o \in A^{BOIL}_j(l)} P^{boil}_{j,o,t}\Delta t
+, \quad \forall l \in A^{TL}_j
 ```
 
 where:
 - ``A^{TL}_j`` is the set of thermal loads for user ``j``
+- ``A^{TES/HP/BOIL}_j`` is the set of thermal storages, heat pumps and boilers for user ``j`` that feed to the thermal load ``l``
 - ``P^{th}_{j,l,t}`` is the thermal power demand of load ``l`` at time ``t`` (positive for heating, negative for cooling)
 - ``\Delta_t`` is the time step duration
 - ``L^{TES}_{j,s,t}`` are the thermal losses from TES

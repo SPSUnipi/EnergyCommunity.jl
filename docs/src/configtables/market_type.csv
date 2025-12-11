@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 profile,,,
 --buy_price,str or float or list,buy_price,Buying electricity price
 --sell_price,str or float or list,sell_price,Selling electricity price

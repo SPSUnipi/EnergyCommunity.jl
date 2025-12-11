@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,battery,Category electrical storage system
 CAPEX_lin,€/kWh,400,Specific investment cost per unit of storage energy capacity
 OEM_lin,€/kWh/y,5,Specific annual O&M cost linked to installed energy capacity

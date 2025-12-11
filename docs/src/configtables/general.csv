@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 init_step,-,1,Initial time step index
 final_step,-,1152,Final time step index
 d_rate,-,0.03,Discount rate applied to yearly cash flows

@@ -1,4 +1,4 @@
-,Unit,Example,Description
+Parameter,Unit,Example,Description
 type,-,t_load,Category Thermal demand for heating/cooling
 corr_asset,list,"[hp,boil,tes]",List of assets serving this thermal load
 profile,,,
