@@ -286,7 +286,7 @@ end
 
 """
     Plots.plot(::AbstractGroupCO, ECModel::AbstractEC, output_plot_file::AbstractString;
-    user_set::AbstractVector = Vector(), line_width = 2.0)
+    user_set::AbstractVector = Vector(), line_width = 2.0, dpi = 300)
 
 Function to plot the results of the Cooperative EC
 """
