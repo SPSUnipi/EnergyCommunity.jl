@@ -333,6 +333,7 @@ function build_base_model!(ECModel::AbstractEC, optimizer; use_notations=false)
     # When the `sum` has no terms, the type is `MutableArithmetics.Zero`
     # otherwise, it is `AffExpr` so the resulting eltype is `Any` which cause issues later, see
     # https://github.com/jump-dev/JuMP.jl/issues/4096
+    # To fix it, we use `init = zero(AffExpr)`
     @expression(model_user, CAPEX_tot_us[u in user_set],
         sum(CAPEX_us[u, a] for a in device_names(users_data[u]); init = zero(AffExpr)) # sum of CAPEX by asset for the same user
     )  # CAPEX by user
