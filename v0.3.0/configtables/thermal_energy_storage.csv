@@ -1,0 +1,16 @@
+Parameter,Unit,Example,Description
+type,-,storage,Category "Thermal energy storage" (hot/cold water buffer tank)
+CAPEX\_lin,€/l,1,Specific investment cost per unit of volume
+OEM\_lin,€/l/y,0.005,Specific annual O&M cost linked to installed volume
+lifetime\_y,years,35,Component lifetime
+eta,-,0.9,Storage round-trip efficiency
+max\_capacity,l,50000,Maximum tank volume
+cp,kWh/l°C,0.00116,Specific heat capacity of storage medium
+b\_tr\_x,-,0.5,Thermal exposure factor interpolating between indoor and outdoor temperature
+k,kWh/h°C,0.0003,Heat loss coefficient per °C temperature difference
+T\_ref\_heat,°C,50.0,Reference storage temperature for heating mode
+T\_ref\_cool,°C,10.0,Reference storage temperature for cooling mode
+T\_input\_heat,°C,20.0,Lower reference temperature for heating mode
+T\_input\_cool,°C,20.0,Lower reference temperature for cooling mode
+profile\_T\_int,-,T\_int,Internal temperature profile
+profile\_T\_ext,-,T\_ext,External temperature profile

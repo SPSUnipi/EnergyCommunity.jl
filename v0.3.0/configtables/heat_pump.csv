@@ -1,0 +1,20 @@
+Parameter,Unit,Example,Description
+type,-,heat\_pump,Category heat pump enabling heating and cooling
+CAPEX\_lin,€/kW,1300,Specific investment cost per unit of electrical capacity
+OEM\_lin,€/kW/y,15,Specific fixed annual O&M cost
+lifetime\_y,years,20,Component lifetime
+COP\_c1,-,2.3,Nominal COP for heating at reference temperature T\_c1
+COP\_c2,-,2.7,Nominal COP for heating at reference temperature T\_c2
+EER\_h1,-,3.0,Nominal EER for cooling at reference temperature T\_h1
+EER\_h2,-,2.6,Nominal EER for cooling at reference temperature T\_h2
+T\_c1,°C,2.0,Reference external air temperature for COP\_c1
+T\_c2,°C,7.0,Reference external air temperature for COP\_c2
+T\_h,°C,55.0,Heating outlet/reference temperature
+T\_h1,°C,30.0,Reference external air temperature for EER\_h1
+T\_h2,°C,35.0,Reference external air temperature for EER\_h2
+T\_c,°C,7.0,Cooling evaporator/reference temperature
+delta\_T\_approach,K,5.0,Temperature approach difference used for COP/EER computation
+max\_capacity,kW,50,Maximum electrical input power of the heat pump
+profile,,,
+--T\_int,str or float or list,T\_int,Internal temperature profile code
+--T\_ext,str or float or list,T\_ext,External temperature profile code
