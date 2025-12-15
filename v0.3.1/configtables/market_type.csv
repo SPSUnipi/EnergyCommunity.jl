@@ -1,0 +1,8 @@
+Parameter,Unit,Example,Description
+profile,,,
+--buy\_price,str or float or list,buy\_price,Buying electricity price
+--sell\_price,str or float or list,sell\_price,Selling electricity price
+--consumption\_price,str or float or list,consumption\_price,Consumption based price (excise)
+--peak\_categories,str or float or list,peak\_categories,Peak category code per timestep
+--peak\_tariff,dict,,Peak tariff by peak category (derived from the peak categories and peak\_tariff time series)
+--peak\_weight,dict,,Peak weight by time vectors (derived from the peak categories and peak\_weight time series)
