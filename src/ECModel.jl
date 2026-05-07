@@ -1273,7 +1273,15 @@ function set_parameters_ECmodel!(ECModel::AbstractEC,
     model = ECModel.model
     deterministic_model = ECModel.deterministic_model
 
-    if occursin("CPLEX", ECModel.optimizer )
+    # `ECModel.optimizer` may be stored as a Type (e.g. `Gurobi.Optimizer`),
+    # an instance, or already a string — coerce to string so `occursin` is
+    # well-defined in all three cases. Without this, passing the optimizer
+    # as `Gurobi.Optimizer` makes the function silently fall through (or,
+    # depending on the call path, raise a MethodError on the first
+    # `occursin`), and none of the parameters end up applied.
+    optimizer_name = string(ECModel.optimizer)
+
+    if occursin("CPLEX", optimizer_name)
         set_optimizer_attribute(model, "CPX_PARAM_EPGAP", tol)
         set_optimizer_attribute(model, "CPX_PARAM_TILIM", time_limit)
         set_optimizer_attribute(model, "CPX_PARAM_THREADS", threads)
@@ -1284,7 +1292,7 @@ function set_parameters_ECmodel!(ECModel::AbstractEC,
         set_optimizer_attribute(deterministic_model, "CPX_PARAM_THREADS", threads)
         set_optimizer_attribute(deterministic_model, "CPX_PARAM_SCRIND", verbosity)
 
-    elseif occursin("HiGHS", ECModel.optimizer)
+    elseif occursin("HiGHS", optimizer_name)
         set_optimizer_attribute(model, "mip_rel_gap", tol)
         set_optimizer_attribute(model, "time_limit", time_limit)
         set_optimizer_attribute(model, "threads", threads)
@@ -1295,7 +1303,7 @@ function set_parameters_ECmodel!(ECModel::AbstractEC,
         set_optimizer_attribute(deterministic_model, "threads", threads)
         set_optimizer_attribute(deterministic_model, "log_to_console", verbosity)
 
-    elseif occursin("Gurobi", ECModel.optimizer)
+    elseif occursin("Gurobi", optimizer_name)
         set_optimizer_attribute(model, "MIPGap", tol)
         set_optimizer_attribute(model, "TimeLimit", time_limit)
         set_optimizer_attribute(model, "Threads", threads)
@@ -1307,7 +1315,7 @@ function set_parameters_ECmodel!(ECModel::AbstractEC,
         set_optimizer_attribute(deterministic_model, "OutputFlag", verbosity)
 
     else
-        @warn "Optimizer of the EC Model not found"
+        @warn "Optimizer of the EC Model not found" optimizer = optimizer_name
     end
 
     return ECModel
