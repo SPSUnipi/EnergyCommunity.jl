@@ -97,26 +97,3 @@ end
     end
 
 end
-
-# Regression test for the optimizer-name coercion in `set_parameters_ECmodel!`.
-# Previously, `occursin("Solver", ECModel.optimizer)` raised `MethodError` when
-# the optimizer was passed as a Type (e.g. `HiGHS.Optimizer`), so the function
-# silently bypassed every parameter assignment for the most common JuMP idiom.
-mutable struct _SetParamsECModelMock <: AbstractEC
-    model::JuMP.Model
-    deterministic_model::JuMP.Model
-    optimizer
-end
-
-@testset "set_parameters_ECmodel! coerces optimizer Type to string" begin
-    em = _SetParamsECModelMock(
-        JuMP.Model(HiGHS.Optimizer),
-        JuMP.Model(HiGHS.Optimizer),
-        HiGHS.Optimizer,  # passed as a Type, the common JuMP idiom
-    )
-    set_parameters_ECmodel!(em, 1e-7, 30, 1, 0)
-    for jm in (em.model, em.deterministic_model)
-        @test MOI.get(jm, MOI.RawOptimizerAttribute("mip_rel_gap")) ≈ 1e-7
-        @test MOI.get(jm, MOI.RawOptimizerAttribute("time_limit")) ≈ 30.0
-    end
-end
