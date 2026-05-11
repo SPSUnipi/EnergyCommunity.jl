@@ -52,7 +52,18 @@ function build_base_model!(ECModel::StochasticEC, optimizer;
     model_user = ECModel.model
 
     @first_stage model_user = begin
-        @decision(model_user, 0 <= x_us[u=user_set, a=device_names(users_data[u])] <= field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"), Int)  # Number of base plants installed by each user
+        @decision(model_user, 0 <= x_us[u=user_set, a=device_names(users_data[u])] <= field_component(users_data[u], a, "max_capacity")/field_component(users_data[u], a, "nom_capacity"))  # Number of base plants installed by each user
+        # Mirror the `modularity` semantics already used in `base_model.jl`
+        # (lines 152-163): the design is continuous when the asset declares
+        # `modularity: true`, integer when `modularity: false`, and -- for
+        # backward compatibility with models that pre-date `modularity` --
+        # integer when the field is absent.
+        for u in user_set, a in device_names(users_data[u])
+            if !(has_component(users_data[u], a, "modularity") &&
+                 field_component(users_data[u], a, "modularity") == true)
+                set_integer(x_us[u, a])
+            end
+        end
         @decision(model_user, 0 <= P_us_dec_P[user_set, scen_s_set, time_set]) # Supposed dispatch of each user, positive when supplying to public grid
         @decision(model_user, 0 <= P_us_dec_N[user_set, scen_s_set, time_set]) # Supposed dispatch of each user, positive when absorbing from public grid
 
