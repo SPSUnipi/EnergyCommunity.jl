@@ -110,8 +110,13 @@ function build_specific_model!(::AbstractGroupCO, ECModel::AbstractEC)
     # Cash flow
     @expression(model, Cash_flow_tot[y in year_set_0],
         sum(model[:Cash_flow_us][y, :])
-        + Cash_flow_agg[y] - sum(field_d(users_data[u], "join_cost", 0.0) for u in user_set)
+        + Cash_flow_agg[y]
     )
+
+    # add join costs to NPV expressions
+    for u in user_set
+        add_to_expression!(model[:NPV_us][u], -field_d(users_data[u], "join_cost", 0.0))
+    end
 
     # Social welfare of the entire aggregation
     @expression(model, SW,

@@ -462,8 +462,7 @@ function build_least_profitable!(
     # change expression of SW
     for u in ECModel.user_set
         # get the constant value
-        join_cost = field_d(ECModel.users_data[u], "join_cost", 0.0)
-        coeff = constant(ECModel.model[:NPV_us][u]) + join_cost
+        coeff = constant(ECModel.model[:NPV_us][u])
 
         # change expression to add the constant only when the corresponding binary is enabled
         add_to_expression!(ECModel.model[:SW], coeff * coalition_status[u] - coeff)
