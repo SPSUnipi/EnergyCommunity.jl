@@ -51,8 +51,9 @@ users:  # list of users and the corresponding assets
 
   user1:  # name of the user
     tariff_name: commercial #type of market
-    # list of components
+    join_cost: 10  # [€] cost for joining the community
     
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1700  # [€/kW] specific investment cost of the component
@@ -94,9 +95,10 @@ users:  # list of users and the corresponding assets
     #   nom_capacity: 10  # [kW] nominal capacity of the generator
 
   user2:  # name of the user
-    # list of components
     tariff_name: non_commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
 
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -140,9 +142,10 @@ users:  # list of users and the corresponding assets
         load: load_user2
 
   user3:  # name of the user
-    # list of components
     tariff_name: non_commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
 
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1600  # [€/kW] specific investment cost of the component
@@ -196,9 +199,10 @@ users:  # list of users and the corresponding assets
         load: load_user3
 
   user4:  # name of the user
-    # list of components 
     tariff_name: non_commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
 
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -216,9 +220,10 @@ users:  # list of users and the corresponding assets
 
 
   user5:  # name of the user
-    # list of components
     tariff_name: commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
 
+    # list of components
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -227,9 +232,10 @@ users:  # list of users and the corresponding assets
 
 
   user6:  # name of the user
-    # list of components
     tariff_name: commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
 
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -272,9 +278,10 @@ users:  # list of users and the corresponding assets
 
 
   user7:  # name of the user
-    # list of components
     tariff_name: non_commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
 
+    # list of components
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
@@ -282,9 +289,10 @@ users:  # list of users and the corresponding assets
         load: load_user7
 
   user8:  # name of the user
-    # list of components
     tariff_name: commercial #type of market
+    join_cost: 10  # [€] cost for joining the community
     
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -338,9 +346,10 @@ users:  # list of users and the corresponding assets
         load: load_user8
 
   user9:  # name of the user
-    # list of components
     tariff_name: commercial #type of market
-    
+    join_cost: 10  # [€] cost for joining the community
+
+    # list of components
     PV:  # component PV
       type: renewable  # type of component
       CAPEX_lin: 1400  # [€/kW] specific investment cost of the component
@@ -382,9 +391,10 @@ users:  # list of users and the corresponding assets
         load: load_user9
 
   user10:  # name of the user
-    # list of components
     tariff_name: commercial #type of market
-    
+    join_cost: 10  # [€] cost for joining the community
+
+    # list of components
     load:  # component load
       type: load
       # curt_cost: 6.0  # [€/kWh] load curtailment cost
