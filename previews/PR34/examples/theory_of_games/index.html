@@ -13,27 +13,27 @@ User set: [&quot;user1&quot;, &quot;user2&quot;, &quot;user3&quot;]
     CO_Model,
     EnergyCommunity.GroupNC(),  # Base group is the Non Cooperative group
     no_aggregator_type=EnergyCommunity.GroupNC(),  # when the aggregator is not in the community, use Non Cooperative group
-)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">TheoryOfGames.EnumMode([&quot;EC&quot;, &quot;user1&quot;, &quot;user2&quot;, &quot;user3&quot;], Dict{Set{String}, Float64}(Set([&quot;EC&quot;, &quot;user2&quot;, &quot;user1&quot;]) =&gt; 9102.53161486378, Set([&quot;EC&quot;, &quot;user3&quot;]) =&gt; -9.9999999992433, Set([&quot;EC&quot;, &quot;user1&quot;]) =&gt; -10.0, Set([&quot;EC&quot;, &quot;user1&quot;, &quot;user3&quot;]) =&gt; 9384.772014430258, Set([&quot;EC&quot;]) =&gt; 0.0, Set([&quot;user3&quot;]) =&gt; 0.0, Set([&quot;user2&quot;, &quot;user1&quot;, &quot;user3&quot;]) =&gt; 0.0, Set([&quot;user2&quot;, &quot;user1&quot;]) =&gt; 0.0, Set([&quot;user1&quot;]) =&gt; 0.0, Set() =&gt; 0.0…))</code></pre><h3 id="Shapley"><a class="docs-heading-anchor" href="#Shapley">Shapley</a><a id="Shapley-1"></a><a class="docs-heading-anchor-permalink" href="#Shapley" title="Permalink"></a></h3><p>Calculate fair allocation using Shapley value</p><pre><code class="language-julia hljs">dst_sh = shapley_value(enum_mode)
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">TheoryOfGames.EnumMode([&quot;EC&quot;, &quot;user1&quot;, &quot;user2&quot;, &quot;user3&quot;], Dict{Set{String}, Float64}(Set([&quot;EC&quot;, &quot;user2&quot;, &quot;user1&quot;]) =&gt; 9122.53161486378, Set([&quot;EC&quot;, &quot;user3&quot;]) =&gt; 7.566995918750763e-10, Set([&quot;EC&quot;, &quot;user1&quot;]) =&gt; 0.0, Set([&quot;EC&quot;, &quot;user1&quot;, &quot;user3&quot;]) =&gt; 9404.772014430258, Set([&quot;EC&quot;]) =&gt; 0.0, Set([&quot;user3&quot;]) =&gt; 0.0, Set([&quot;user2&quot;, &quot;user1&quot;, &quot;user3&quot;]) =&gt; 0.0, Set([&quot;user2&quot;, &quot;user1&quot;]) =&gt; 0.0, Set([&quot;user1&quot;]) =&gt; 0.0, Set() =&gt; 0.0…))</code></pre><h3 id="Shapley"><a class="docs-heading-anchor" href="#Shapley">Shapley</a><a id="Shapley-1"></a><a class="docs-heading-anchor-permalink" href="#Shapley" title="Permalink"></a></h3><p>Calculate fair allocation using Shapley value</p><pre><code class="language-julia hljs">dst_sh = shapley_value(enum_mode)
 dst_sh</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Float64} with 4 entries:
-  &quot;EC&quot;    =&gt; 6103.81
-  &quot;user2&quot; =&gt; 2978.88
-  &quot;user1&quot; =&gt; 4063.05
-  &quot;user3&quot; =&gt; 3072.96</code></pre><h3 id="Nucleolus"><a class="docs-heading-anchor" href="#Nucleolus">Nucleolus</a><a id="Nucleolus-1"></a><a class="docs-heading-anchor-permalink" href="#Nucleolus" title="Permalink"></a></h3><p>Calculate fair allocation using Nucleolus</p><pre><code class="language-julia hljs">dst_nuc = nucleolus(enum_mode, optimizer)
+  &quot;EC&quot;    =&gt; 6118.81
+  &quot;user2&quot; =&gt; 2983.88
+  &quot;user1&quot; =&gt; 4068.05
+  &quot;user3&quot; =&gt; 3077.96</code></pre><h3 id="Nucleolus"><a class="docs-heading-anchor" href="#Nucleolus">Nucleolus</a><a id="Nucleolus-1"></a><a class="docs-heading-anchor-permalink" href="#Nucleolus" title="Permalink"></a></h3><p>Calculate fair allocation using Nucleolus</p><pre><code class="language-julia hljs">dst_nuc = nucleolus(enum_mode, optimizer)
 dst_nuc</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Float64} with 4 entries:
-  &quot;EC&quot;    =&gt; 4621.83
-  &quot;user2&quot; =&gt; 3416.97
-  &quot;user1&quot; =&gt; 4621.83
-  &quot;user3&quot; =&gt; 3558.09</code></pre><h3 id="Variance-Core"><a class="docs-heading-anchor" href="#Variance-Core">Variance Core</a><a id="Variance-Core-1"></a><a class="docs-heading-anchor-permalink" href="#Variance-Core" title="Permalink"></a></h3><p>Calculate fair allocation using Variance Core</p><pre><code class="language-julia hljs">dst_vc = var_in_core(enum_mode, optimizer)
+  &quot;EC&quot;    =&gt; 4631.83
+  &quot;user2&quot; =&gt; 3421.97
+  &quot;user1&quot; =&gt; 4631.83
+  &quot;user3&quot; =&gt; 3563.09</code></pre><h3 id="Variance-Core"><a class="docs-heading-anchor" href="#Variance-Core">Variance Core</a><a id="Variance-Core-1"></a><a class="docs-heading-anchor-permalink" href="#Variance-Core" title="Permalink"></a></h3><p>Calculate fair allocation using Variance Core</p><pre><code class="language-julia hljs">dst_vc = var_in_core(enum_mode, optimizer)
 dst_vc</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Float64} with 4 entries:
-  &quot;EC&quot;    =&gt; 4054.68
-  &quot;user2&quot; =&gt; 4054.68
-  &quot;user1&quot; =&gt; 4054.68
-  &quot;user3&quot; =&gt; 4054.68</code></pre><h3 id="Variance-Least-Core"><a class="docs-heading-anchor" href="#Variance-Least-Core">Variance Least Core</a><a id="Variance-Least-Core-1"></a><a class="docs-heading-anchor-permalink" href="#Variance-Least-Core" title="Permalink"></a></h3><p>Calculatefair allocation using Variance Least Core</p><pre><code class="language-julia hljs">dst_vlc = var_least_core(enum_mode, optimizer)
+  &quot;EC&quot;    =&gt; 4062.18
+  &quot;user2&quot; =&gt; 4062.18
+  &quot;user1&quot; =&gt; 4062.18
+  &quot;user3&quot; =&gt; 4062.18</code></pre><h3 id="Variance-Least-Core"><a class="docs-heading-anchor" href="#Variance-Least-Core">Variance Least Core</a><a id="Variance-Least-Core-1"></a><a class="docs-heading-anchor-permalink" href="#Variance-Least-Core" title="Permalink"></a></h3><p>Calculatefair allocation using Variance Least Core</p><pre><code class="language-julia hljs">dst_vlc = var_least_core(enum_mode, optimizer)
 dst_vlc</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Float64} with 4 entries:
-  &quot;EC&quot;    =&gt; 4551.27
-  &quot;user2&quot; =&gt; 3416.97
-  &quot;user1&quot; =&gt; 4551.27
-  &quot;user3&quot; =&gt; 3699.21</code></pre><h2 id="Verify-stability-of-the-allocations"><a class="docs-heading-anchor" href="#Verify-stability-of-the-allocations">Verify stability of the allocations</a><a id="Verify-stability-of-the-allocations-1"></a><a class="docs-heading-anchor-permalink" href="#Verify-stability-of-the-allocations" title="Permalink"></a></h2><p>Check if the Shapley value is in the Core</p><pre><code class="language-julia hljs">sh_in_core = verify_in_core(dst_sh, enum_mode, optimizer)
+  &quot;EC&quot;    =&gt; 4561.27
+  &quot;user2&quot; =&gt; 3421.97
+  &quot;user1&quot; =&gt; 4561.27
+  &quot;user3&quot; =&gt; 3704.21</code></pre><h2 id="Verify-stability-of-the-allocations"><a class="docs-heading-anchor" href="#Verify-stability-of-the-allocations">Verify stability of the allocations</a><a id="Verify-stability-of-the-allocations-1"></a><a class="docs-heading-anchor-permalink" href="#Verify-stability-of-the-allocations" title="Permalink"></a></h2><p>Check if the Shapley value is in the Core</p><pre><code class="language-julia hljs">sh_in_core = verify_in_core(dst_sh, enum_mode, optimizer)
 println(&quot;Shapley value in Core: &quot;, sh_in_core)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Shapley value in Core: true</code></pre><p>Check if the Nucleolus is in the Core</p><pre><code class="language-julia hljs">nuc_in_core = verify_in_core(dst_nuc, enum_mode, optimizer)
 println(&quot;Nucleolus in Core: &quot;, nuc_in_core)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Nucleolus in Core: true</code></pre><p>Check if the Variance Core allocation is in the Core</p><pre><code class="language-julia hljs">vc_in_core = verify_in_core(dst_vc, enum_mode, optimizer)
 println(&quot;Variance Core allocation in Core: &quot;, vc_in_core)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Variance Core allocation in Core: true</code></pre><p>Check if the Variance Least Core allocation is in the Core</p><pre><code class="language-julia hljs">vlc_in_core = verify_in_core(dst_vlc, enum_mode, optimizer)
@@ -48,10 +48,10 @@ println(df)</code></pre><pre class="documenter-example-output"><code class="nohi
  Row │ Member  Shapley  Nucleolus  Variance_Core  Variance_Least_Core
      │ String  Float64  Float64    Float64        Float64
 ─────┼────────────────────────────────────────────────────────────────
-   1 │ EC      6103.81    4621.83        4054.68              4551.27
-   2 │ user2   2978.88    3416.97        4054.68              3416.97
-   3 │ user1   4063.05    4621.83        4054.68              4551.27
-   4 │ user3   3072.96    3558.09        4054.68              3699.21</code></pre><p>Plot the comparison</p><pre><code class="language-julia hljs">groupedbar(
+   1 │ EC      6118.81    4631.83        4062.18              4561.27
+   2 │ user2   2983.88    3421.97        4062.18              3421.97
+   3 │ user1   4068.05    4631.83        4062.18              4561.27
+   4 │ user3   3077.96    3563.09        4062.18              3704.21</code></pre><p>Plot the comparison</p><pre><code class="language-julia hljs">groupedbar(
     df.Member,
     [df.Shapley df.Nucleolus df.Variance_Core df.Variance_Least_Core],
     label = [&quot;Shapley&quot; &quot;Nucleolus&quot; &quot;Variance Core&quot; &quot;Variance Least Core&quot;],
@@ -59,7 +59,7 @@ println(df)</code></pre><pre class="documenter-example-output"><code class="nohi
     xlabel = &quot;Community Members&quot;,
     ylabel = &quot;Allocated Reward [€]&quot;,
     bar_position = :dodge,
-)</code></pre><img src="8fb76234.svg" alt="Example block output"/><h2 id="Iterative-method-for-reward-allocations"><a class="docs-heading-anchor" href="#Iterative-method-for-reward-allocations">Iterative method for reward allocations</a><a id="Iterative-method-for-reward-allocations-1"></a><a class="docs-heading-anchor-permalink" href="#Iterative-method-for-reward-allocations" title="Permalink"></a></h2><p>For large energy communities, the enumerative method may become computationally expensive as it implies the calculation of the utility function for all possible coalitions. In such cases, an iterative method employing row-generation can be employed to estimate fair reward allocations more efficiently. This example showcases how to set up an iterative method for computing the Nucleolus allocation.</p><p>Define the iterative mode for cooperative games</p><pre><code class="language-julia hljs">iter_mode = IterMode(
+)</code></pre><img src="6610f603.svg" alt="Example block output"/><h2 id="Iterative-method-for-reward-allocations"><a class="docs-heading-anchor" href="#Iterative-method-for-reward-allocations">Iterative method for reward allocations</a><a id="Iterative-method-for-reward-allocations-1"></a><a class="docs-heading-anchor-permalink" href="#Iterative-method-for-reward-allocations" title="Permalink"></a></h2><p>For large energy communities, the enumerative method may become computationally expensive as it implies the calculation of the utility function for all possible coalitions. In such cases, an iterative method employing row-generation can be employed to estimate fair reward allocations more efficiently. This example showcases how to set up an iterative method for computing the Nucleolus allocation.</p><p>Define the iterative mode for cooperative games</p><pre><code class="language-julia hljs">iter_mode = IterMode(
     CO_Model,
     EnergyCommunity.GroupNC(),  # Base group is the Non Cooperative group
     no_aggregator_type=EnergyCommunity.GroupNC(),  # when the aggregator is not in the community, use Non Cooperative group
@@ -84,15 +84,15 @@ Energy Community problem for a Cooperative Model
 User set: [&quot;user1&quot;, &quot;user2&quot;, &quot;user3&quot;]
 , Dict{Any, Any}())))</code></pre><p>Calculate Variance Least Core with iterative method</p><pre><code class="language-julia hljs">dst_vlc_iter = var_least_core(iter_mode, optimizer)
 dst_vlc_iter</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Dict{String, Float64} with 4 entries:
-  &quot;EC&quot;    =&gt; 4556.27
-  &quot;user2&quot; =&gt; 3411.97
-  &quot;user1&quot; =&gt; 4556.27
-  &quot;user3&quot; =&gt; 3694.21</code></pre><p>Compare the distributions from the enumerative and iterative methods</p><pre><code class="language-julia hljs">println(&quot;Difference between enumerative and iterative Variance Least Core allocations:&quot;)
+  &quot;EC&quot;    =&gt; 4561.27
+  &quot;user2&quot; =&gt; 3421.97
+  &quot;user1&quot; =&gt; 4561.27
+  &quot;user3&quot; =&gt; 3704.21</code></pre><p>Compare the distributions from the enumerative and iterative methods</p><pre><code class="language-julia hljs">println(&quot;Difference between enumerative and iterative Variance Least Core allocations:&quot;)
 for member in keys(dst_vlc)
     diff = dst_vlc[member] - dst_vlc_iter[member]
     println(&quot;Member: &quot;, member, &quot;, Absolute Difference [%]: &quot;, 100*abs(diff)/dst_vlc[member])
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Difference between enumerative and iterative Variance Least Core allocations:
-Member: EC, Absolute Difference [%]: 0.109859547023896
-Member: user2, Absolute Difference [%]: 0.14632863795440126
-Member: user1, Absolute Difference [%]: 0.109859547023896
-Member: user3, Absolute Difference [%]: 0.13516412119164517</code></pre><div class="admonition is-info" id="Info-e468d72cd066a7a2"><header class="admonition-header">Info<a class="admonition-anchor" href="#Info-e468d72cd066a7a2" title="Permalink"></a></header><div class="admonition-body"><p><a href="../theory_of_games.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../heating_cooling/">« Heating and Cooling Flexibility</a><a class="docs-footer-nextpage" href="../../model/intro_model/">Architecture of the model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 11 July 2026 00:25">Saturday 11 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Member: EC, Absolute Difference [%]: 7.95587017568954e-12
+Member: user2, Absolute Difference [%]: 1.2318964536748155e-11
+Member: user1, Absolute Difference [%]: 7.975809699939387e-12
+Member: user3, Absolute Difference [%]: 2.4761724242403935e-11</code></pre><div class="admonition is-info" id="Info-e468d72cd066a7a2"><header class="admonition-header">Info<a class="admonition-anchor" href="#Info-e468d72cd066a7a2" title="Permalink"></a></header><div class="admonition-body"><p><a href="../theory_of_games.jl">View this file on Github</a>.</p></div></div><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../heating_cooling/">« Heating and Cooling Flexibility</a><a class="docs-footer-nextpage" href="../../model/intro_model/">Architecture of the model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 11 July 2026 00:28">Saturday 11 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
